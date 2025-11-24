@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reflow PDF Editor - Proof of Concept</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .alert {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .layout {
+            display: flex;
+            gap: 20px;
+        }
+
+        .editor-section {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page-container {
+            position: relative;
+            background: white;
+            border: 1px solid #ddd;
+            margin: 20px auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .editable-block {
+            position: absolute;
+            border: 2px solid transparent;
+            cursor: text;
+            transition: all 0.2s ease;
+        }
+
+        .editable-block:hover {
+            border-color: #2196F3;
+            background: rgba(33, 150, 243, 0.05);
+        }
+
+        .editable-block.editing {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+            z-index: 10;
+        }
+
+        .editable-block textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            resize: none;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            outline: none;
+            padding: 0;
+        }
+
+        /* Preserve mode specific styles */
+        .preserve-element {
+            position: absolute;
+            padding: 0;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.65;
+        }
+
+        .image-element, .graphic-element {
+            position: absolute;
+            cursor: pointer;
+        }
+
+        .image-element {
+            border: 2px dashed #2196F3;
+            background: rgba(33, 150, 243, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #2196F3;
+        }
+
+        .graphic-element {
+            border: 2px solid #666;
+            background: transparent;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background: #2196F3;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1976D2;
+        }
+
+        button.success {
+            background: #4CAF50;
+        }
+
+        button.success:hover {
+            background: #45a049;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .sidebar h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .block-list {
+            list-style: none;
+        }
+
+        .block-list li {
+            padding: 10px;
+            margin-bottom: 5px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .block-list li.active {
+            background: #e3f2fd;
+            border-left: 3px solid #2196F3;
+        }
+
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .stats div {
+            margin-bottom: 5px;
+        }
+
+        .demo-info {
+            background: #e8f5e9;
+            border: 1px solid #4CAF50;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .demo-info h3 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+
+        .demo-info ul {
+            margin-left: 20px;
+            color: #1b5e20;
+        }
+
+        .demo-info ul li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Reflow PDF Editor - Proof of Concept</h1>
+
+        <div class="alert">
+            <strong>⚠️ Phase 1 MVP Demo</strong>
+            This is a proof-of-concept showing text reflow with dynamic block resizing.
+            Edit any text block and watch neighboring blocks move automatically!
+        </div>
+
+        <div class="demo-info">
+            <h3>✨ Try These Actions:</h3>
+            <ul>
+                <li><strong>Click any text</strong> to edit it</li>
+                <li><strong>Make text shorter</strong> - watch blocks below pull up</li>
+                <li><strong>Make text longer</strong> - watch blocks below push down</li>
+                <li><strong>Click "Export PDF"</strong> - saved PDF matches the preview exactly</li>
+            </ul>
+        </div>
+
+        <div class="layout">
+            <div class="editor-section">
+                <div class="controls">
+                    <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;" onchange="app.handleFileSelect(event)">
+                    <button onclick="document.getElementById('pdfFileInput').click()">📤 Import PDF</button>
+                    <button id="modeToggleBtn" onclick="app.toggleMode()" style="background: #FF9800;">🔄 Mode: <span id="currentMode">Auto</span></button>
+                    <button onclick="app.resetDocument()">Reset Demo</button>
+                    <button class="success" onclick="app.exportPDF()">📥 Export PDF</button>
+                </div>
+
+                <div id="pageContainer"></div>
+            </div>
+
+            <div class="sidebar">
+                <h3>Document Structure</h3>
+                <ul class="block-list" id="blockList"></ul>
+
+                <div class="stats" id="stats"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/lib/layout-engine.js"></script>
+    <script>
+        // Simple App State
+        const app = {
+            document: null,
+            layoutEngine: null,
+            activeBlockId: null,
+            modeOverride: null, // null = auto, 'preserve', or 'reflow'
+
+            init() {
+                this.layoutEngine = new LayoutEngine();
+                this.resetDocument();
+                this.updateModeButton();
+            },
+
+            toggleMode() {
+                // Cycle through: auto -> preserve -> reflow -> auto
+                if (this.modeOverride === null) {
+                    this.modeOverride = 'preserve';
+                } else if (this.modeOverride === 'preserve') {
+                    this.modeOverride = 'reflow';
+                } else {
+                    this.modeOverride = null;
+                }
+
+                this.updateModeButton();
+                this.render();
+            },
+
+            updateModeButton() {
+                const modeSpan = document.getElementById('currentMode');
+                const modeBtn = document.getElementById('modeToggleBtn');
+
+                if (this.modeOverride === null) {
+                    modeSpan.textContent = 'Auto';
+                    modeBtn.style.background = '#FF9800';
+                } else if (this.modeOverride === 'preserve') {
+                    modeSpan.textContent = 'Preserve';
+                    modeBtn.style.background = '#4CAF50';
+                } else {
+                    modeSpan.textContent = 'Reflow';
+                    modeBtn.style.background = '#2196F3';
+                }
+            },
+
+            resetDocument() {
+                this.document = this.createDemoDocument();
+                this.render();
+            },
+
+            createDemoDocument() {
+                const generateId = () => Math.random().toString(36).substr(2, 9);
+
+                return {
+                    id: 'demo-doc',
+                    pages: [{
+                        id: 'page-1',
+                        width: 612, // US Letter width in points
+                        height: 792, // US Letter height in points
+                        containers: [{
+                            id: 'container-1',
+                            type: 'flow',
+                            bounds: { x: 50, y: 50, width: 512, height: 692 },
+                            blocks: [
+                                {
+                                    id: generateId(),
+                                    type: 'heading',
+                                    content: [{ text: 'Reflowable Document Editor' }],
+                                    style: {
+                                        fontSize: 24,
+                                        fontFamily: 'Arial, sans-serif',
+                                        fontWeight: 'bold',
+                                        lineHeight: 1.3,
+                                        textAlign: 'left',
+                                        marginTop: 0,
+                                        marginBottom: 15
+                                    }
+                                },
+                                {
+                                    id: generateId(),
+                                    type: 'paragraph',
+                                    content: [{ text: 'This is a proof-of-concept demonstrating true text reflow in PDF editing. Unlike traditional PDF editors that use fixed overlays, this system recalculates layout dynamically.' }],
+                                    style: {
+                                        fontSize: 14,
+                                        fontFamily: 'Arial, sans-serif',
+                                        fontWeight: 'normal',
+                                        lineHeight: 1.5,
+                                        textAlign: 'left',
+                                        marginTop: 0,
+                                        marginBottom: 12
+                                    }
+                                },
+                                {
+                                    id: generateId(),
+                                    type: 'paragraph',
+                                    content: [{ text: 'Try editing this paragraph. Make it longer or shorter and watch how the blocks below automatically adjust their positions. This is how word processors work!' }],
+                                    style: {
+                                        fontSize: 14,
+                                        fontFamily: 'Arial, sans-serif',
+                                        fontWeight: 'normal',
+                                        lineHeight: 1.5,
+                                        textAlign: 'left',
+                                        marginTop: 0,
+                                        marginBottom: 12
+                                    }
+                                },
+                                {
+                                    id: generateId(),
+                                    type: 'heading',
+                                    content: [{ text: 'Key Features' }],
+                                    style: {
+                                        fontSize: 18,
+                                        fontFamily: 'Arial, sans-serif',
+                                        fontWeight: 'bold',
+                                        lineHeight: 1.3,
+                                        textAlign: 'left',
+                                        marginTop: 20,
+                                        marginBottom: 10
+                                    }
+                                },
+                                {
+                                    id: generateId(),
+                                    type: 'paragraph',
+                                    content: [{ text: '• Dynamic block resizing based on content\n• Automatic neighbor block repositioning\n• Real-time layout recalculation\n• Export to PDF with exact preview match' }],
+                                    style: {
+                                        fontSize: 14,
+                                        fontFamily: 'Arial, sans-serif',
+                                        fontWeight: 'normal',
+                                        lineHeight: 1.6,
+                                        textAlign: 'left',
+                                        marginTop: 0,
+                                        marginBottom: 12
+                                    }
+                                },
+                                {
+                                    id: generateId(),
+                                    type: 'paragraph',
+                                    content: [{ text: 'This paragraph will move when you edit content above it. The layout engine recalculates positions for all blocks every time you make a change.' }],
+                                    style: {
+                                        fontSize: 14,
+                                        fontFamily: 'Arial, sans-serif',
+                                        fontWeight: 'normal',
+                                        lineHeight: 1.5,
+                                        textAlign: 'left',
+                                        marginTop: 0,
+                                        marginBottom: 12
+                                    }
+                                }
+                            ],
+                            style: {
+                                padding: { top: 0, right: 0, bottom: 0, left: 0 }
+                            }
+                        }]
+                    }],
+                    metadata: {
+                        title: 'Reflow Demo Document',
+                        createdAt: new Date().toISOString()
+                    }
+                };
+            },
+
+            render() {
+                const pageContainer = document.getElementById('pageContainer');
+                pageContainer.innerHTML = '';
+
+                // Determine mode: use override if set, otherwise use document metadata
+                let isPreserveMode;
+                if (this.modeOverride === 'preserve') {
+                    isPreserveMode = true;
+                } else if (this.modeOverride === 'reflow') {
+                    isPreserveMode = false;
+                } else {
+                    // Auto mode: use document metadata
+                    isPreserveMode = this.document.metadata?.mode === 'preserve';
+                }
+
+                // Render all pages
+                console.log(`Starting render. Mode: ${isPreserveMode ? 'PRESERVE' : 'REFLOW'}`);
+
+                for (let pageIndex = 0; pageIndex < this.document.pages.length; pageIndex++) {
+                    const page = this.document.pages[pageIndex];
+
+                    console.log(`Page ${pageIndex + 1}: has elements=${!!page.elements}, has containers=${!!page.containers}`);
+
+                    // Create page wrapper
+                    const pageDiv = document.createElement('div');
+                    pageDiv.className = 'page-container';
+                    pageDiv.style.width = page.width + 'px';
+                    pageDiv.style.height = page.height + 'px';
+                    pageDiv.dataset.pageIndex = pageIndex;
+
+                    // Add page number indicator
+                    if (this.document.pages.length > 1) {
+                        const pageLabel = document.createElement('div');
+                        pageLabel.className = 'page-label';
+                        pageLabel.textContent = `Page ${pageIndex + 1} ${isPreserveMode ? '(Preserve Mode)' : '(Reflow Mode)'}`;
+                        pageLabel.style.cssText = 'position: absolute; top: -25px; left: 0; font-size: 12px; color: #666;';
+                        pageDiv.style.position = 'relative';
+                        pageDiv.style.marginBottom = '40px';
+                        pageDiv.appendChild(pageLabel);
+                    }
+
+                    if (isPreserveMode && page.elements && page.elements.length > 0) {
+                        // Preserve mode: render elements at exact positions
+                        console.log(`  → Rendering PRESERVE mode (${page.elements.length} elements)`);
+                        this.renderPreserveMode(page, pageDiv, pageIndex);
+                    } else if (page.containers && page.containers.length > 0) {
+                        // Reflow mode: use layout engine
+                        console.log(`  → Rendering REFLOW mode (${page.containers[0]?.blocks?.length || 0} blocks)`);
+                        this.renderReflowMode(page, pageDiv, pageIndex);
+                    } else {
+                        console.warn(`  → No content to render for page ${pageIndex + 1}!`);
+                    }
+
+                    pageContainer.appendChild(pageDiv);
+                }
+
+                // Update sidebar
+                this.updateSidebar();
+            },
+
+            renderPreserveMode(page, pageDiv, pageIndex) {
+                // Combine small text blocks into paragraphs to prevent overlap
+                console.log(`Rendering preserve mode for page ${pageIndex + 1}, elements: ${page.elements.length}`);
+
+                // Group consecutive text elements into paragraphs
+                const textElements = page.elements.filter(e => e.elementType === 'text');
+                const paragraphs = this.groupIntoParagraphs(textElements);
+
+                console.log(`  Grouped ${textElements.length} text elements into ${paragraphs.length} paragraphs`);
+
+                // Render combined paragraphs
+                for (const paragraph of paragraphs) {
+                    const textDiv = this.createPreserveTextElement(paragraph, pageIndex, 0, null);
+                    pageDiv.appendChild(textDiv);
+                }
+
+                // Render other elements
+                for (const element of page.elements) {
+                    if (element.elementType === 'image') {
+                        const imageDiv = this.createPreserveImageElement(element, pageIndex);
+                        pageDiv.appendChild(imageDiv);
+                    } else if (element.elementType === 'graphic') {
+                        const graphicDiv = this.createPreserveGraphicElement(element, pageIndex);
+                        pageDiv.appendChild(graphicDiv);
+                    }
+                }
+            },
+
+            groupIntoParagraphs(elements) {
+                // Group consecutive text elements with similar X position into paragraphs
+                const paragraphs = [];
+                let currentParagraph = null;
+
+                for (const element of elements) {
+                    const xPos = element.xPosition || 72;
+                    const yPos = element.yPosition || 0;
+                    const fontSize = element.style?.fontSize || 12;
+
+                    if (!currentParagraph) {
+                        // Start new paragraph
+                        currentParagraph = {
+                            id: element.id,
+                            elementType: 'text',
+                            xPosition: xPos,
+                            yPosition: yPos,
+                            lastYPosition: yPos, // Track last line's Y position
+                            style: element.style,
+                            content: [...element.content] // Create new array to avoid reference issues
+                        };
+                    } else {
+                        // Check if this element should be combined with current paragraph
+                        // Compare against the LAST line's Y position, not the first
+                        const xDiff = Math.abs(xPos - currentParagraph.xPosition);
+                        const yDiff = yPos - currentParagraph.lastYPosition;
+                        const expectedLineGap = fontSize * 1.5; // Typical line spacing
+
+                        // Combine if same X position and reasonable Y gap (looks like same paragraph)
+                        if (xDiff < 5 && yDiff > 0 && yDiff < expectedLineGap * 2) {
+                            // Add space and append text
+                            currentParagraph.content.push({ text: ' ' });
+                            currentParagraph.content.push(...element.content);
+                            // Update last Y position to track where this paragraph ends
+                            currentParagraph.lastYPosition = yPos;
+                        } else {
+                            // Different paragraph - save current and start new
+                            paragraphs.push(currentParagraph);
+                            currentParagraph = {
+                                id: element.id,
+                                elementType: 'text',
+                                xPosition: xPos,
+                                yPosition: yPos,
+                                lastYPosition: yPos,
+                                style: element.style,
+                                content: [...element.content] // Create new array to avoid reference issues
+                            };
+                        }
+                    }
+                }
+
+                // Add last paragraph
+                if (currentParagraph) {
+                    paragraphs.push(currentParagraph);
+                }
+
+                return paragraphs;
+            },
+
+            renderReflowMode(page, pageDiv, pageIndex) {
+                // Use layout engine for dynamic reflow
+                const layout = this.layoutEngine.layoutPage(page);
+
+                for (const positioned of layout.positionedBlocks) {
+                    const block = this.findBlock(page, positioned.blockId);
+                    if (!block) continue;
+
+                    const blockDiv = this.createEditableBlock(block, positioned, pageIndex);
+                    pageDiv.appendChild(blockDiv);
+                }
+            },
+
+            createPreserveTextElement(element, pageIndex, yOffset, previousElement) {
+                const div = document.createElement('div');
+                div.className = 'editable-block preserve-element';
+                div.dataset.elementId = element.id;
+                div.dataset.pageIndex = pageIndex;
+
+                // Get text content
+                const text = element.content.map(s => s.text).join('');
+
+                // Get font size and calculate baseline offset
+                const fontSize = element.style?.fontSize || 12;
+                const lineHeight = 1.65; // FORCE 1.65 to prevent overlap (don't use element.style.lineHeight)
+
+                // Position at exact location from PDF + accumulated offset
+                // PDF yPosition is the baseline, we need to adjust to top of text box
+                // Approximate baseline offset is ~80% of font size
+                const baselineOffset = fontSize * 0.2; // Adjust Y to position from top instead of baseline
+
+                const xPos = element.xPosition || element.style?.marginLeft || 72;
+                const yPos = (element.yPosition || 0) - baselineOffset + yOffset; // Add accumulated offset
+
+                // Use absolute positioning with adjusted Y
+                div.style.left = xPos + 'px';
+                div.style.top = yPos + 'px';
+                div.style.width = 'auto';
+                div.style.maxWidth = (this.document.pages[pageIndex].width - xPos - 72) + 'px';
+
+                // Apply extracted styles
+                div.style.fontSize = fontSize + 'px';
+                div.style.fontFamily = element.style?.fontFamily || 'Arial, sans-serif';
+                div.style.fontWeight = element.style?.fontWeight || 'normal';
+                div.style.lineHeight = lineHeight;
+                div.style.textAlign = element.style?.textAlign || 'left';
+                div.style.margin = '0';
+                div.style.padding = '0';
+
+                // Allow text wrapping to show ALL content in UI preview
+                // Use proper line height (1.65) to prevent tight spacing
+                div.style.whiteSpace = 'normal';
+                div.style.wordWrap = 'break-word';
+
+                // Add extra bottom margin to prevent overlap with next element
+                // This pushes subsequent elements down if current element wraps
+                div.style.marginBottom = (fontSize * lineHeight * 0.5) + 'px'; // Extra spacing for safety
+
+                div.textContent = text;
+
+                // Enable editing
+                div.addEventListener('click', () => this.startEditingElement(element, div));
+
+                return div;
+            },
+
+            startEditingElement(element, div) {
+                if (div.classList.contains('editing')) return;
+
+                this.activeElementId = element.id;
+                div.classList.add('editing');
+
+                const text = div.textContent;
+
+                // Capture original dimensions BEFORE clearing content
+                const originalWidth = div.offsetWidth;
+                const originalHeight = div.offsetHeight;
+
+                // Preserve div dimensions when content is cleared
+                div.style.width = originalWidth + 'px';
+                div.style.height = Math.max(originalHeight, 30) + 'px';
+
+                div.innerHTML = '';
+
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+
+                textarea.addEventListener('blur', () => this.finishEditingElement(element, textarea));
+                textarea.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        textarea.value = text;
+                        textarea.blur();
+                    }
+                });
+
+                div.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+            },
+
+            finishEditingElement(element, textarea) {
+                const div = textarea.parentElement;
+                const newText = textarea.value;
+
+                // Update element content
+                element.content = [{ text: newText }];
+
+                div.classList.remove('editing');
+                div.textContent = newText;
+
+                this.activeElementId = null;
+                this.updateSidebar();
+            },
+
+            createPreserveImageElement(element, pageIndex) {
+                const container = document.createElement('div');
+                container.className = 'preserve-element image-element';
+                container.dataset.elementId = element.id;
+                container.dataset.pageIndex = pageIndex;
+
+                // Position at exact location
+                container.style.position = 'absolute';
+                container.style.left = (element.position?.x || 0) + 'px';
+                container.style.top = (element.position?.y || 0) + 'px';
+                container.style.width = (element.position?.width || 100) + 'px';
+                container.style.height = (element.position?.height || 100) + 'px';
+
+                // If we have image data, render actual image
+                if (element.data) {
+                    const img = document.createElement('img');
+                    img.src = `data:image/jpeg;base64,${element.data}`;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'contain';
+                    img.style.display = 'block';
+                    img.alt = element.name || 'Image';
+
+                    // Add error handling for image load failures
+                    img.onerror = () => {
+                        console.warn(`Failed to load image: ${element.name}`);
+                        // Fallback to placeholder
+                        container.innerHTML = '';
+                        this.renderImagePlaceholder(container, element);
+                    };
+
+                    container.appendChild(img);
+                } else {
+                    // No image data - show placeholder
+                    this.renderImagePlaceholder(container, element);
+                }
+
+                return container;
+            },
+
+            renderImagePlaceholder(container, element) {
+                container.style.border = '2px dashed #2196F3';
+                container.style.background = 'rgba(33, 150, 243, 0.1)';
+                container.style.display = 'flex';
+                container.style.alignItems = 'center';
+                container.style.justifyContent = 'center';
+                container.style.fontSize = '12px';
+                container.style.color = '#2196F3';
+                container.style.padding = '5px';
+                container.style.boxSizing = 'border-box';
+
+                const placeholder = document.createElement('div');
+                placeholder.textContent = `📷 Image: ${element.name || 'Unknown'}\n${element.position?.width}×${element.position?.height}px`;
+                placeholder.style.whiteSpace = 'pre';
+                placeholder.style.textAlign = 'center';
+
+                container.appendChild(placeholder);
+            },
+
+            createPreserveGraphicElement(element, pageIndex) {
+                const div = document.createElement('div');
+                div.className = 'preserve-element graphic-element';
+                div.dataset.elementId = element.id;
+                div.dataset.pageIndex = pageIndex;
+
+                // Position at exact location
+                div.style.position = 'absolute';
+                div.style.left = (element.position?.x || 0) + 'px';
+                div.style.top = (element.position?.y || 0) + 'px';
+                div.style.width = (element.position?.width || 100) + 'px';
+                div.style.height = (element.position?.height || 100) + 'px';
+
+                // Render based on graphic type
+                if (element.type === 'rectangle') {
+                    div.style.border = `2px solid ${element.style?.stroke || '#666'}`;
+                    div.style.background = 'transparent';
+                } else {
+                    div.style.border = '1px dashed #FF9800';
+                    div.style.background = 'rgba(255, 152, 0, 0.05)';
+                }
+
+                return div;
+            },
+
+            findBlock(page, blockId) {
+                for (const container of page.containers) {
+                    const block = container.blocks.find(b => b.id === blockId);
+                    if (block) return block;
+                }
+                return null;
+            },
+
+            createEditableBlock(block, positioned, pageIndex) {
+                const div = document.createElement('div');
+                div.className = 'editable-block';
+                div.dataset.blockId = block.id;
+                div.dataset.pageIndex = pageIndex;
+
+                div.style.left = positioned.x + 'px';
+                div.style.top = positioned.y + 'px';
+                div.style.width = positioned.width + 'px';
+                div.style.minHeight = positioned.height + 'px';
+                div.style.fontSize = block.style.fontSize + 'px';
+                div.style.fontFamily = block.style.fontFamily;
+                div.style.fontWeight = block.style.fontWeight;
+                div.style.lineHeight = block.style.lineHeight;
+                div.style.textAlign = block.style.textAlign;
+
+                const text = block.content.map(s => s.text).join('');
+                div.textContent = text;
+
+                div.addEventListener('click', () => this.startEditing(block, div));
+
+                return div;
+            },
+
+            startEditing(block, div) {
+                if (div.classList.contains('editing')) return;
+
+                this.activeBlockId = block.id;
+                div.classList.add('editing');
+
+                const text = div.textContent;
+
+                // Capture original dimensions BEFORE clearing content
+                const originalWidth = div.offsetWidth;
+                const originalHeight = div.offsetHeight;
+
+                // Preserve div dimensions when content is cleared
+                div.style.width = originalWidth + 'px';
+                div.style.height = originalHeight + 'px';
+
+                div.innerHTML = '';
+
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+
+                textarea.addEventListener('blur', () => this.finishEditing(block, textarea));
+                textarea.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        textarea.value = text;
+                        textarea.blur();
+                    }
+                });
+
+                div.appendChild(textarea);
+                textarea.focus();
+            },
+
+            finishEditing(block, textarea) {
+                const newText = textarea.value;
+                block.content = [{ text: newText }];
+
+                this.activeBlockId = null;
+                this.render();
+            },
+
+            updateSidebar() {
+                const blockList = document.getElementById('blockList');
+                blockList.innerHTML = '';
+
+                let totalBlocks = 0;
+
+                // Iterate through all pages
+                for (let pageIndex = 0; pageIndex < this.document.pages.length; pageIndex++) {
+                    const page = this.document.pages[pageIndex];
+                    const layout = this.layoutEngine.layoutPage(page);
+
+                    // Add page header if multiple pages
+                    if (this.document.pages.length > 1) {
+                        const pageHeader = document.createElement('li');
+                        pageHeader.textContent = `═ Page ${pageIndex + 1} ═`;
+                        pageHeader.style.cssText = 'font-weight: bold; background: #e0e0e0; text-align: center;';
+                        blockList.appendChild(pageHeader);
+                    }
+
+                    // Add blocks for this page
+                    for (const positioned of layout.positionedBlocks) {
+                        const block = this.findBlock(page, positioned.blockId);
+                        if (!block) continue;
+
+                        const li = document.createElement('li');
+                        li.textContent = `${block.type} (${Math.round(positioned.height)}px)`;
+                        if (block.id === this.activeBlockId) {
+                            li.classList.add('active');
+                        }
+                        blockList.appendChild(li);
+                        totalBlocks++;
+                    }
+                }
+
+                // Update stats
+                const stats = document.getElementById('stats');
+                stats.innerHTML = `
+                    <div><strong>Total Pages:</strong> ${this.document.pages.length}</div>
+                    <div><strong>Total Blocks:</strong> ${totalBlocks}</div>
+                    <div><strong>Source:</strong> ${this.document.metadata?.source || 'demo'}</div>
+                `;
+            },
+
+            handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (file && file.type === 'application/pdf') {
+                    this.importPDF(file);
+                } else {
+                    alert('Please select a valid PDF file.');
+                }
+            },
+
+            async importPDF(file) {
+                try {
+                    const formData = new FormData();
+                    formData.append('pdf', file);
+
+                    const response = await fetch('/api/reflow/import-pdf', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error('Import failed');
+
+                    const document = await response.json();
+
+                    // Load imported document into editor
+                    this.document = document;
+                    this.render();
+
+                    alert(`PDF imported successfully!\n\n${document.pages.length} page(s) loaded.\nYou can now edit the text and see it reflow.`);
+                } catch (error) {
+                    console.error('Import error:', error);
+                    alert('Import failed. Make sure the server is running and the PDF is valid.');
+                }
+            },
+
+            async exportPDF() {
+                try {
+                    // Determine the current effective mode
+                    let exportMode;
+                    if (this.modeOverride === 'preserve') {
+                        exportMode = 'preserve';
+                    } else if (this.modeOverride === 'reflow') {
+                        exportMode = 'reflow';
+                    } else {
+                        // Auto mode: use document metadata
+                        exportMode = this.document.metadata?.mode || 'preserve';
+                    }
+
+                    // Create export document with correct mode
+                    const exportDoc = {
+                        ...this.document,
+                        metadata: {
+                            ...this.document.metadata,
+                            mode: exportMode
+                        }
+                    };
+
+                    const response = await fetch('/api/reflow/export-pdf', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(exportDoc)
+                    });
+
+                    if (!response.ok) throw new Error('Export failed');
+
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'reflow-document.pdf';
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                    alert('PDF exported successfully! ✓\n\nThe saved PDF layout exactly matches what you see in the preview.');
+                } catch (error) {
+                    console.error('Export error:', error);
+                    alert('Export failed. Make sure the server is running.');
+                }
+            }
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>

@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Primary Meta Tags -->
+    <title>PDF Editor - Free Online PDF Editor with OCR & Text Extraction</title>
+    <meta name="title" content="PDF Editor - Free Online PDF Editor with OCR & Text Extraction">
+    <meta name="description" content="Edit PDF files online for free. Extract and edit text from scanned PDFs with OCR. Select, edit, and save PDF text. No signup required. Fast and secure.">
+    <meta name="keywords" content="pdf to text, pdf converter, pdf to txt, pdf to docx, pdf to html, ocr pdf, scanned pdf to text, extract text from pdf, pdf text extraction, free pdf converter, online pdf converter">
+    <meta name="author" content="PDF to Text Converter">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yourwebsite.com/">
+    <meta property="og:title" content="PDF to Text Converter - Free Online PDF to TXT, DOCX, HTML Converter with OCR">
+    <meta property="og:description" content="Convert PDF to text online for free. Extract text from scanned PDFs with OCR. Convert PDF to TXT, DOCX, or HTML. No signup required.">
+    <meta property="og:image" content="https://yourwebsite.com/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://yourwebsite.com/">
+    <meta property="twitter:title" content="PDF to Text Converter - Free Online PDF to TXT, DOCX, HTML Converter with OCR">
+    <meta property="twitter:description" content="Convert PDF to text online for free. Extract text from scanned PDFs with OCR. Convert PDF to TXT, DOCX, or HTML. No signup required.">
+    <meta property="twitter:image" content="https://yourwebsite.com/twitter-image.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://yourwebsite.com/">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+
+    <!-- Structured Data / JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PDF to Text Converter",
+      "url": "https://yourwebsite.com/",
+      "description": "Free online PDF to text converter with OCR support for scanned documents. Convert PDF to TXT, DOCX, or HTML format.",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "2.99",
+        "priceCurrency": "EUR"
+      },
+      "featureList": [
+        "PDF to TXT conversion",
+        "PDF to DOCX conversion",
+        "PDF to HTML conversion",
+        "OCR for scanned PDFs",
+        "Free online converter",
+        "No registration required",
+        "Supports files up to 50MB"
+      ],
+      "screenshot": "https://yourwebsite.com/screenshot.png",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1250"
+      }
+    }
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #DC1F26 0%, #b71c1c 100%);
+            color: white;
+            padding: 25px 40px;
+            box-shadow: 0 4px 20px rgba(220, 31, 38, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+            position: relative;
+        }
+
+        .header .subtitle {
+            font-size: 15px;
+            opacity: 0.95;
+            margin-top: 8px;
+            font-weight: 400;
+            letter-spacing: 0.2px;
+            position: relative;
+        }
+
+        .container {
+            flex: 1;
+            max-width: 1000px;
+            width: 100%;
+            margin: 60px auto;
+            padding: 0 30px;
+        }
+
+        .converter-box {
+            background: white;
+            border-radius: 16px;
+            padding: 50px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .converter-box:hover {
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
+        }
+
+        .upload-area {
+            border: 3px dashed #DC1F26;
+            border-radius: 16px;
+            padding: 80px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, #fff8f8 0%, #ffffff 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(220, 31, 38, 0.05), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .upload-area:hover::before {
+            left: 100%;
+        }
+
+        .upload-area:hover {
+            border-color: #b71c1c;
+            background: linear-gradient(135deg, #fff0f0 0%, #fff8f8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 31, 38, 0.15);
+        }
+
+        .upload-area.dragging {
+            border-color: #b71c1c;
+            background: linear-gradient(135deg, #ffe8e8 0%, #fff0f0 100%);
+            transform: scale(1.02);
+            box-shadow: 0 12px 35px rgba(220, 31, 38, 0.2);
+        }
+
+        .upload-icon {
+            font-size: 72px;
+            margin-bottom: 24px;
+            color: #DC1F26;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .upload-text {
+            color: #1a1a1a;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+
+        .upload-hint {
+            color: #666;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .format-selector {
+            margin-top: 30px;
+            padding: 25px;
+            background: #F9F9F9;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .format-selector.active {
+            display: block;
+        }
+
+        .format-selector label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .format-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .format-option {
+            position: relative;
+        }
+
+        .format-option input[type="radio"] {
+            display: none;
+        }
+
+        .format-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 15px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .format-option input[type="radio"]:checked + label {
+            border-color: #DC1F26;
+            background: #FFF8F8;
+            color: #DC1F26;
+        }
+
+        .format-option label:hover {
+            border-color: #DC1F26;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #DC1F26 0%, #b71c1c 100%);
+            color: white;
+            border: none;
+            padding: 16px 48px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(220, 31, 38, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(220, 31, 38, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 4px 15px rgba(220, 31, 38, 0.2);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #F0F0F0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px 20px;
+            display: none;
+        }
+
+        .spinner {
+            border: 5px solid rgba(220, 31, 38, 0.1);
+            border-top: 5px solid #DC1F26;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            margin: 0 auto 24px;
+            box-shadow: 0 4px 15px rgba(220, 31, 38, 0.2);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 17px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+
+        .result-area {
+            margin-top: 30px;
+            padding: 30px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result-area.success {
+            background: #E8F5E9;
+            border: 2px solid #4CAF50;
+        }
+
+        .result-area.error {
+            background: #FFEBEE;
+            border: 2px solid #F44336;
+        }
+
+        .result-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-title.success {
+            color: #2E7D32;
+        }
+
+        .result-title.error {
+            color: #C62828;
+        }
+
+        .download-section {
+            margin-top: 25px;
+            padding: 20px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #DDD;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: #DC1F26;
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .download-btn:hover {
+            background: #A00000;
+        }
+
+        .text-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: #F9F9F9;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #333;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .footer {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2C2C2C 100%);
+            color: #CCC;
+            padding: 30px 40px;
+            text-align: center;
+            font-size: 14px;
+            margin-top: 80px;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Professional Icon Styles */
+        .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            position: relative;
+        }
+
+        .icon-pdf {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #DC1F26 0%, #b71c1c 100%);
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(220, 31, 38, 0.3);
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .icon-pdf::before {
+            content: 'PDF';
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .icon-pdf::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .format-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            font-size: 20px;
+            font-weight: 700;
+            color: #DC1F26;
+            transition: all 0.3s ease;
+        }
+
+        .format-option:hover .format-icon {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        }
+
+        .format-option input[type="radio"]:checked + label .format-icon {
+            background: linear-gradient(135deg, #DC1F26 0%, #b71c1c 100%);
+            color: white;
+            box-shadow: 0 6px 18px rgba(220, 31, 38, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <rect x="6" y="4" width="20" height="24" rx="2" fill="white" opacity="0.9"/>
+                <path d="M10 10h12M10 14h12M10 18h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                <circle cx="24" cy="8" r="4" fill="#4CAF50"/>
+            </svg>
+            PDF Editor
+        </h1>
+        <p class="subtitle">Edit your PDF documents with OCR text extraction</p>
+    </header>
+
+    <main class="container">
+        <section class="converter-box" aria-label="PDF conversion tool">
+            <div class="upload-area" id="uploadArea">
+                <div class="icon-pdf"></div>
+                <div class="upload-text">Click to upload or drag and drop your PDF</div>
+                <div class="upload-hint">PDF files only (max 50MB) - Start editing immediately</div>
+                <input type="file" id="fileInput" accept=".pdf">
+            </div>
+
+            <div class="file-info" id="fileInfo"></div>
+
+            <div class="format-selector" id="formatSelector">
+                <label>Select output format:</label>
+                <div class="format-options">
+                    <div class="format-option">
+                        <input type="radio" id="formatTxt" name="format" value="txt" checked>
+                        <label for="formatTxt">
+                            <div class="format-icon">TXT</div>
+                            Text File
+                        </label>
+                    </div>
+                    <div class="format-option">
+                        <input type="radio" id="formatDocx" name="format" value="docx">
+                        <label for="formatDocx">
+                            <div class="format-icon">DOC</div>
+                            Word Document
+                        </label>
+                    </div>
+                    <div class="format-option">
+                        <input type="radio" id="formatHtml" name="format" value="html">
+                        <label for="formatHtml">
+                            <div class="format-icon">HTM</div>
+                            HTML File
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group" style="display: none; gap: 15px;" id="buttonGroup">
+                <button class="btn" id="convertBtn" style="margin: 0;">Convert PDF</button>
+                <button class="btn btn-secondary" id="editBtn" style="margin: 0; background: #4CAF50;">Edit PDF</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">Converting your PDF...</div>
+            </div>
+
+            <div class="result-area" id="resultArea"></div>
+        </section>
+
+        <!-- SEO Content Section -->
+        <section class="seo-content" style="margin-top: 60px; padding: 40px; background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);">
+            <article>
+                <h2 style="color: #DC1F26; margin-bottom: 20px; font-size: 24px;">Free Online PDF to Text Converter with OCR</h2>
+
+                <p style="line-height: 1.8; margin-bottom: 20px; color: #333;">
+                    Our <strong>PDF to Text Converter</strong> is a powerful, free online tool that helps you extract text from PDF documents and convert them to editable formats including TXT, DOCX, and HTML. Whether you're working with digital PDFs or scanned documents, our advanced OCR (Optical Character Recognition) technology ensures accurate text extraction.
+                </p>
+
+                <h3 style="color: #333; margin: 30px 0 15px; font-size: 20px;">Why Choose Our PDF Converter?</h3>
+                <ul style="line-height: 1.8; margin-bottom: 20px; padding-left: 25px; color: #555;">
+                    <li><strong>Free to use</strong> - No hidden costs or subscription required</li>
+                    <li><strong>OCR Support</strong> - Extract text from scanned PDFs and images</li>
+                    <li><strong>Multiple formats</strong> - Convert to TXT, DOCX, or HTML</li>
+                    <li><strong>No registration</strong> - Start converting immediately</li>
+                    <li><strong>Secure</strong> - Files are processed securely and deleted after conversion</li>
+                    <li><strong>Large file support</strong> - Handle PDFs up to 50MB</li>
+                </ul>
+
+                <h3 style="color: #333; margin: 30px 0 15px; font-size: 20px;">How to Convert PDF to Text</h3>
+                <ol style="line-height: 1.8; margin-bottom: 20px; padding-left: 25px; color: #555;">
+                    <li>Upload your PDF file by clicking the upload area or dragging and dropping</li>
+                    <li>Select your preferred output format (TXT, DOCX, or HTML)</li>
+                    <li>Click "Convert PDF" and wait for processing</li>
+                    <li>Download your converted file instantly</li>
+                </ol>
+
+                <h3 style="color: #333; margin: 30px 0 15px; font-size: 20px;">Supported Formats</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                    <div style="padding: 15px; background: #F9F9F9; border-radius: 6px;">
+                        <strong style="color: #DC1F26;">PDF to TXT</strong>
+                        <p style="margin-top: 8px; font-size: 14px; color: #666;">Convert PDF to plain text format for easy editing and reading</p>
+                    </div>
+                    <div style="padding: 15px; background: #F9F9F9; border-radius: 6px;">
+                        <strong style="color: #DC1F26;">PDF to DOCX</strong>
+                        <p style="margin-top: 8px; font-size: 14px; color: #666;">Export to Microsoft Word document format for advanced editing</p>
+                    </div>
+                    <div style="padding: 15px; background: #F9F9F9; border-radius: 6px;">
+                        <strong style="color: #DC1F26;">PDF to HTML</strong>
+                        <p style="margin-top: 8px; font-size: 14px; color: #666;">Convert to web-ready HTML format for online publishing</p>
+                    </div>
+                </div>
+
+                <h3 style="color: #333; margin: 30px 0 15px; font-size: 20px;">Advanced AI-Powered OCR Technology</h3>
+                <p style="line-height: 1.8; margin-bottom: 20px; color: #333;">
+                    Our converter uses state-of-the-art <strong>OCR (Optical Character Recognition)</strong> powered by advanced AI technologies to accurately extract text from scanned PDFs, photographs, and image-based documents. Our intelligent algorithms ensure high accuracy text recognition, making it perfect for digitizing old documents, converting scanned contracts, or extracting text from any PDF that doesn't support native text selection.
+                </p>
+
+                <h3 style="color: #333; margin: 30px 0 15px; font-size: 20px;">Privacy & Security</h3>
+                <p style="line-height: 1.8; margin-bottom: 20px; color: #333;">
+                    We take your privacy seriously. All uploaded files are processed securely on our servers and are automatically deleted after conversion. We don't store, share, or use your documents for any purpose other than the conversion process.
+                </p>
+            </article>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>PDF to Text Converter - Powered by Advanced AI Technologies</p>
+        <p style="margin-top: 8px; font-size: 12px; opacity: 0.8;">© 2025 PDF to Text Converter. Free online PDF conversion tool.</p>
+    </footer>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const formatSelector = document.getElementById('formatSelector');
+        const buttonGroup = document.getElementById('buttonGroup');
+        const convertBtn = document.getElementById('convertBtn');
+        const editBtn = document.getElementById('editBtn');
+        const loading = document.getElementById('loading');
+        const resultArea = document.getElementById('resultArea');
+
+        let selectedFile = null;
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragging');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragging');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragging');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                handleFile(file);
+            } else {
+                alert('Please upload a PDF file');
+            }
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+
+            // Show loading state
+            fileInfo.style.display = 'block';
+            fileInfo.textContent = `Loading ${file.name}...`;
+            loading.style.display = 'flex';
+
+            // Read file and redirect to editor
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64data = e.target.result;
+
+                // Store in sessionStorage
+                sessionStorage.setItem('pdfToEdit', base64data);
+                sessionStorage.setItem('pdfFileName', file.name);
+
+                // Redirect to editor
+                window.location.href = '/pdf-editor.html';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Edit PDF button click
+        editBtn.addEventListener('click', () => {
+            if (!selectedFile) return;
+
+            // Store file in sessionStorage temporarily
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                sessionStorage.setItem('pdfToEdit', e.target.result);
+                sessionStorage.setItem('pdfFileName', selectedFile.name);
+                window.location.href = '/pdf-editor.html';
+            };
+            reader.readAsDataURL(selectedFile);
+        });
+
+        // Convert button click
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const selectedFormat = document.querySelector('input[name="format"]:checked').value;
+
+            const formData = new FormData();
+            formData.append('pdf', selectedFile);
+            formData.append('format', selectedFormat);
+
+            convertBtn.disabled = true;
+            loading.style.display = 'block';
+            resultArea.style.display = 'none';
+
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                loading.style.display = 'none';
+                convertBtn.disabled = false;
+                resultArea.style.display = 'block';
+
+                if (!response.ok) {
+                    resultArea.className = 'result-area error';
+                    resultArea.innerHTML = `
+                        <div class="result-title error">❌ Conversion Failed</div>
+                        <p style="color: #C62828; line-height: 1.6;">${data.details || data.error || 'Failed to convert PDF.'}</p>
+                    `;
+                    return;
+                }
+
+                // Success
+                resultArea.className = 'result-area success';
+                resultArea.innerHTML = `
+                    <div class="result-title success">✅ Conversion Successful</div>
+                    <p style="color: #2E7D32; margin-bottom: 20px;">Your PDF has been converted successfully!</p>
+
+                    <div class="download-section">
+                        <strong style="font-size: 16px;">📁 ${data.filename}</strong>
+                        <div class="info-row">
+                            <span>Characters extracted: ${data.characterCount.toLocaleString()}</span>
+                            <span>Format: ${selectedFormat.toUpperCase()}</span>
+                        </div>
+                        <button onclick="handleDownload('${data.filename}')" class="download-btn" style="border: none; cursor: pointer;">💳 Download for €2.99</button>
+                        <p style="margin-top: 10px; font-size: 13px; color: #666;">24-hour download access</p>
+                    </div>
+
+                    <div class="text-preview">
+                        <strong style="display: block; margin-bottom: 10px; color: #666;">Preview (first 500 characters):</strong>
+                        ${data.textPreview}
+                    </div>
+                `;
+
+                // Reset for next conversion
+                selectedFile = null;
+                fileInput.value = '';
+                fileInfo.style.display = 'none';
+                formatSelector.classList.remove('active');
+                buttonGroup.style.display = 'none';
+
+            } catch (error) {
+                loading.style.display = 'none';
+                convertBtn.disabled = false;
+                resultArea.style.display = 'block';
+                resultArea.className = 'result-area error';
+                resultArea.innerHTML = `
+                    <div class="result-title error">❌ Error</div>
+                    <p style="color: #C62828;">${error.message || 'Failed to convert PDF. Please try again.'}</p>
+                `;
+            }
+        });
+
+        // Handle download with Stripe payment
+        async function handleDownload(filename) {
+            try {
+                // Create Stripe checkout session
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ filename }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.url) {
+                    // Redirect to Stripe checkout
+                    window.location.href = data.url;
+                } else {
+                    alert('Failed to initiate payment. Please try again.');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert('Failed to initiate payment. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>

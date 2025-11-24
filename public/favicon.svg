@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#DC1F26;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A00000;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- PDF Document shape -->
+  <path d="M 25 10 L 60 10 L 75 25 L 75 90 L 25 90 Z" fill="url(#grad)"/>
+
+  <!-- Folded corner -->
+  <path d="M 60 10 L 60 25 L 75 25 Z" fill="#8B0000"/>
+
+  <!-- PDF text -->
+  <text x="50" y="58" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="white" text-anchor="middle">PDF</text>
+
+  <!-- Arrow indicating conversion -->
+  <path d="M 50 68 L 50 75 M 47 72 L 50 75 L 53 72" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

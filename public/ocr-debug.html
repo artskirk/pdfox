@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>OCR Debug Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        #canvas { border: 1px solid #ccc; margin: 20px 0; }
+        .test-section { margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: white; padding: 10px; overflow: auto; max-height: 300px; }
+    </style>
+</head>
+<body>
+    <h1>OCR Debug Test</h1>
+
+    <div class="test-section">
+        <h3>Test 1: Load PDF</h3>
+        <button onclick="loadPDF()">Load not-editable.pdf</button>
+        <div id="loadStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Render PDF Canvas</h3>
+        <canvas id="canvas"></canvas>
+        <div id="renderStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Run OCR</h3>
+        <button onclick="runOCR()">Run OCR on Page 1</button>
+        <div id="ocrStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 4: OCR Results</h3>
+        <div id="ocrResults"></div>
+        <pre id="ocrData"></pre>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 5: Render Text Overlay</h3>
+        <button onclick="renderTextOverlay()">Render Text Spans</button>
+        <div id="overlayStatus"></div>
+        <div id="textLayer" style="position: relative; background: rgba(255,255,0,0.1);"></div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let pdfDoc = null;
+        let page = null;
+        let viewport = null;
+        let ocrData = null;
+
+        async function loadPDF() {
+            const status = document.getElementById('loadStatus');
+            status.innerHTML = '<p class="info">Loading PDF...</p>';
+
+            try {
+                const response = await fetch('/uploads/not-editable.pdf');
+                if (!response.ok) throw new Error('Failed to load PDF');
+
+                const arrayBuffer = await response.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                pdfDoc = await loadingTask.promise;
+                page = await pdfDoc.getPage(1);
+                viewport = page.getViewport({ scale: 1.5 });
+
+                status.innerHTML = `<p class="success">✓ PDF loaded: ${pdfDoc.numPages} pages</p>`;
+
+                // Auto-render canvas
+                renderCanvas();
+            } catch (error) {
+                status.innerHTML = `<p class="error">✗ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function renderCanvas() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const status = document.getElementById('renderStatus');
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            try {
+                await page.render({
+                    canvasContext: ctx,
+                    viewport: viewport
+                }).promise;
+
+                status.innerHTML = `<p class="success">✓ Canvas rendered: ${viewport.width}x${viewport.height}px</p>`;
+            } catch (error) {
+                status.innerHTML = `<p class="error">✗ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function runOCR() {
+            const status = document.getElementById('ocrStatus');
+            const results = document.getElementById('ocrResults');
+            const dataEl = document.getElementById('ocrData');
+
+            if (!page) {
+                status.innerHTML = '<p class="error">✗ Load PDF first!</p>';
+                return;
+            }
+
+            status.innerHTML = '<p class="info">Running OCR...</p>';
+
+            try {
+                // Create canvas for OCR
+                const ocrCanvas = document.createElement('canvas');
+                const ocrViewport = page.getViewport({ scale: 2.0 });
+                ocrCanvas.width = ocrViewport.width;
+                ocrCanvas.height = ocrViewport.height;
+                const ocrCtx = ocrCanvas.getContext('2d');
+
+                await page.render({
+                    canvasContext: ocrCtx,
+                    viewport: ocrViewport
+                }).promise;
+
+                // Run OCR
+                const worker = await Tesseract.createWorker('eng');
+                const { data } = await worker.recognize(ocrCanvas);
+                await worker.terminate();
+
+                ocrData = data;
+
+                status.innerHTML = `<p class="success">✓ OCR complete!</p>`;
+                results.innerHTML = `
+                    <p><strong>Words found:</strong> ${data.words.length}</p>
+                    <p><strong>Text:</strong> ${data.text.substring(0, 200)}...</p>
+                `;
+                dataEl.textContent = JSON.stringify(data.words.slice(0, 10), null, 2);
+
+            } catch (error) {
+                status.innerHTML = `<p class="error">✗ Error: ${error.message}</p>`;
+                console.error(error);
+            }
+        }
+
+        function renderTextOverlay() {
+            const status = document.getElementById('overlayStatus');
+            const textLayer = document.getElementById('textLayer');
+
+            if (!ocrData) {
+                status.innerHTML = '<p class="error">✗ Run OCR first!</p>';
+                return;
+            }
+
+            textLayer.innerHTML = '';
+            textLayer.style.width = viewport.width + 'px';
+            textLayer.style.height = viewport.height + 'px';
+
+            const scale = 1.5 / 2.0; // OCR at 2x, display at 1.5x
+            let renderedCount = 0;
+
+            ocrData.words.forEach((word, index) => {
+                const bbox = word.bbox;
+                const x = bbox.x0 * scale;
+                const y = bbox.y0 * scale;
+                const width = (bbox.x1 - bbox.x0) * scale;
+                const height = (bbox.y1 - bbox.y0) * scale;
+
+                const span = document.createElement('span');
+                span.textContent = word.text;
+                span.style.position = 'absolute';
+                span.style.left = x + 'px';
+                span.style.top = y + 'px';
+                span.style.fontSize = height + 'px';
+                span.style.color = 'red';
+                span.style.border = '1px solid blue';
+                span.style.cursor = 'pointer';
+                span.title = `Word ${index}: "${word.text}" at (${x.toFixed(1)}, ${y.toFixed(1)})`;
+
+                textLayer.appendChild(span);
+                renderedCount++;
+            });
+
+            status.innerHTML = `<p class="success">✓ Rendered ${renderedCount} text spans</p>`;
+        }
+    </script>
+</body>
+</html>

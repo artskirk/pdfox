@@ -1,0 +1,13 @@
+# robots.txt for PDF to Text Converter
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://yourwebsite.com/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Disallow certain paths
+Disallow: /uploads/
+Disallow: /outputs/

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - PDF to Text Converter</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Adobe Clean', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #DC1F26 0%, #A00000 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 50px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 32px;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: #DC1F26;
+            color: white;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 18px;
+            margin: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .download-btn:hover {
+            background: #A00000;
+        }
+
+        .secondary-btn {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 10px;
+            transition: background 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .secondary-btn:hover {
+            background: #5a6268;
+        }
+
+        .google-docs-btn {
+            display: inline-block;
+            background: #4285f4;
+            color: white;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 18px;
+            margin: 10px;
+            transition: background 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .google-docs-btn:hover {
+            background: #357ae8;
+        }
+
+        .google-docs-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .warning-note {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        .info-box {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .info-box p {
+            margin: 10px 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .loading {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #DC1F26;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="content">
+        <div class="loading" id="loadingState">
+            <div class="spinner"></div>
+            <p>Verifying your payment...</p>
+        </div>
+
+        <div id="successState" style="display: none;">
+            <div class="success-icon">✅</div>
+            <h1>Payment Successful!</h1>
+            <p>Thank you for your purchase. Your 24-hour download access is now active.</p>
+
+            <div class="button-group">
+                <a href="#" id="downloadBtn" class="download-btn">⬇️ Download Your File</a>
+                <button id="googleDocsBtn" class="google-docs-btn" onclick="openInGoogleDocs()">📄 Open in Google Docs</button>
+                <a href="/" class="secondary-btn">← Convert Another PDF</a>
+            </div>
+
+            <div id="localhostWarning" class="warning-note" style="display: none;">
+                ⚠️ <strong>Note:</strong> Google Docs preview requires a publicly accessible URL. This feature will work when your service is deployed to a public server.
+            </div>
+
+            <div class="info-box">
+                <p><strong>📁 File:</strong> <span id="filename"></span></p>
+                <p><strong>⏰ Access Expires:</strong> <span id="expiresAt"></span></p>
+                <p><strong>💡 Tip:</strong> Save your download link. You can access it anytime within 24 hours.</p>
+            </div>
+        </div>
+
+        <div id="errorState" style="display: none;">
+            <div style="font-size: 80px; margin-bottom: 20px;">❌</div>
+            <h1 style="color: #dc3545;">Payment Verification Failed</h1>
+            <p id="errorMessage">There was an issue verifying your payment. Please contact support.</p>
+            <a href="/" class="secondary-btn">← Return to Home</a>
+        </div>
+    </div>
+
+    <script>
+        async function verifyPayment() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            const filename = urlParams.get('filename');
+
+            if (!sessionId || !filename) {
+                showError('Invalid payment session. Please try again.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/verify-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sessionId, filename }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showSuccess(data, filename);
+                } else {
+                    showError(data.error || 'Payment verification failed');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            }
+        }
+
+        function showSuccess(data, filename) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('successState').style.display = 'block';
+
+            document.getElementById('filename').textContent = decodeURIComponent(filename);
+
+            const expiresDate = new Date(data.expiresAt);
+            document.getElementById('expiresAt').textContent = expiresDate.toLocaleString();
+
+            const downloadUrl = `/download/${encodeURIComponent(filename)}?token=${data.accessToken}`;
+            document.getElementById('downloadBtn').href = downloadUrl;
+
+            // Store access info in localStorage for reference
+            localStorage.setItem('pdfAccess', JSON.stringify({
+                filename: filename,
+                token: data.accessToken,
+                expiresAt: data.expiresAt,
+                downloadUrl: downloadUrl
+            }));
+
+            // Check if running on localhost and show warning
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                document.getElementById('localhostWarning').style.display = 'block';
+            }
+        }
+
+        let googleTokenClient;
+        let googleAccessToken = null;
+
+        // Initialize Google Token Client
+        function initGoogleClient() {
+            googleTokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: 'YOUR_GOOGLE_CLIENT_ID', // Will be replaced via config endpoint
+                scope: 'https://www.googleapis.com/auth/drive.file',
+                callback: handleGoogleAuth,
+            });
+
+            // Fetch actual client ID from server
+            fetch('/google-config')
+                .then(res => res.json())
+                .then(config => {
+                    if (config.clientId && config.clientId !== 'YOUR_GOOGLE_CLIENT_ID') {
+                        googleTokenClient = google.accounts.oauth2.initTokenClient({
+                            client_id: config.clientId,
+                            scope: 'https://www.googleapis.com/auth/drive.file',
+                            callback: handleGoogleAuth,
+                        });
+                    }
+                })
+                .catch(err => console.error('Failed to load Google config:', err));
+        }
+
+        function handleGoogleAuth(tokenResponse) {
+            if (tokenResponse && tokenResponse.access_token) {
+                googleAccessToken = tokenResponse.access_token;
+                uploadToDriveAndOpen();
+            } else {
+                alert('Google authentication failed. Please try again.');
+            }
+        }
+
+        async function openInGoogleDocs() {
+            const accessData = JSON.parse(localStorage.getItem('pdfAccess'));
+
+            if (!accessData || !accessData.token) {
+                alert('Unable to open file. Please try again.');
+                return;
+            }
+
+            // If we don't have Google token, request it
+            if (!googleAccessToken && googleTokenClient) {
+                googleTokenClient.requestAccessToken();
+            } else if (googleAccessToken) {
+                uploadToDriveAndOpen();
+            } else {
+                alert('Google Sign-In not initialized. Please refresh the page.');
+            }
+        }
+
+        async function uploadToDriveAndOpen() {
+            const accessData = JSON.parse(localStorage.getItem('pdfAccess'));
+
+            if (!accessData || !googleAccessToken) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/upload-to-drive', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        accessToken: accessData.token,
+                        googleAccessToken: googleAccessToken,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Open file in Google Docs
+                    window.open(data.webViewLink, '_blank');
+                } else {
+                    alert('Failed to upload to Google Drive: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Failed to upload to Google Drive. Please try again.');
+            }
+        }
+
+        // Initialize Google client when page loads
+        window.addEventListener('load', () => {
+            if (typeof google !== 'undefined' && google.accounts) {
+                initGoogleClient();
+            }
+        });
+
+        function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // Verify payment on page load
+        verifyPayment();
+    </script>
+</body>
+</html>

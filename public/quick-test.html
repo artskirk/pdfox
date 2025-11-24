@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick OCR Test</title>
+</head>
+<body>
+    <h1>Quick OCR Test</h1>
+    <button onclick="loadPDF()">Load not-editable.pdf</button>
+    <p id="status"></p>
+
+    <script>
+        async function loadPDF() {
+            const status = document.getElementById('status');
+            status.textContent = 'Loading...';
+
+            try {
+                const response = await fetch('/uploads/not-editable.pdf');
+                status.textContent = `Response status: ${response.status} ${response.statusText}`;
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                status.textContent = `Success! File size: ${blob.size} bytes`;
+
+                // Convert to data URL
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    sessionStorage.setItem('pdfToEdit', reader.result);
+                    sessionStorage.setItem('pdfFileName', 'not-editable.pdf');
+                    window.location.href = '/pdf-editor.html';
+                };
+                reader.readAsDataURL(blob);
+
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+                console.error('Full error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
