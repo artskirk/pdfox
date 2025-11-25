@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Editor - Edit and Save PDFs</title>
+    <title>PDFOX - Professional PDF Editor</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
     <!-- PDF.js Library -->
@@ -18,10 +18,10 @@
     <!-- Signature Pad Library -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@5.0.3/dist/signature_pad.umd.min.js"></script>
 
-    <!-- Google Fonts for Handwriting Signatures -->
+    <!-- Google Fonts for Handwriting Signatures + Bebas Neue for Netflix Branding -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Pacifico&family=Sacramento&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Pacifico&family=Sacramento&family=Bebas+Neue&display=swap" rel="stylesheet">
 
     <style>
         * {
@@ -30,51 +30,76 @@
             box-sizing: border-box;
         }
 
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #141414;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 10px;
+            border: 2px solid #141414;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #E50914;
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: #141414;
+        }
+
+        /* Firefox Scrollbar */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #333 #141414;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            background: #000000;
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            color: #ffffff;
         }
 
         .header {
-            background: linear-gradient(135deg, #DC1F26 0%, #b71c1c 100%);
+            background: #000000;
             color: white;
-            padding: 18px 35px;
-            box-shadow: 0 4px 20px rgba(220, 31, 38, 0.2);
+            padding: 20px 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: relative;
             z-index: 100;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-            pointer-events: none;
+            border-bottom: 1px solid #141414;
         }
 
         .header h1 {
-            font-size: 26px;
-            font-weight: 700;
+            font-size: 36px;
+            font-weight: 900;
             display: flex;
             align-items: center;
             gap: 12px;
-            letter-spacing: -0.5px;
+            letter-spacing: 2px;
             position: relative;
             margin: 0;
+            font-family: 'Bebas Neue', sans-serif;
+            color: #E50914;
+            text-shadow: 2px 2px 4px rgba(229, 9, 20, 0.5);
         }
 
         .header-logo-link {
-            color: white;
+            color: #E50914;
             text-decoration: none;
             display: flex;
             align-items: center;
@@ -84,7 +109,7 @@
         }
 
         .header-logo-link:hover {
-            opacity: 0.9;
+            opacity: 0.85;
         }
 
         .header-actions {
@@ -93,50 +118,52 @@
         }
 
         .header-btn {
-            background: white;
-            color: #DC1F26;
+            background: #808080;
+            color: white;
             border: none;
             padding: 12px 24px;
-            border-radius: 10px;
+            border-radius: 4px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
             position: relative;
+            font-size: 15px;
         }
 
         .header-btn:hover {
-            background: #f8f8f8;
+            background: #606060;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
         }
 
         .header-btn.primary {
-            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            background: #E50914;
             color: white;
-            box-shadow: 0 3px 12px rgba(76, 175, 80, 0.3);
+            box-shadow: 0 3px 12px rgba(229, 9, 20, 0.4);
         }
 
         .header-btn.primary:hover {
-            box-shadow: 0 5px 18px rgba(76, 175, 80, 0.4);
+            background: #C40812;
+            box-shadow: 0 5px 18px rgba(229, 9, 20, 0.5);
         }
 
         .toolbar {
-            background: white;
+            background: #141414;
             padding: 18px 35px;
-            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.8);
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
             align-items: center;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid #222;
         }
 
         .tool-group {
             display: flex;
             gap: 5px;
             padding: 5px;
-            border-right: 1px solid #E0E0E0;
+            border-right: 1px solid #333;
         }
 
         .tool-group:last-child {
@@ -144,37 +171,38 @@
         }
 
         .tool-btn {
-            background: #f8f9fa;
+            background: #2a2a2a;
             border: 2px solid transparent;
             padding: 12px 18px;
-            border-radius: 10px;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 20px;
             display: flex;
             align-items: center;
             gap: 6px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+            color: #ffffff;
         }
 
         .tool-btn:hover {
-            background: #e9ecef;
+            background: #3a3a3a;
             transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
         }
 
         .tool-btn.active {
-            background: linear-gradient(135deg, #DC1F26 0%, #b71c1c 100%);
+            background: #E50914;
             color: white;
             border-color: transparent;
-            box-shadow: 0 4px 12px rgba(220, 31, 38, 0.3);
+            box-shadow: 0 4px 12px rgba(229, 9, 20, 0.5);
             transform: translateY(0);
         }
 
         .tool-label {
             font-size: 13px;
             font-weight: 500;
-            color: #666;
+            color: #aaaaaa;
             margin-right: 10px;
         }
 
@@ -194,7 +222,7 @@
 
         .canvas-container {
             flex: 1;
-            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            background: #1a1a1a;
             overflow: auto;
             position: relative;
             display: flex;
@@ -425,24 +453,25 @@
         .overlay-list-item {
             padding: 10px;
             margin: 8px 0;
-            background: #f5f5f5;
+            background: #2a2a2a;
             border-radius: 6px;
             cursor: pointer;
             transition: background 0.2s;
             font-size: 13px;
+            color: #ffffff;
         }
 
         .overlay-list-item:hover {
-            background: #e0e0e0;
+            background: #3a3a3a;
         }
 
         .overlay-list-item.active {
-            background: #e3f2fd;
-            border: 2px solid #2196F3;
+            background: rgba(229, 9, 20, 0.2);
+            border: 2px solid #E50914;
         }
 
         .overlay-list-item .overlay-text-preview {
-            color: #666;
+            color: #aaaaaa;
             font-size: 12px;
             white-space: nowrap;
             overflow: hidden;
@@ -452,17 +481,17 @@
 
         .sidebar {
             width: 320px;
-            background: white;
+            background: #141414;
             padding: 25px;
-            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.08);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.8);
             overflow-y: auto;
-            border-left: 1px solid rgba(0, 0, 0, 0.05);
+            border-left: 1px solid #222;
         }
 
         .sidebar h3 {
             font-size: 16px;
             margin-bottom: 15px;
-            color: #333;
+            color: #ffffff;
         }
 
         .property-group {
@@ -472,7 +501,7 @@
         .property-label {
             font-size: 14px;
             font-weight: 500;
-            color: #666;
+            color: #aaaaaa;
             margin-bottom: 8px;
             display: block;
         }
@@ -480,9 +509,11 @@
         .property-input {
             width: 100%;
             padding: 8px 12px;
-            border: 1px solid #DDD;
+            border: 1px solid #333;
             border-radius: 4px;
             font-size: 14px;
+            background: #2a2a2a;
+            color: #ffffff;
         }
 
         .page-controls {
@@ -490,37 +521,38 @@
             gap: 10px;
             align-items: center;
             padding: 15px 30px;
-            background: white;
-            border-top: 1px solid #E0E0E0;
+            background: #141414;
+            border-top: 1px solid #222;
         }
 
         .page-btn {
-            background: #f8f9fa;
+            background: #2a2a2a;
             border: none;
             padding: 10px 18px;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+            color: #ffffff;
         }
 
         .page-btn:hover {
-            background: #e9ecef;
+            background: #3a3a3a;
             transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
         }
 
         .page-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
         }
 
         .page-info {
             font-size: 14px;
-            color: #666;
+            color: #aaaaaa;
         }
 
         .loading {
@@ -538,12 +570,13 @@
         }
 
         .loading-content {
-            background: white;
+            background: #1a1a1a;
             padding: 40px;
             border-radius: 16px;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
             animation: fadeInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #333;
         }
 
         @keyframes fadeInScale {
@@ -558,18 +591,18 @@
         }
 
         .spinner {
-            border: 5px solid rgba(220, 31, 38, 0.1);
-            border-top: 5px solid #DC1F26;
+            border: 5px solid rgba(229, 9, 20, 0.2);
+            border-top: 5px solid #E50914;
             border-radius: 50%;
             width: 60px;
             height: 60px;
             animation: spin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
             margin: 0 auto 24px;
-            box-shadow: 0 4px 15px rgba(220, 31, 38, 0.2);
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
         }
 
         .loading-content > div:last-child {
-            color: #333;
+            color: #ffffff;
             font-size: 17px;
             font-weight: 500;
             letter-spacing: 0.2px;
@@ -596,13 +629,14 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
+            background: #1a1a1a;
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
             z-index: 1001;
             min-width: 400px;
             display: none;
+            border: 1px solid #333;
         }
 
         .edit-modal.active {
@@ -611,18 +645,20 @@
 
         .edit-modal h3 {
             margin-bottom: 15px;
-            color: #333;
+            color: #ffffff;
         }
 
         .edit-modal textarea {
             width: 100%;
             min-height: 100px;
             padding: 10px;
-            border: 2px solid #DC1F26;
+            border: 2px solid #E50914;
             border-radius: 4px;
             font-size: 14px;
             font-family: Arial, sans-serif;
             resize: vertical;
+            background: #2a2a2a;
+            color: #ffffff;
         }
 
         .edit-modal-actions {
@@ -647,24 +683,25 @@
         }
 
         .edit-modal-btn.primary {
-            background: linear-gradient(135deg, #DC1F26 0%, #b71c1c 100%);
+            background: #E50914;
             color: white;
-            box-shadow: 0 4px 12px rgba(220, 31, 38, 0.3);
+            box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
         }
 
         .edit-modal-btn.primary:hover {
-            box-shadow: 0 6px 18px rgba(220, 31, 38, 0.4);
+            background: #C40812;
+            box-shadow: 0 6px 18px rgba(229, 9, 20, 0.5);
         }
 
         .edit-modal-btn.secondary {
-            background: #f8f9fa;
-            color: #495057;
-            border: 2px solid #e9ecef;
+            background: #2a2a2a;
+            color: #ffffff;
+            border: 2px solid #333;
         }
 
         .edit-modal-btn.secondary:hover {
-            background: #e9ecef;
-            border-color: #dee2e6;
+            background: #3a3a3a;
+            border-color: #444;
         }
 
         .modal-overlay {
@@ -708,14 +745,15 @@
         }
 
         .custom-modal-content {
-            background: white;
+            background: #1a1a1a;
             border-radius: 16px;
             padding: 32px;
             max-width: 440px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
             animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-align: center;
+            border: 1px solid #333;
         }
 
         @keyframes slideUp {
@@ -743,7 +781,7 @@
         .modal-message {
             font-size: 16px;
             line-height: 1.6;
-            color: #333;
+            color: #ffffff;
             margin-bottom: 28px;
             white-space: pre-line;
         }
@@ -766,26 +804,27 @@
         }
 
         .modal-btn-primary {
-            background: linear-gradient(135deg, #DC1F26 0%, #b71c1c 100%);
+            background: #E50914;
             color: white;
-            box-shadow: 0 4px 12px rgba(220, 31, 38, 0.3);
+            box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
         }
 
         .modal-btn-primary:hover {
+            background: #C40812;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 31, 38, 0.4);
+            box-shadow: 0 6px 20px rgba(229, 9, 20, 0.5);
         }
 
         .modal-btn-secondary {
-            background: #f5f5f5;
-            color: #666;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            background: #2a2a2a;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
         }
 
         .modal-btn-secondary:hover {
-            background: #e0e0e0;
+            background: #3a3a3a;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
         }
 
         .modal-btn:active {
@@ -794,7 +833,7 @@
 
         /* Signature Modal Styles */
         .signature-modal-content {
-            background: white;
+            background: #1a1a1a;
             border-radius: 16px;
             padding: 0;
             max-width: 600px;
@@ -804,16 +843,17 @@
             display: flex;
             flex-direction: column;
             animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid #333;
         }
 
         .signature-modal-header {
             padding: 24px 24px 16px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid #333;
         }
 
         .signature-modal-header h2 {
             font-size: 24px;
-            color: #333;
+            color: #ffffff;
             margin: 0;
             display: flex;
             align-items: center;
@@ -824,14 +864,14 @@
             display: flex;
             gap: 8px;
             padding: 0 24px;
-            background: #f8f9fa;
+            background: #0a0a0a;
         }
 
         .signature-tab {
             padding: 12px 24px;
             background: transparent;
             border: none;
-            color: #666;
+            color: #aaaaaa;
             font-size: 15px;
             font-weight: 500;
             cursor: pointer;
@@ -840,14 +880,14 @@
         }
 
         .signature-tab:hover {
-            color: #DC1F26;
-            background: rgba(220, 31, 38, 0.05);
+            color: #E50914;
+            background: rgba(229, 9, 20, 0.1);
         }
 
         .signature-tab.active {
-            color: #DC1F26;
-            border-bottom-color: #DC1F26;
-            background: white;
+            color: #E50914;
+            border-bottom-color: #E50914;
+            background: #1a1a1a;
         }
 
         .signature-tab-content {
@@ -863,11 +903,11 @@
 
         /* Draw Tab Styles */
         .signature-canvas-container {
-            border: 2px solid #e0e0e0;
+            border: 2px solid #333;
             border-radius: 12px;
             overflow: hidden;
             background: white;
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         #signatureCanvas {
@@ -888,15 +928,17 @@
             width: 100%;
             padding: 16px;
             font-size: 32px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #333;
             border-radius: 12px;
             margin-bottom: 20px;
             transition: border-color 0.2s;
+            background: #2a2a2a;
+            color: #ffffff;
         }
 
         .type-signature-input:focus {
             outline: none;
-            border-color: #DC1F26;
+            border-color: #E50914;
         }
 
         .font-selector {
@@ -908,24 +950,25 @@
 
         .font-option {
             padding: 20px 16px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #333;
             border-radius: 12px;
-            background: white;
+            background: #2a2a2a;
             cursor: pointer;
             text-align: center;
             font-size: 24px;
             transition: all 0.2s;
+            color: #ffffff;
         }
 
         .font-option:hover {
-            border-color: #DC1F26;
+            border-color: #E50914;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(220, 31, 38, 0.15);
+            box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
         }
 
         .font-option.selected {
-            border-color: #DC1F26;
-            background: rgba(220, 31, 38, 0.05);
+            border-color: #E50914;
+            background: rgba(229, 9, 20, 0.1);
         }
 
         .signature-color-picker {
@@ -937,7 +980,7 @@
 
         .signature-color-picker label {
             font-weight: 500;
-            color: #333;
+            color: #ffffff;
         }
 
         .signature-color-picker input[type="color"] {
@@ -950,40 +993,40 @@
 
         /* Upload Tab Styles */
         .upload-area {
-            border: 3px dashed #e0e0e0;
+            border: 3px dashed #333;
             border-radius: 16px;
             padding: 48px 24px;
             text-align: center;
-            background: #f8f9fa;
+            background: #0a0a0a;
             transition: all 0.3s;
             cursor: pointer;
         }
 
         .upload-area:hover {
-            border-color: #DC1F26;
-            background: rgba(220, 31, 38, 0.05);
+            border-color: #E50914;
+            background: rgba(229, 9, 20, 0.1);
         }
 
         .upload-area.drag-over {
-            border-color: #DC1F26;
-            background: rgba(220, 31, 38, 0.1);
+            border-color: #E50914;
+            background: rgba(229, 9, 20, 0.15);
         }
 
         .upload-icon {
             font-size: 48px;
             margin-bottom: 16px;
-            color: #DC1F26;
+            color: #E50914;
         }
 
         .upload-text {
             font-size: 16px;
-            color: #666;
+            color: #aaaaaa;
             margin-bottom: 8px;
         }
 
         .upload-hint {
             font-size: 13px;
-            color: #999;
+            color: #777;
         }
 
         #signatureFileInput {
@@ -998,18 +1041,19 @@
         .signature-preview {
             max-width: 100%;
             max-height: 200px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #333;
             border-radius: 12px;
             padding: 16px;
-            background: white;
+            background: #2a2a2a;
         }
 
         .signature-modal-footer {
             padding: 16px 24px;
-            border-top: 2px solid #f0f0f0;
+            border-top: 2px solid #333;
             display: flex;
             gap: 12px;
             justify-content: flex-end;
+            background: #1a1a1a;
         }
     </style>
 </head>
@@ -1022,20 +1066,20 @@
                     <defs>
                         <!-- Gradient for document -->
                         <linearGradient id="docGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#f0f0f0;stop-opacity:1" />
+                            <stop offset="0%" style="stop-color:#E50914;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#C40812;stop-opacity:1" />
                         </linearGradient>
                         <!-- Gradient for edit badge -->
                         <linearGradient id="editGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#2E7D32;stop-opacity:1" />
+                            <stop offset="0%" style="stop-color:#E50914;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#B00610;stop-opacity:1" />
                         </linearGradient>
                         <!-- Shadow filter -->
                         <filter id="docShadow" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur in="SourceAlpha" stdDeviation="1"/>
-                            <feOffset dx="0" dy="1" result="offsetblur"/>
+                            <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
+                            <feOffset dx="0" dy="2" result="offsetblur"/>
                             <feComponentTransfer>
-                                <feFuncA type="linear" slope="0.3"/>
+                                <feFuncA type="linear" slope="0.5"/>
                             </feComponentTransfer>
                             <feMerge>
                                 <feMergeNode/>
@@ -1044,7 +1088,7 @@
                         </filter>
                         <!-- Glow filter -->
                         <filter id="glow">
-                            <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
                             <feMerge>
                                 <feMergeNode in="coloredBlur"/>
                                 <feMergeNode in="SourceGraphic"/>
@@ -1053,27 +1097,27 @@
                     </defs>
 
                     <!-- Main document body -->
-                    <rect x="8" y="6" width="28" height="36" rx="3" fill="url(#docGradient)" filter="url(#docShadow)" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+                    <rect x="8" y="6" width="28" height="36" rx="3" fill="url(#docGradient)" filter="url(#docShadow)" stroke="rgba(229,9,20,0.8)" stroke-width="1.5"/>
 
                     <!-- Folded corner (top-right) -->
-                    <path d="M36 6 L36 12 L30 12 L36 6 Z" fill="rgba(200,200,200,0.5)"/>
-                    <path d="M36 6 L36 12 L30 12" stroke="rgba(255,255,255,0.8)" stroke-width="1" fill="none"/>
+                    <path d="M36 6 L36 12 L30 12 L36 6 Z" fill="rgba(196,8,18,0.7)"/>
+                    <path d="M36 6 L36 12 L30 12" stroke="rgba(229,9,20,0.9)" stroke-width="1" fill="none"/>
 
                     <!-- PDF text lines -->
-                    <line x1="14" y1="16" x2="30" y2="16" stroke="rgba(100,100,100,0.4)" stroke-width="2" stroke-linecap="round"/>
-                    <line x1="14" y1="21" x2="28" y2="21" stroke="rgba(100,100,100,0.4)" stroke-width="2" stroke-linecap="round"/>
-                    <line x1="14" y1="26" x2="30" y2="26" stroke="rgba(100,100,100,0.4)" stroke-width="2" stroke-linecap="round"/>
-                    <line x1="14" y1="31" x2="24" y2="31" stroke="rgba(100,100,100,0.4)" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="14" y1="16" x2="30" y2="16" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="14" y1="21" x2="28" y2="21" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="14" y1="26" x2="30" y2="26" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="14" y1="31" x2="24" y2="31" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>
 
                     <!-- Edit badge with pen icon -->
-                    <circle cx="36" cy="36" r="9" fill="url(#editGradient)" filter="url(#glow)" stroke="white" stroke-width="2"/>
+                    <circle cx="36" cy="36" r="9" fill="url(#editGradient)" filter="url(#glow)" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
 
                     <!-- Pen icon -->
-                    <path d="M32 36 L36 32 L38 34 L34 38 Z" fill="white" opacity="0.9"/>
-                    <path d="M38 34 L39 33 L40 34 L39 35 Z" fill="white" opacity="0.9"/>
-                    <line x1="32" y1="38" x2="31" y2="39" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+                    <path d="M32 36 L36 32 L38 34 L34 38 Z" fill="white" opacity="0.95"/>
+                    <path d="M38 34 L39 33 L40 34 L39 35 Z" fill="white" opacity="0.95"/>
+                    <line x1="32" y1="38" x2="31" y2="39" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
                 </svg>
-                PDF Editor
+                PDFOX
                 </a>
             </h1>
         </div>
@@ -1135,6 +1179,15 @@
                 </svg>
                 <small>Select Text</small>
             </button>
+            <button class="tool-btn" id="eraseTool" onclick="setTool('erase')" title="Erase (Permanently remove content from document)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 6h16v2H4z" fill="currentColor"/>
+                    <path d="M5 16l2-8h10l2 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <rect x="7" y="16" width="10" height="5" rx="1" fill="currentColor"/>
+                    <path d="M9 8l3-4 3 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <small>Erase</small>
+            </button>
         </div>
 
         <div class="tool-group">
@@ -1181,9 +1234,6 @@
         <div class="tool-group">
             <button class="tool-btn" onclick="undo()" title="Undo">
                 <span>↶</span>
-            </button>
-            <button class="tool-btn" onclick="clearAnnotations()" title="Clear Annotations">
-                <span>🗑️</span>
             </button>
         </div>
     </div>
@@ -1392,7 +1442,7 @@
         </div>
     </div>
 
-    <!-- Extract Button (appears when selection is active) -->
+    <!-- Extract Text Button (appears when selection is active with Select Text tool) -->
     <button id="extractOCRBtn" style="display: none; position: fixed; bottom: 30px; right: 30px; z-index: 1000;
             background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
             color: white; border: none; padding: 16px 32px; border-radius: 16px;
@@ -1672,6 +1722,7 @@
         let selectedSignatureFont = 'Dancing Script';
         let signatures = []; // Array to store placed signatures
         let actionHistory = []; // Track all actions (annotations and signatures) in chronological order
+        let removedAreas = []; // Array to store areas to be removed/covered: {x, y, width, height, page}
 
         // Initialize Signature Pad when modal opens
         function initializeSignaturePad() {
@@ -3045,10 +3096,10 @@
             if (tool === 'editText' || tool === 'moveText') {
                 annCanvas.style.cursor = 'default';
                 annCanvas.style.pointerEvents = 'none';  // Allow clicks to pass through to text layer
-            } else if (tool === 'ocrSelect') {
+            } else if (tool === 'ocrSelect' || tool === 'erase') {
                 annCanvas.style.cursor = 'crosshair';
                 annCanvas.style.pointerEvents = 'auto';
-                // Clear any existing selection when entering OCR mode
+                // Clear any existing selection when entering OCR/Erase mode
                 ocrSelection = null;
                 document.getElementById('extractOCRBtn').style.display = 'none';
             } else {
@@ -3056,8 +3107,8 @@
                 annCanvas.style.pointerEvents = 'auto';
             }
 
-            // Clear OCR selection when switching away from OCR tool
-            if (tool !== 'ocrSelect' && ocrSelection) {
+            // Clear OCR selection when switching away from OCR/Erase tool
+            if (tool !== 'ocrSelect' && tool !== 'erase' && ocrSelection) {
                 ocrSelection = null;
                 document.getElementById('extractOCRBtn').style.display = 'none';
                 redrawAnnotations();
@@ -3083,8 +3134,8 @@
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            // Handle OCR selection mode
-            if (currentTool === 'ocrSelect') {
+            // Handle OCR selection mode and Erase mode
+            if (currentTool === 'ocrSelect' || currentTool === 'erase') {
                 isSelectingOCR = true;
                 ocrSelectionStart = { x, y };
                 ocrSelection = { x, y, width: 0, height: 0, page: currentPage };
@@ -3123,8 +3174,8 @@
         }
 
         function drawAnnotation(e) {
-            // Handle OCR selection drawing
-            if (isSelectingOCR && currentTool === 'ocrSelect') {
+            // Handle OCR selection drawing and Erase selection drawing
+            if (isSelectingOCR && (currentTool === 'ocrSelect' || currentTool === 'erase')) {
                 const rect = annCanvas.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
@@ -3197,6 +3248,33 @@
                 if (ocrSelection.width > 20 && ocrSelection.height > 20) {
                     document.getElementById('extractOCRBtn').style.display = 'flex';
                     console.log('OCR selection completed:', ocrSelection);
+                } else {
+                    // Selection too small, clear it
+                    ocrSelection = null;
+                    redrawAnnotations();
+                }
+                return;
+            }
+
+            // Handle Redact selection completion - automatically remove area
+            if (isSelectingOCR && currentTool === 'erase') {
+                isSelectingOCR = false;
+
+                // Normalize negative widths/heights
+                if (ocrSelection.width < 0) {
+                    ocrSelection.x += ocrSelection.width;
+                    ocrSelection.width = Math.abs(ocrSelection.width);
+                }
+                if (ocrSelection.height < 0) {
+                    ocrSelection.y += ocrSelection.height;
+                    ocrSelection.height = Math.abs(ocrSelection.height);
+                }
+
+                // Only erase if selection is large enough (min 10x10)
+                if (ocrSelection.width > 10 && ocrSelection.height > 10) {
+                    console.log('Erase selection completed:', ocrSelection);
+                    // Automatically remove the selected area
+                    removeSelectedArea();
                 } else {
                     // Selection too small, clear it
                     ocrSelection = null;
@@ -3289,6 +3367,12 @@
                 annCtx.strokeRect(ocrSelection.x, ocrSelection.y, ocrSelection.width, ocrSelection.height);
                 annCtx.restore();
             }
+
+            // Draw removed areas as white rectangles
+            removedAreas.filter(area => area.page === currentPage).forEach(area => {
+                annCtx.fillStyle = 'white';
+                annCtx.fillRect(area.x, area.y, area.width, area.height);
+            });
         }
 
         // Undo last annotation or signature
@@ -3345,6 +3429,14 @@
                     renderPage(currentPage); // Re-render to show previous position
                 }
                 showAlert('Text position restored', 'success');
+            } else if (lastAction.type === 'removeArea') {
+                // Remove the last removed area
+                const index = removedAreas.findIndex(area => area === lastAction.data);
+                if (index !== -1) {
+                    removedAreas.splice(index, 1);
+                    redrawAnnotations();
+                }
+                showAlert('Removed area restored', 'success');
             }
         }
 
@@ -3465,6 +3557,45 @@
                 loadingText.textContent = originalText;
                 showAlert('OCR extraction failed: ' + error.message, 'error');
             }
+        }
+
+        // Remove selected area by covering it with white rectangle
+        function removeSelectedArea() {
+            if (!ocrSelection) {
+                showAlert('No area selected. Please drag to select an area first.', 'warning');
+                return;
+            }
+
+            // Store the area to be removed
+            const areaToRemove = {
+                x: ocrSelection.x,
+                y: ocrSelection.y,
+                width: ocrSelection.width,
+                height: ocrSelection.height,
+                page: currentPage
+            };
+
+            removedAreas.push(areaToRemove);
+
+            // Track in action history for undo
+            actionHistory.push({
+                type: 'removeArea',
+                data: areaToRemove
+            });
+
+            console.log(`Area removed: ${Math.round(areaToRemove.width)}x${Math.round(areaToRemove.height)}px on page ${currentPage}`);
+
+            // Clear selection
+            ocrSelection = null;
+            isSelectingOCR = false;
+
+            // Hide buttons
+            document.getElementById('extractOCRBtn').style.display = 'none';
+
+            // Redraw to show removed area
+            redrawAnnotations();
+
+            showNotification('Area removed successfully! It will be covered in the exported PDF. ✓', 'success');
         }
 
         // Show OCR results in modal
@@ -4179,6 +4310,37 @@
                             borderWidth: ann.size / ANNOTATION_SCALE
                         });
                     }
+                }
+
+                // Apply removed areas (cover with white rectangles)
+                console.log('🗑️  Removed areas to apply:', removedAreas.length);
+                const REMOVED_AREA_SCALE = 1.5; // Removed areas are captured at 1.5x scale
+                for (const area of removedAreas) {
+                    const page = pages[area.page - 1];
+                    const { height } = page.getSize();
+
+                    // Scale coordinates and dimensions
+                    const pdfX = area.x / REMOVED_AREA_SCALE;
+                    const pdfY = height - (area.y / REMOVED_AREA_SCALE) - (area.height / REMOVED_AREA_SCALE);
+                    const pdfWidth = area.width / REMOVED_AREA_SCALE;
+                    const pdfHeight = area.height / REMOVED_AREA_SCALE;
+
+                    console.log(`  Removing area on page ${area.page}:`, {
+                        x: pdfX,
+                        y: pdfY,
+                        width: pdfWidth,
+                        height: pdfHeight
+                    });
+
+                    // Draw white rectangle to cover the area
+                    page.drawRectangle({
+                        x: pdfX,
+                        y: pdfY,
+                        width: pdfWidth,
+                        height: pdfHeight,
+                        color: PDFLib.rgb(1, 1, 1), // White
+                        borderWidth: 0
+                    });
                 }
 
                 // Helper function to map CSS font families to PDF standard fonts
