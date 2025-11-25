@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact PDFOX - Get in Touch with Our Team</title>
+    <meta name="description" content="Contact PDFOX for sales inquiries, technical support, or general questions. We're here to help.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(229, 9, 20, 0.2);
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 40px;
+            font-weight: 700;
+            color: #E50914;
+            cursor: pointer;
+            letter-spacing: 2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: #E50914;
+        }
+
+        .cta-button {
+            background: #E50914;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #B8070F;
+        }
+
+        .hero {
+            padding: 140px 50px 80px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(229, 9, 20, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #E50914 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: #cccccc;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .contact-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 50px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+        }
+
+        .contact-options {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .contact-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            transition: all 0.3s;
+        }
+
+        .contact-card:hover {
+            border-color: rgba(229, 9, 20, 0.3);
+            transform: translateX(5px);
+        }
+
+        .contact-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #E50914;
+        }
+
+        .contact-card p {
+            color: #cccccc;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .contact-link {
+            color: #E50914;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: gap 0.3s;
+        }
+
+        .contact-link:hover {
+            gap: 12px;
+        }
+
+        .contact-form {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 40px;
+        }
+
+        .contact-form h2 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .contact-form .subtitle {
+            color: #999999;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #E50914;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-submit {
+            width: 100%;
+            padding: 14px;
+            background: #E50914;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .form-submit:hover {
+            background: #B8070F;
+        }
+
+        .response-time {
+            text-align: center;
+            padding: 40px 50px;
+            background: rgba(229, 9, 20, 0.05);
+        }
+
+        .response-time p {
+            font-size: 18px;
+            color: #cccccc;
+        }
+
+        .response-time strong {
+            color: #E50914;
+        }
+
+        .footer {
+            background: #000000;
+            padding: 60px 50px 40px;
+            border-top: 1px solid #333333;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h4 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .footer-section a {
+            display: block;
+            color: #808080;
+            text-decoration: none;
+            margin-bottom: 12px;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: #ffffff;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 30px;
+            border-top: 1px solid #333333;
+            color: #808080;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media (max-width: 992px) {
+            .contact-container {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .hero h1 {
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="logo" onclick="window.location.href='index.html'">PDFOX</div>
+        <div class="nav-links">
+            <a href="index.html#features" class="nav-link">Features</a>
+            <a href="pricing.html" class="nav-link">Pricing</a>
+            <a href="about.html" class="nav-link">About</a>
+            <button class="cta-button" onclick="window.location.href='index.html#upload'">Try Now</button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>We're Here to Help</h1>
+        <p>Get in touch with our team. We typically respond within a few hours.</p>
+    </section>
+
+    <div class="contact-container">
+        <div class="contact-options">
+            <div class="contact-card">
+                <h3>💼 Enterprise Sales</h3>
+                <p>Interested in PDFOX for your team or organization? Our sales team can help with custom pricing, deployment options, and dedicated support.</p>
+                <a href="mailto:sales@pdfox.cloud" class="contact-link">
+                    sales@pdfox.cloud →
+                </a>
+            </div>
+
+            <div class="contact-card">
+                <h3>🛠️ Technical Support</h3>
+                <p>Need help with your account or experiencing technical issues? Our support team is standing by.</p>
+                <a href="mailto:support@pdfox.cloud" class="contact-link">
+                    support@pdfox.cloud →
+                </a>
+                <p style="margin-top: 15px; font-size: 14px;">
+                    <strong>Response times:</strong><br>
+                    Starter: 24 hours<br>
+                    Professional: 4 hours<br>
+                    Enterprise: 1 hour
+                </p>
+            </div>
+
+            <div class="contact-card">
+                <h3>💡 General Inquiries</h3>
+                <p>Have questions about features, pricing, or partnerships? We'd love to hear from you.</p>
+                <a href="mailto:hello@pdfox.cloud" class="contact-link">
+                    hello@pdfox.cloud →
+                </a>
+            </div>
+
+            <div class="contact-card">
+                <h3>📚 Self-Service Resources</h3>
+                <p>Looking for quick answers? Check out our help center and documentation.</p>
+                <a href="#" class="contact-link">
+                    Visit Help Center →
+                </a>
+            </div>
+        </div>
+
+        <div class="contact-form">
+            <h2>Send Us a Message</h2>
+            <p class="subtitle">Fill out the form below and we'll get back to you shortly.</p>
+
+            <form id="contactForm">
+                <div class="form-group">
+                    <label for="name">Full Name *</label>
+                    <input type="text" id="name" name="name" required placeholder="John Smith">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required placeholder="john@company.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="company">Company (Optional)</label>
+                    <input type="text" id="company" name="company" placeholder="Acme Corporation">
+                </div>
+
+                <div class="form-group">
+                    <label for="topic">What can we help with? *</label>
+                    <select id="topic" name="topic" required>
+                        <option value="">Select a topic...</option>
+                        <option value="sales">Enterprise Sales Inquiry</option>
+                        <option value="support">Technical Support</option>
+                        <option value="billing">Billing Question</option>
+                        <option value="feature">Feature Request</option>
+                        <option value="partnership">Partnership Opportunity</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message *</label>
+                    <textarea id="message" name="message" required placeholder="Tell us how we can help..."></textarea>
+                </div>
+
+                <button type="submit" class="form-submit">Send Message</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="response-time">
+        <p>Our team typically responds within <strong>4 hours</strong> during business hours (Monday-Friday, 9AM-6PM EST)</p>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>PDFOX</h4>
+                <a href="index.html#features">Features</a>
+                <a href="pricing.html">Pricing</a>
+                <a href="about.html">About Us</a>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <a href="#">Help Center</a>
+                <a href="#">Documentation</a>
+                <a href="#">API</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="security.html">Security</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2025 PDFOX. All rights reserved. | Professional PDF Editing Platform
+        </div>
+    </footer>
+
+    <script>
+        const lenis = new Lenis({
+            duration: 1.2,
+            lerp: 0.1,
+            wheelMultiplier: 1,
+            smoothTouch: false,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Form submission handler
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // In production, this would send to your backend
+            alert('Thank you for your message! We\'ll get back to you within 4 hours during business hours.');
+
+            // Reset form
+            this.reset();
+        });
+    </script>
+</body>
+</html>

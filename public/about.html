@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About PDFOX - Professional PDF Editing Made Simple</title>
+    <meta name="description" content="Learn about PDFOX's mission to make professional PDF editing accessible to everyone without enterprise pricing.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        .nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(229, 9, 20, 0.2);
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 40px;
+            font-weight: 700;
+            color: #E50914;
+            cursor: pointer;
+            letter-spacing: 2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: #E50914;
+        }
+
+        .cta-button {
+            background: #E50914;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #B8070F;
+        }
+
+        .hero {
+            padding: 140px 50px 80px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(229, 9, 20, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #E50914 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: #cccccc;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .content-section {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 50px;
+        }
+
+        .content-section h2 {
+            font-size: 36px;
+            margin-bottom: 24px;
+            color: #E50914;
+        }
+
+        .content-section p {
+            font-size: 18px;
+            color: #cccccc;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(229, 9, 20, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: #E50914;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            color: #999999;
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .value-card {
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 4px solid #E50914;
+            border-radius: 8px;
+        }
+
+        .value-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+
+        .value-card p {
+            font-size: 16px;
+            color: #999999;
+            margin: 0;
+        }
+
+        .cta-section {
+            text-align: center;
+            padding: 80px 50px;
+            background: rgba(229, 9, 20, 0.05);
+        }
+
+        .cta-section h2 {
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+
+        .cta-section p {
+            font-size: 18px;
+            color: #cccccc;
+            margin-bottom: 30px;
+        }
+
+        .btn-large {
+            background: #E50914;
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-large:hover {
+            background: #B8070F;
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            background: #000000;
+            padding: 60px 50px 40px;
+            border-top: 1px solid #333333;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h4 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .footer-section a {
+            display: block;
+            color: #808080;
+            text-decoration: none;
+            margin-bottom: 12px;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: #ffffff;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 30px;
+            border-top: 1px solid #333333;
+            color: #808080;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 40px;
+            }
+            .content-section {
+                padding: 40px 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="logo" onclick="window.location.href='index.html'">PDFOX</div>
+        <div class="nav-links">
+            <a href="index.html#features" class="nav-link">Features</a>
+            <a href="pricing.html" class="nav-link">Pricing</a>
+            <a href="about.html" class="nav-link">About</a>
+            <button class="cta-button" onclick="window.location.href='index.html#upload'">Try Now</button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Built for Professionals Who Refuse to Overpay</h1>
+        <p>We believe powerful PDF editing shouldn't require enterprise budgets. PDFOX delivers professional-grade features at prices that make sense for real businesses.</p>
+    </section>
+
+    <section class="content-section">
+        <h2>Our Mission</h2>
+        <p>PDF editing has been dominated by expensive enterprise software for too long. Small businesses, freelancers, and growing teams deserve access to professional tools without breaking the bank.</p>
+        <p>PDFOX was built to challenge this status quo. We combine cutting-edge AI technology with intuitive design to deliver an editing experience that rivals industry leaders—at a fraction of the cost.</p>
+        <p>We're not trying to be the cheapest option. We're trying to be the best value: professional power, zero learning curve, and pricing that respects your budget.</p>
+    </section>
+
+    <section class="content-section">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">50K+</span>
+                <span class="stat-label">Professionals Trust PDFOX</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">2M+</span>
+                <span class="stat-label">Documents Edited Monthly</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">60%</span>
+                <span class="stat-label">Lower Cost Than Adobe</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>What We Stand For</h2>
+        <div class="values-grid">
+            <div class="value-card">
+                <h3>Transparency</h3>
+                <p>No hidden fees. No surprise charges. What you see is what you pay. Simple, honest pricing for professionals.</p>
+            </div>
+            <div class="value-card">
+                <h3>Security First</h3>
+                <p>Your documents contain sensitive information. We use enterprise-grade encryption and never share your data. Period.</p>
+            </div>
+            <div class="value-card">
+                <h3>Continuous Innovation</h3>
+                <p>We're constantly improving. New AI features, faster processing, better user experience. Your subscription gets better every month.</p>
+            </div>
+            <div class="value-card">
+                <h3>Customer Success</h3>
+                <p>We succeed when you succeed. That's why we offer priority support, comprehensive documentation, and a team that actually cares.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>Why PDFOX?</h2>
+        <p>We're not another PDF editor. We're the solution you've been waiting for:</p>
+        <p><strong>For freelancers:</strong> Professional tools without the professional price tag. Edit client documents with confidence.</p>
+        <p><strong>For small businesses:</strong> Scale your document workflows without scaling your software budget. Team collaboration included.</p>
+        <p><strong>For enterprises:</strong> All the security and compliance features you need, with flexible deployment options and dedicated support.</p>
+        <p>Whether you're editing one PDF a week or a thousand, PDFOX adapts to your needs.</p>
+    </section>
+
+    <section class="cta-section">
+        <h2>Ready to Experience the Difference?</h2>
+        <p>Join 50,000+ professionals who chose PDFOX over expensive alternatives.</p>
+        <button class="btn-large" onclick="window.location.href='index.html#upload'">Start Your Free Trial</button>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>PDFOX</h4>
+                <a href="index.html#features">Features</a>
+                <a href="pricing.html">Pricing</a>
+                <a href="about.html">About Us</a>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <a href="#">Help Center</a>
+                <a href="#">Documentation</a>
+                <a href="#">API</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="security.html">Security</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2025 PDFOX. All rights reserved. | Professional PDF Editing Platform
+        </div>
+    </footer>
+
+    <script>
+        const lenis = new Lenis({
+            duration: 1.2,
+            lerp: 0.1,
+            wheelMultiplier: 1,
+            smoothTouch: false,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+    </script>
+</body>
+</html>

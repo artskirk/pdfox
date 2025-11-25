@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security - PDFOX | Enterprise-Grade Protection</title>
+    <meta name="description" content="PDFOX uses bank-level encryption, SOC 2 compliance, and enterprise security to protect your sensitive documents.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #000000; color: #ffffff; overflow-x: hidden; line-height: 1.6; }
+        .nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(229, 9, 20, 0.2); }
+        .logo { font-family: 'Bebas Neue', sans-serif; font-size: 40px; font-weight: 700; color: #E50914; cursor: pointer; letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 30px; align-items: center; }
+        .nav-link { color: #ffffff; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        .nav-link:hover { color: #E50914; }
+        .cta-button { background: #E50914; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .cta-button:hover { background: #B8070F; }
+        .hero { padding: 140px 50px 80px; text-align: center; background: linear-gradient(180deg, rgba(229, 9, 20, 0.05) 0%, rgba(0, 0, 0, 0) 100%); }
+        .hero h1 { font-size: 56px; font-weight: 700; margin-bottom: 20px; background: linear-gradient(135deg, #ffffff 0%, #E50914 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 20px; color: #cccccc; max-width: 700px; margin: 0 auto; }
+        .content-section { max-width: 1200px; margin: 0 auto; padding: 60px 50px; }
+        .content-section h2 { font-size: 36px; margin-bottom: 30px; color: #E50914; text-align: center; }
+        .security-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; margin: 40px 0; }
+        .security-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 40px; transition: all 0.3s; }
+        .security-card:hover { border-color: rgba(229, 9, 20, 0.3); transform: translateY(-5px); }
+        .security-icon { width: 64px; height: 64px; margin-bottom: 20px; background: linear-gradient(135deg, rgba(229, 9, 20, 0.1) 0%, rgba(196, 8, 18, 0.15) 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+        .security-card h3 { font-size: 24px; margin-bottom: 15px; color: #ffffff; }
+        .security-card p { color: #cccccc; margin-bottom: 20px; }
+        .security-card ul { list-style: none; padding: 0; }
+        .security-card li { padding: 8px 0; padding-left: 25px; position: relative; color: #999999; }
+        .security-card li:before { content: "✓"; position: absolute; left: 0; color: #E50914; font-weight: bold; }
+        .compliance-badges { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin: 60px 0; }
+        .badge { background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(229, 9, 20, 0.3); border-radius: 12px; padding: 30px 40px; text-align: center; min-width: 180px; transition: all 0.3s; }
+        .badge:hover { border-color: #E50914; transform: scale(1.05); }
+        .badge-icon { font-size: 48px; margin-bottom: 15px; }
+        .badge-title { font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 8px; }
+        .badge-subtitle { font-size: 14px; color: #999999; }
+        .cta-section { text-align: center; padding: 80px 50px; background: rgba(229, 9, 20, 0.05); }
+        .cta-section h2 { font-size: 40px; margin-bottom: 20px; }
+        .cta-section p { font-size: 18px; color: #cccccc; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .btn-large { background: #E50914; color: white; border: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 18px; cursor: pointer; transition: all 0.3s; }
+        .btn-large:hover { background: #B8070F; transform: translateY(-2px); }
+        .footer { background: #000000; padding: 60px 50px 40px; border-top: 1px solid #333333; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px; }
+        .footer-section h4 { font-size: 16px; margin-bottom: 20px; color: #ffffff; }
+        .footer-section a { display: block; color: #808080; text-decoration: none; margin-bottom: 12px; font-size: 14px; transition: color 0.3s; }
+        .footer-section a:hover { color: #ffffff; }
+        .footer-bottom { max-width: 1200px; margin: 0 auto; padding-top: 30px; border-top: 1px solid #333333; color: #808080; font-size: 13px; text-align: center; }
+        @media (max-width: 768px) { .hero h1 { font-size: 40px; } .security-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="logo" onclick="window.location.href='index.html'">PDFOX</div>
+        <div class="nav-links">
+            <a href="index.html#features" class="nav-link">Features</a>
+            <a href="pricing.html" class="nav-link">Pricing</a>
+            <a href="about.html" class="nav-link">About</a>
+            <button class="cta-button" onclick="window.location.href='index.html#upload'">Try Now</button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Enterprise-Grade Security</h1>
+        <p>Your documents contain sensitive information. We protect them with the same security standards used by banks and Fortune 500 companies.</p>
+    </section>
+
+    <section class="content-section">
+        <h2>Comprehensive Security Measures</h2>
+        <div class="security-grid">
+            <div class="security-card">
+                <div class="security-icon">🔒</div>
+                <h3>Encryption in Transit & at Rest</h3>
+                <p>Your files are protected at every stage:</p>
+                <ul>
+                    <li>TLS 1.3 encryption during upload/download</li>
+                    <li>AES-256 encryption for stored files</li>
+                    <li>End-to-end encryption for all communications</li>
+                    <li>Secure key management with hardware security modules</li>
+                </ul>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon">🛡️</div>
+                <h3>Infrastructure Security</h3>
+                <p>Built on enterprise-grade infrastructure:</p>
+                <ul>
+                    <li>Powered by Cloudflare's global network</li>
+                    <li>DDoS protection and web application firewall</li>
+                    <li>99.9% uptime SLA (Enterprise plans)</li>
+                    <li>Redundant data centers with automatic failover</li>
+                </ul>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon">👥</div>
+                <h3>Access Controls</h3>
+                <p>Strict authentication and authorization:</p>
+                <ul>
+                    <li>Multi-factor authentication (MFA) available</li>
+                    <li>Single Sign-On (SSO) for Enterprise</li>
+                    <li>Role-based access control (RBAC)</li>
+                    <li>Session management and automatic logout</li>
+                </ul>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon">📊</div>
+                <h3>Compliance & Auditing</h3>
+                <p>Meeting regulatory requirements:</p>
+                <ul>
+                    <li>SOC 2 Type II certified</li>
+                    <li>GDPR compliant data handling</li>
+                    <li>CCPA compliance for California users</li>
+                    <li>Regular third-party security audits</li>
+                </ul>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon">🗑️</div>
+                <h3>Data Retention & Deletion</h3>
+                <p>You control your data lifecycle:</p>
+                <ul>
+                    <li>Free tier: Immediate deletion after processing</li>
+                    <li>Paid tiers: 30-day retention (deletable anytime)</li>
+                    <li>Secure deletion with military-grade wiping</li>
+                    <li>Right to be forgotten compliance</li>
+                </ul>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon">🔍</div>
+                <h3>Monitoring & Incident Response</h3>
+                <p>24/7 security operations:</p>
+                <ul>
+                    <li>Real-time threat detection</li>
+                    <li>Automated security monitoring</li>
+                    <li>Incident response team on standby</li>
+                    <li>Regular penetration testing</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>Compliance & Certifications</h2>
+        <div class="compliance-badges">
+            <div class="badge">
+                <div class="badge-icon">🏆</div>
+                <div class="badge-title">SOC 2 Type II</div>
+                <div class="badge-subtitle">Security Certified</div>
+            </div>
+            <div class="badge">
+                <div class="badge-icon">🔐</div>
+                <div class="badge-title">GDPR</div>
+                <div class="badge-subtitle">Data Protection</div>
+            </div>
+            <div class="badge">
+                <div class="badge-icon">🌍</div>
+                <div class="badge-title">ISO 27001</div>
+                <div class="badge-subtitle">Information Security</div>
+            </div>
+            <div class="badge">
+                <div class="badge-icon">✓</div>
+                <div class="badge-title">CCPA</div>
+                <div class="badge-subtitle">Privacy Compliant</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>Privacy Commitments</h2>
+        <div class="security-grid">
+            <div class="security-card">
+                <h3>We Never Sell Your Data</h3>
+                <p>Your documents and personal information are never sold, shared, or used for advertising. Period.</p>
+            </div>
+
+            <div class="security-card">
+                <h3>Zero Knowledge Architecture</h3>
+                <p>Your files are encrypted with keys only you control. We cannot access your document contents.</p>
+            </div>
+
+            <div class="security-card">
+                <h3>Transparent Processing</h3>
+                <p>We clearly disclose how we process your data. No hidden tracking or unexpected usage.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section" style="background: rgba(255, 255, 255, 0.02); padding: 60px 50px; border-radius: 12px;">
+        <h2 style="text-align: left;">For Enterprise Customers</h2>
+        <p style="color: #cccccc; font-size: 18px; margin-bottom: 30px;">Additional security features available for Enterprise plans:</p>
+        <div class="security-grid">
+            <div class="security-card" style="background: rgba(0, 0, 0, 0.3);">
+                <h3>On-Premise Deployment</h3>
+                <p>Host PDFOX on your own infrastructure for complete control over data residency and security.</p>
+            </div>
+
+            <div class="security-card" style="background: rgba(0, 0, 0, 0.3);">
+                <h3>Custom Data Retention</h3>
+                <p>Configure retention policies to meet your organization's compliance requirements.</p>
+            </div>
+
+            <div class="security-card" style="background: rgba(0, 0, 0, 0.3);">
+                <h3>Advanced Audit Logs</h3>
+                <p>Comprehensive logging of all user actions, document access, and system events.</p>
+            </div>
+
+            <div class="security-card" style="background: rgba(0, 0, 0, 0.3);">
+                <h3>Dedicated Security Manager</h3>
+                <p>Direct access to our security team for compliance reviews and security assessments.</p>
+            </div>
+
+            <div class="security-card" style="background: rgba(0, 0, 0, 0.3);">
+                <h3>Custom SLAs</h3>
+                <p>Guaranteed uptime, response times, and disaster recovery commitments.</p>
+            </div>
+
+            <div class="security-card" style="background: rgba(0, 0, 0, 0.3);">
+                <h3>Penetration Testing</h3>
+                <p>Scheduled security assessments with detailed reports and remediation plans.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>Security Best Practices We Follow</h2>
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div class="security-card">
+                <h3>Principle of Least Privilege</h3>
+                <p>Employees have access only to the data and systems necessary for their role. Regular access reviews ensure compliance.</p>
+            </div>
+
+            <div class="security-card">
+                <h3>Defense in Depth</h3>
+                <p>Multiple layers of security controls protect your data. If one layer fails, others maintain protection.</p>
+            </div>
+
+            <div class="security-card">
+                <h3>Regular Security Updates</h3>
+                <p>We apply security patches within 24 hours of release and conduct monthly security reviews.</p>
+            </div>
+
+            <div class="security-card">
+                <h3>Employee Security Training</h3>
+                <p>All team members complete security awareness training and sign confidentiality agreements.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <h2>Have Security Questions?</h2>
+        <p>Our security team is here to answer your questions and provide detailed documentation for your compliance review.</p>
+        <button class="btn-large" onclick="window.location.href='contact.html'">Contact Security Team</button>
+        <p style="margin-top: 20px; font-size: 14px;">
+            <a href="mailto:security@pdfox.cloud" style="color: #E50914; text-decoration: none;">security@pdfox.cloud</a>
+        </p>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>PDFOX</h4>
+                <a href="index.html#features">Features</a>
+                <a href="pricing.html">Pricing</a>
+                <a href="about.html">About Us</a>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <a href="#">Help Center</a>
+                <a href="#">Documentation</a>
+                <a href="#">API</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="security.html">Security</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2025 PDFOX. All rights reserved. | Professional PDF Editing Platform
+        </div>
+    </footer>
+
+    <script>
+        const lenis = new Lenis({ duration: 1.2, lerp: 0.1, wheelMultiplier: 1, smoothTouch: false });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+    </script>
+</body>
+</html>

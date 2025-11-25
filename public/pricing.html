@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - PDFOX Professional PDF Editor</title>
+    <meta name="description" content="Simple, transparent pricing for professional PDF editing. Choose the plan that fits your needs.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+
+    <!-- Lenis Smooth Scroll -->
+    <script src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.3s;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(229, 9, 20, 0.2);
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 40px;
+            font-weight: 700;
+            color: #E50914;
+            cursor: pointer;
+            letter-spacing: 2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: #E50914;
+        }
+
+        .cta-button {
+            background: #E50914;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #B8070F;
+            transform: translateY(-2px);
+        }
+
+        /* Hero Section */
+        .pricing-hero {
+            padding: 140px 50px 80px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(229, 9, 20, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
+        }
+
+        .pricing-hero h1 {
+            font-size: 56px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #E50914 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .pricing-hero p {
+            font-size: 20px;
+            color: #cccccc;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        /* Billing Toggle */
+        .billing-toggle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 60px;
+        }
+
+        .toggle-label {
+            font-size: 16px;
+            color: #cccccc;
+            font-weight: 500;
+        }
+
+        .toggle-label.active {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #333;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #E50914;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(30px);
+        }
+
+        .save-badge {
+            background: rgba(229, 9, 20, 0.2);
+            color: #E50914;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid rgba(229, 9, 20, 0.3);
+        }
+
+        /* Pricing Cards */
+        .pricing-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 50px 100px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 40px 30px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(229, 9, 20, 0.3);
+        }
+
+        .pricing-card.featured {
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.1) 0%, rgba(196, 8, 18, 0.05) 100%);
+            border: 2px solid #E50914;
+            transform: scale(1.05);
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.05) translateY(-5px);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #E50914;
+            color: white;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .plan-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .plan-description {
+            font-size: 14px;
+            color: #999999;
+            margin-bottom: 30px;
+            min-height: 40px;
+        }
+
+        .plan-price {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #E50914;
+        }
+
+        .plan-price span {
+            font-size: 18px;
+            color: #999999;
+            font-weight: 400;
+        }
+
+        .plan-billing {
+            font-size: 14px;
+            color: #666666;
+            margin-bottom: 30px;
+        }
+
+        .plan-cta {
+            width: 100%;
+            padding: 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 30px;
+        }
+
+        .plan-cta.primary {
+            background: #E50914;
+            color: white;
+            border: none;
+        }
+
+        .plan-cta.primary:hover {
+            background: #B8070F;
+        }
+
+        .plan-cta.secondary {
+            background: transparent;
+            color: #E50914;
+            border: 2px solid #E50914;
+        }
+
+        .plan-cta.secondary:hover {
+            background: rgba(229, 9, 20, 0.1);
+        }
+
+        .plan-features {
+            list-style: none;
+        }
+
+        .plan-features li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .plan-features li:last-child {
+            border-bottom: none;
+        }
+
+        .check-icon {
+            color: #E50914;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* Trust Section */
+        .trust-section {
+            padding: 80px 50px;
+            background: rgba(255, 255, 255, 0.02);
+            text-align: center;
+        }
+
+        .trust-section h2 {
+            font-size: 32px;
+            margin-bottom: 40px;
+        }
+
+        .trust-badges {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .trust-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .trust-badge-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(229, 9, 20, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #E50914;
+            font-size: 24px;
+        }
+
+        .trust-badge-text {
+            font-size: 14px;
+            color: #999999;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 80px 50px 100px;
+        }
+
+        .faq-section h2 {
+            text-align: center;
+            font-size: 40px;
+            margin-bottom: 50px;
+        }
+
+        .faq-item {
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .faq-question:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .faq-answer {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .faq-item.active .faq-answer {
+            padding: 20px;
+            max-height: 500px;
+        }
+
+        .faq-answer p {
+            color: #cccccc;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background: #000000;
+            padding: 60px 50px 40px;
+            border-top: 1px solid #333333;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h4 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .footer-section a {
+            display: block;
+            color: #808080;
+            text-decoration: none;
+            margin-bottom: 12px;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: #ffffff;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 30px;
+            border-top: 1px solid #333333;
+            color: #808080;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media (max-width: 992px) {
+            .pricing-container {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+
+            .pricing-hero h1 {
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="logo" onclick="window.location.href='index.html'">PDFOX</div>
+        <div class="nav-links">
+            <a href="index.html#features" class="nav-link">Features</a>
+            <a href="pricing.html" class="nav-link">Pricing</a>
+            <a href="about.html" class="nav-link">About</a>
+            <button class="cta-button" onclick="window.location.href='index.html#upload'">Try Now</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pricing-hero">
+        <h1>Simple, Transparent Pricing</h1>
+        <p>Choose the plan that fits your needs. All plans include core features. Upgrade anytime.</p>
+
+        <!-- Billing Toggle -->
+        <div class="billing-toggle">
+            <span class="toggle-label active" id="monthlyLabel">Monthly</span>
+            <div class="toggle-switch" id="billingToggle" onclick="toggleBilling()">
+                <div class="toggle-slider"></div>
+            </div>
+            <span class="toggle-label" id="annualLabel">Annual</span>
+            <span class="save-badge">Save 20%</span>
+        </div>
+    </section>
+
+    <!-- Pricing Cards -->
+    <section class="pricing-container">
+        <!-- Starter Plan -->
+        <div class="pricing-card">
+            <div class="plan-name">Starter</div>
+            <div class="plan-description">Perfect for individuals and occasional use</div>
+            <div class="plan-price">
+                $<span id="starter-price">19</span><span>/month</span>
+            </div>
+            <div class="plan-billing" id="starter-billing">Billed monthly</div>
+            <button class="plan-cta secondary" onclick="window.location.href='index.html#upload'">Start Free Trial</button>
+            <ul class="plan-features">
+                <li><span class="check-icon">✓</span> Edit up to 50 PDFs/month</li>
+                <li><span class="check-icon">✓</span> AI-Powered OCR</li>
+                <li><span class="check-icon">✓</span> Digital Signatures</li>
+                <li><span class="check-icon">✓</span> Basic Redaction</li>
+                <li><span class="check-icon">✓</span> Cloud Storage (5GB)</li>
+                <li><span class="check-icon">✓</span> Email Support</li>
+            </ul>
+        </div>
+
+        <!-- Professional Plan (Featured) -->
+        <div class="pricing-card featured">
+            <div class="popular-badge">Most Popular</div>
+            <div class="plan-name">Professional</div>
+            <div class="plan-description">For professionals and small teams</div>
+            <div class="plan-price">
+                $<span id="pro-price">49</span><span>/month</span>
+            </div>
+            <div class="plan-billing" id="pro-billing">Billed monthly</div>
+            <button class="plan-cta primary" onclick="window.location.href='index.html#upload'">Start Free Trial</button>
+            <ul class="plan-features">
+                <li><span class="check-icon">✓</span> Unlimited PDF editing</li>
+                <li><span class="check-icon">✓</span> Advanced AI Features</li>
+                <li><span class="check-icon">✓</span> Smart Redaction</li>
+                <li><span class="check-icon">✓</span> Team Collaboration</li>
+                <li><span class="check-icon">✓</span> Cloud Storage (100GB)</li>
+                <li><span class="check-icon">✓</span> Priority Support (4-hour response)</li>
+                <li><span class="check-icon">✓</span> Advanced Security</li>
+                <li><span class="check-icon">✓</span> Batch Processing</li>
+            </ul>
+        </div>
+
+        <!-- Enterprise Plan -->
+        <div class="pricing-card">
+            <div class="plan-name">Enterprise</div>
+            <div class="plan-description">For large teams and organizations</div>
+            <div class="plan-price">
+                Custom
+            </div>
+            <div class="plan-billing">Contact sales for pricing</div>
+            <button class="plan-cta secondary" onclick="window.location.href='contact.html'">Contact Sales</button>
+            <ul class="plan-features">
+                <li><span class="check-icon">✓</span> Everything in Professional</li>
+                <li><span class="check-icon">✓</span> SSO Integration</li>
+                <li><span class="check-icon">✓</span> API Access</li>
+                <li><span class="check-icon">✓</span> Custom Workflows</li>
+                <li><span class="check-icon">✓</span> Unlimited Cloud Storage</li>
+                <li><span class="check-icon">✓</span> Dedicated Account Manager</li>
+                <li><span class="check-icon">✓</span> SLA Guarantee</li>
+                <li><span class="check-icon">✓</span> On-Premise Deployment Option</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Trust Section -->
+    <section class="trust-section">
+        <h2>Why Choose PDFOX?</h2>
+        <div class="trust-badges">
+            <div class="trust-badge">
+                <div class="trust-badge-icon">🔒</div>
+                <div class="trust-badge-text">Bank-Level Security</div>
+            </div>
+            <div class="trust-badge">
+                <div class="trust-badge-icon">💳</div>
+                <div class="trust-badge-text">No Credit Card Required</div>
+            </div>
+            <div class="trust-badge">
+                <div class="trust-badge-icon">⏱️</div>
+                <div class="trust-badge-text">14-Day Free Trial</div>
+            </div>
+            <div class="trust-badge">
+                <div class="trust-badge-icon">🔄</div>
+                <div class="trust-badge-text">Cancel Anytime</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <h2>Frequently Asked Questions</h2>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Do I need a credit card for the free trial?
+                <span>+</span>
+            </div>
+            <div class="faq-answer">
+                <p>No! You can start your 14-day free trial without entering any payment information. You'll only be charged if you decide to continue after your trial ends.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Can I cancel my subscription at any time?
+                <span>+</span>
+            </div>
+            <div class="faq-answer">
+                <p>Yes, you can cancel your subscription at any time with no penalties or fees. Your access will continue until the end of your billing period.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                What payment methods do you accept?
+                <span>+</span>
+            </div>
+            <div class="faq-answer">
+                <p>We accept all major credit cards (Visa, Mastercard, American Express), PayPal, and bank transfers for Enterprise plans.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Can I upgrade or downgrade my plan?
+                <span>+</span>
+            </div>
+            <div class="faq-answer">
+                <p>Absolutely! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate the difference.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Is my data secure?
+                <span>+</span>
+            </div>
+            <div class="faq-answer">
+                <p>Yes! We use enterprise-grade AES-256 encryption, SOC 2 compliance, and your documents are protected by Cloudflare's global security network. Your data is never shared with third parties.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Do you offer discounts for nonprofits or education?
+                <span>+</span>
+            </div>
+            <div class="faq-answer">
+                <p>Yes! We offer special pricing for nonprofits, educational institutions, and students. Contact our sales team to learn more about our discount programs.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>PDFOX</h4>
+                <a href="index.html#features">Features</a>
+                <a href="pricing.html">Pricing</a>
+                <a href="about.html">About Us</a>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <a href="#">Help Center</a>
+                <a href="#">Documentation</a>
+                <a href="#">API</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="security.html">Security</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2025 PDFOX. All rights reserved. | Professional PDF Editing Platform
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lenis smooth scroll
+        const lenis = new Lenis({
+            duration: 1.2,
+            lerp: 0.1,
+            wheelMultiplier: 1,
+            smoothTouch: false,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Billing toggle
+        let isAnnual = false;
+
+        function toggleBilling() {
+            isAnnual = !isAnnual;
+            const toggle = document.getElementById('billingToggle');
+            const monthlyLabel = document.getElementById('monthlyLabel');
+            const annualLabel = document.getElementById('annualLabel');
+
+            if (isAnnual) {
+                toggle.classList.add('active');
+                monthlyLabel.classList.remove('active');
+                annualLabel.classList.add('active');
+
+                // Update prices (20% discount for annual)
+                document.getElementById('starter-price').textContent = '15';
+                document.getElementById('starter-billing').textContent = '$180 billed annually';
+
+                document.getElementById('pro-price').textContent = '39';
+                document.getElementById('pro-billing').textContent = '$468 billed annually';
+            } else {
+                toggle.classList.remove('active');
+                monthlyLabel.classList.add('active');
+                annualLabel.classList.remove('active');
+
+                // Update prices (monthly)
+                document.getElementById('starter-price').textContent = '19';
+                document.getElementById('starter-billing').textContent = 'Billed monthly';
+
+                document.getElementById('pro-price').textContent = '49';
+                document.getElementById('pro-billing').textContent = 'Billed monthly';
+            }
+        }
+
+        // FAQ toggle
+        function toggleFaq(element) {
+            const item = element.parentElement;
+            const allItems = document.querySelectorAll('.faq-item');
+
+            // Close all other items
+            allItems.forEach(i => {
+                if (i !== item) {
+                    i.classList.remove('active');
+                    i.querySelector('.faq-question span').textContent = '+';
+                }
+            });
+
+            // Toggle current item
+            item.classList.toggle('active');
+            element.querySelector('span').textContent = item.classList.contains('active') ? '−' : '+';
+        }
+    </script>
+</body>
+</html>
