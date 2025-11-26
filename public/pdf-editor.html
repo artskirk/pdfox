@@ -1706,17 +1706,44 @@
             }
         }
 
-        // Close modal on Escape key
+        // Close modals on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
+                // Check and close all modals in priority order
                 const alertModal = document.getElementById('customAlertModal');
                 const confirmModal = document.getElementById('customConfirmModal');
+                const signatureModal = document.getElementById('signatureModal');
+                const editModal = document.getElementById('editModal');
+                const ocrModal = document.getElementById('ocrResultsModal');
 
-                if (alertModal.style.display === 'flex') {
+                // Close alert modal
+                if (alertModal && alertModal.style.display === 'flex') {
                     closeCustomAlert();
+                    return;
                 }
-                if (confirmModal.style.display === 'flex') {
+
+                // Close confirm modal
+                if (confirmModal && confirmModal.style.display === 'flex') {
                     closeCustomConfirm(false);
+                    return;
+                }
+
+                // Close signature modal
+                if (signatureModal && signatureModal.style.display !== 'none') {
+                    closeSignatureModal();
+                    return;
+                }
+
+                // Close edit text modal
+                if (editModal && editModal.classList.contains('active')) {
+                    closeEditModal();
+                    return;
+                }
+
+                // Close OCR results modal
+                if (ocrModal && ocrModal.classList.contains('active')) {
+                    closeOCRModal();
+                    return;
                 }
             }
         });
