@@ -1730,6 +1730,7 @@
         let signatures = []; // Array to store placed signatures
         let actionHistory = []; // Track all actions (annotations and signatures) in chronological order
         let removedAreas = []; // Array to store areas to be removed/covered: {x, y, width, height, page}
+        let selectedSignature = null; // Track currently selected signature for deletion
 
         // Initialize Signature Pad when modal opens
         function initializeSignaturePad() {
@@ -2121,9 +2122,22 @@
                 sigElement.style.width = signature.width + 'px';
                 sigElement.style.height = signature.height + 'px';
                 sigElement.style.cursor = 'move';
-                sigElement.style.border = '2px dashed rgba(220, 31, 38, 0.5)';
+                // Highlight if selected
+                if (selectedSignature === signature) {
+                    sigElement.style.border = '2px solid #DC1F26';
+                    sigElement.style.boxShadow = '0 0 10px rgba(220, 31, 38, 0.5)';
+                } else {
+                    sigElement.style.border = '2px dashed rgba(220, 31, 38, 0.5)';
+                }
                 sigElement.style.boxSizing = 'border-box';
                 sigElement.dataset.signatureId = signature.id;
+
+                // Add click handler for selection
+                sigElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectedSignature = signature;
+                    renderSignatures(); // Re-render to show selection
+                });
 
                 const img = document.createElement('img');
                 img.src = signature.image;
@@ -2240,6 +2254,43 @@
                 }
             });
         }
+
+        // Delete selected signature
+        function deleteSelectedSignature() {
+            if (!selectedSignature) return;
+
+            // Find the signature in the array
+            const index = signatures.findIndex(sig => sig === selectedSignature);
+            if (index !== -1) {
+                // Remove from signatures array
+                signatures.splice(index, 1);
+
+                // Remove from action history
+                const historyIndex = actionHistory.findIndex(action =>
+                    action.type === 'signature' && action.data === selectedSignature
+                );
+                if (historyIndex !== -1) {
+                    actionHistory.splice(historyIndex, 1);
+                }
+
+                // Clear selection
+                selectedSignature = null;
+
+                // Re-render signatures
+                renderSignatures();
+
+                showAlert('Signature deleted', 'success');
+            }
+        }
+
+        // Deselect signature when clicking outside
+        document.addEventListener('click', (e) => {
+            // If click is not on a signature element, deselect
+            if (!e.target.closest('.signature-overlay') && selectedSignature) {
+                selectedSignature = null;
+                renderSignatures();
+            }
+        });
 
         // Load PDF from sessionStorage
         window.addEventListener('load', async () => {
@@ -4274,10 +4325,26 @@
             document.removeEventListener('mouseup', endResize);
         }
 
-        // Keyboard shortcut for Delete
+        // Keyboard shortcuts for Delete and Backspace
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Delete' && selectedOverlay) {
-                deleteOverlay(selectedOverlay);
+            // Delete or Backspace key
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                // Check if we're not in an input field
+                if (document.activeElement.tagName !== 'INPUT' &&
+                    document.activeElement.tagName !== 'TEXTAREA' &&
+                    !document.activeElement.isContentEditable) {
+
+                    // Delete selected overlay
+                    if (selectedOverlay) {
+                        deleteOverlay(selectedOverlay);
+                        e.preventDefault();
+                    }
+                    // Delete selected signature
+                    else if (selectedSignature) {
+                        deleteSelectedSignature();
+                        e.preventDefault();
+                    }
+                }
             }
         });
 
