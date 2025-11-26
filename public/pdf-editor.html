@@ -2663,7 +2663,9 @@
                 textSpan.style.left = tx[4] + 'px';
                 textSpan.style.top = (tx[5] - fontAscent) + 'px';
                 textSpan.style.fontSize = fontHeight + 'px';
-                textSpan.style.fontFamily = 'Arial, Helvetica, sans-serif';
+                textSpan.style.fontFamily = 'Helvetica, Arial, sans-serif';
+                textSpan.style.letterSpacing = '-0.02em'; // Tighter spacing to prevent visual indent
+                textSpan.style.textIndent = '0';
                 textSpan.dataset.index = index;
                 textSpan.dataset.page = pageNumber;
 
