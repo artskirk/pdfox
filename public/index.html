@@ -1639,7 +1639,7 @@
                 const base64data = e.target.result;
                 sessionStorage.setItem('pdfToEdit', base64data);
                 sessionStorage.setItem('pdfFileName', file.name);
-                window.location.href = '/pdf-editor.html';
+                window.location.href = '/pdf-editor-modular.html';
             };
             reader.readAsDataURL(file);
         }

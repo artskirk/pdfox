@@ -265,14 +265,22 @@
             right: 0;
             bottom: 0;
             overflow: hidden;
-            opacity: 0;
             line-height: 1.0;
             pointer-events: none;
         }
 
         #textLayer.editable {
-            opacity: 1;
             pointer-events: auto;
+        }
+
+        /* Hide non-edited spans when not in edit mode */
+        #textLayer:not(.editable) > span:not(.edited) {
+            opacity: 0;
+        }
+
+        /* Ensure white overlay for edited text is always visible */
+        #textLayer .text-edit-overlay {
+            opacity: 1 !important;
         }
 
         #overlayLayer {
@@ -311,12 +319,14 @@
         #textLayer > span.edited {
             background: rgb(255, 255, 255) !important; /* Fully opaque white to cover original text */
             color: #1a1a1a !important;
+            opacity: 1 !important; /* Always visible, even when textLayer has opacity: 0 */
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.4); /* Green border to indicate edited */
             border: 1px solid rgba(76, 175, 80, 0.5);
             padding: 4px 6px !important;
             margin: -4px -6px !important;
             cursor: move !important;
             user-select: none;
+            pointer-events: auto !important; /* Ensure clickable even when layer is not editable */
         }
 
         #textLayer > span.edited.dragging {
@@ -479,6 +489,173 @@
             margin-top: 4px;
         }
 
+        /* Layers Panel Styles */
+        .layers-panel {
+            margin-top: 20px;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+
+        .layers-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .layers-panel-header h4 {
+            color: #E50914;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .layers-panel-header .layer-count {
+            background: #E50914;
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .layers-list {
+            max-height: 350px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .layer-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            margin: 6px 0;
+            background: #2a2a2a;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .layer-item:hover {
+            background: #3a3a3a;
+        }
+
+        .layer-item.selected {
+            background: rgba(229, 9, 20, 0.15);
+            border-color: #E50914;
+        }
+
+        .layer-item-icon {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            min-height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 14px;
+            flex-shrink: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .layer-item-icon.text-edit {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+
+        .layer-item-icon.text-overlay {
+            background: rgba(33, 150, 243, 0.2);
+            color: #2196F3;
+        }
+
+        .layer-item-icon svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            display: block;
+        }
+
+        .layer-item-icon.signature {
+            background: rgba(156, 39, 176, 0.2);
+            color: #9C27B0;
+        }
+
+        .layer-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .layer-item-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .layer-item-preview {
+            font-size: 11px;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+
+        .layer-item-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .layer-item:hover .layer-item-actions {
+            opacity: 1;
+        }
+
+        .layer-action-btn {
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .layer-action-btn:hover {
+            background: #E50914;
+        }
+
+        .layer-action-btn.delete:hover {
+            background: #dc3545;
+        }
+
+        .layers-empty {
+            text-align: center;
+            padding: 30px 15px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .layers-empty svg {
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
         .sidebar {
             width: 320px;
             background: #141414;
@@ -622,6 +799,23 @@
                 transform: scale(1.05);
                 box-shadow: 0 6px 20px rgba(220, 31, 38, 0.5);
             }
+        }
+
+        @keyframes layerHighlight {
+            0% {
+                box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.8);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(229, 9, 20, 0.4);
+            }
+            100% {
+                box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.8);
+            }
+        }
+
+        .layer-highlight {
+            box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.8) !important;
+            z-index: 1000 !important;
         }
 
         .edit-modal {
@@ -1277,17 +1471,29 @@
                 </ul>
             </div>
 
-            <div class="property-group">
-                <h4 style="margin-bottom: 10px; color: #2196F3;">Text Overlays:</h4>
-                <div id="overlayList" style="max-height: 200px; overflow-y: auto;">
-                    <em style="font-size: 12px; color: #666;">No overlays yet</em>
+            <!-- Layers Panel -->
+            <div class="layers-panel">
+                <div class="layers-panel-header">
+                    <h4>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                            <polyline points="2 17 12 22 22 17"/>
+                            <polyline points="2 12 12 17 22 12"/>
+                        </svg>
+                        Layers
+                        <span class="layer-count" id="layerCount">0</span>
+                    </h4>
                 </div>
-            </div>
-
-            <div class="property-group">
-                <h4 style="margin-bottom: 10px; color: #DC1F26;">Edited Text Items:</h4>
-                <div id="editedTextList" style="font-size: 12px; color: #666; max-height: 200px; overflow-y: auto;">
-                    <em>No text edited yet</em>
+                <div class="layers-list" id="layersList">
+                    <div class="layers-empty">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                            <polyline points="2 17 12 22 22 17"/>
+                            <polyline points="2 12 12 17 22 12"/>
+                        </svg>
+                        <div>No layers yet</div>
+                        <div style="font-size: 11px; margin-top: 4px;">Edit or add text to create layers</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1303,11 +1509,12 @@
 
     <!-- Edit Text Modal -->
     <div id="editModal" class="custom-modal" style="display: none;">
-        <div class="custom-modal-content" style="max-width: 500px; text-align: left;">
+        <div class="custom-modal-content" style="max-width: 520px; text-align: left;">
             <div style="margin-bottom: 20px;">
                 <h3 style="font-size: 22px; color: #ffffff; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke="#DC1F26" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                     Edit Text
                 </h3>
@@ -1315,10 +1522,116 @@
                     Original: <span id="originalText" style="color: #ccc; font-style: italic;"></span>
                 </p>
             </div>
-            <textarea id="editTextArea" style="width: 100%; min-height: 120px; padding: 12px; border: 2px solid #333; border-radius: 8px; font-size: 14px; font-family: Arial, sans-serif; resize: vertical; background: #2a2a2a; color: #ffffff; transition: border-color 0.3s; box-sizing: border-box;" onfocus="this.style.borderColor='#DC1F26'" onblur="this.style.borderColor='#333'"></textarea>
-            <div class="modal-actions" style="margin-top: 20px;">
-                <button class="modal-btn modal-btn-secondary" onclick="closeEditModal()">Cancel</button>
-                <button class="modal-btn modal-btn-primary" onclick="saveTextEdit()">Save Changes</button>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text:</label>
+                <textarea id="editTextArea" style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #333; border-radius: 8px; font-size: 14px; font-family: Arial, sans-serif; resize: vertical; background: #2a2a2a; color: #ffffff; transition: border-color 0.3s; box-sizing: border-box;" onfocus="this.style.borderColor='#E50914'" onblur="this.style.borderColor='#333'"></textarea>
+            </div>
+
+            <!-- Font Size with slider and presets -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font Size: <span id="editTextFontSizeValue" style="color: #E50914; font-weight: 600;">14px</span></label>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <input type="range" id="editTextFontSize" value="14" min="8" max="72" style="flex: 1; height: 6px; accent-color: #E50914; cursor: pointer;" oninput="document.getElementById('editTextFontSizeValue').textContent = this.value + 'px'">
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <button type="button" onclick="setFontSize('editTextFontSize', 'editTextFontSizeValue', 10)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">10</button>
+                    <button type="button" onclick="setFontSize('editTextFontSize', 'editTextFontSizeValue', 12)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">12</button>
+                    <button type="button" onclick="setFontSize('editTextFontSize', 'editTextFontSizeValue', 14)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">14</button>
+                    <button type="button" onclick="setFontSize('editTextFontSize', 'editTextFontSizeValue', 18)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">18</button>
+                    <button type="button" onclick="setFontSize('editTextFontSize', 'editTextFontSizeValue', 24)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">24</button>
+                    <button type="button" onclick="setFontSize('editTextFontSize', 'editTextFontSizeValue', 36)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">36</button>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text Color:</label>
+                    <input type="color" id="editTextColor" value="#000000" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Background:</label>
+                    <input type="color" id="editTextBgColor" value="#ffffff" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font:</label>
+                    <select id="editTextFontFamily" style="width: 100%; padding: 10px 8px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; color: #ffffff; font-size: 13px; cursor: pointer; box-sizing: border-box;">
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Times New Roman', serif">Times New Roman</option>
+                        <option value="'Courier New', monospace">Courier New</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="Verdana, sans-serif">Verdana</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button class="modal-btn modal-btn-secondary" onclick="closeEditModal()" style="padding: 12px 24px; background: #2a2a2a; color: #ffffff; border: 2px solid #333; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s;" onmouseover="this.style.background='#3a3a3a'" onmouseout="this.style.background='#2a2a2a'">Cancel</button>
+                <button class="modal-btn modal-btn-primary" onclick="saveTextEdit()" style="padding: 12px 24px; background: #E50914; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); transition: all 0.3s;" onmouseover="this.style.background='#C40812'; this.style.boxShadow='0 6px 18px rgba(229, 9, 20, 0.5)'" onmouseout="this.style.background='#E50914'; this.style.boxShadow='0 4px 12px rgba(229, 9, 20, 0.4)'">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Text Modal -->
+    <div id="addTextModal" class="custom-modal" style="display: none;">
+        <div class="custom-modal-content" style="max-width: 520px; text-align: left;">
+            <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 22px; color: #ffffff; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Add Text
+                </h3>
+                <p style="font-size: 13px; color: #999; margin: 0;">
+                    Add new text to the document
+                </p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text:</label>
+                <textarea id="addTextArea" style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #333; border-radius: 8px; font-size: 14px; font-family: Arial, sans-serif; resize: vertical; background: #2a2a2a; color: #ffffff; transition: border-color 0.3s; box-sizing: border-box;" onfocus="this.style.borderColor='#E50914'" onblur="this.style.borderColor='#333'" placeholder="Enter your text here..."></textarea>
+            </div>
+
+            <!-- Font Size with slider and presets -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font Size: <span id="addTextFontSizeValue" style="color: #E50914; font-weight: 600;">14px</span></label>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <input type="range" id="addTextFontSize" value="14" min="8" max="72" style="flex: 1; height: 6px; accent-color: #E50914; cursor: pointer;" oninput="document.getElementById('addTextFontSizeValue').textContent = this.value + 'px'">
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <button type="button" onclick="setFontSize('addTextFontSize', 'addTextFontSizeValue', 10)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">10</button>
+                    <button type="button" onclick="setFontSize('addTextFontSize', 'addTextFontSizeValue', 12)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">12</button>
+                    <button type="button" onclick="setFontSize('addTextFontSize', 'addTextFontSizeValue', 14)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">14</button>
+                    <button type="button" onclick="setFontSize('addTextFontSize', 'addTextFontSizeValue', 18)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">18</button>
+                    <button type="button" onclick="setFontSize('addTextFontSize', 'addTextFontSizeValue', 24)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">24</button>
+                    <button type="button" onclick="setFontSize('addTextFontSize', 'addTextFontSizeValue', 36)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">36</button>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text Color:</label>
+                    <input type="color" id="addTextColor" value="#000000" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Background:</label>
+                    <input type="color" id="addTextBgColor" value="#ffffff" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font:</label>
+                    <select id="addTextFontFamily" style="width: 100%; padding: 10px 8px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; color: #ffffff; font-size: 13px; cursor: pointer; box-sizing: border-box;">
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Times New Roman', serif">Times New Roman</option>
+                        <option value="'Courier New', monospace">Courier New</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="Verdana, sans-serif">Verdana</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="closeAddTextModal()" style="padding: 12px 24px; background: #2a2a2a; color: #ffffff; border: 2px solid #333; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s;" onmouseover="this.style.background='#3a3a3a'" onmouseout="this.style.background='#2a2a2a'">Cancel</button>
+                <button onclick="saveAddText()" style="padding: 12px 24px; background: #E50914; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); transition: all 0.3s;" onmouseover="this.style.background='#C40812'; this.style.boxShadow='0 6px 18px rgba(229, 9, 20, 0.5)'" onmouseout="this.style.background='#E50914'; this.style.boxShadow='0 4px 12px rgba(229, 9, 20, 0.4)'">Add Text</button>
             </div>
         </div>
     </div>
@@ -2138,6 +2451,7 @@
                 });
 
                 renderSignatures();
+                renderLayersPanel();
 
                 showAlert('Signature added! You can drag to reposition it.', 'success');
             };
@@ -2391,6 +2705,7 @@
                         const testOverlay = JSON.parse(testOverlayData);
                         textOverlays.push(testOverlay);
                         renderTextOverlays();
+                        renderLayersPanel();
                         console.log('✓ Test overlay loaded:', testOverlay);
                         // Clear it so it doesn't load again on refresh
                         sessionStorage.removeItem('testOverlay');
@@ -2718,6 +3033,9 @@
             // Re-render signatures
             renderSignatures();
 
+            // Update layers panel
+            renderLayersPanel();
+
             // Update page buttons
             document.getElementById('prevPage').disabled = pageNumber === 1;
             document.getElementById('nextPage').disabled = pageNumber === totalPages;
@@ -2828,6 +3146,9 @@
 
         // Open edit modal
         function openEditModal(textItem, textSpan, pageNumber) {
+            const index = parseInt(textSpan.dataset.index);
+            const existingEdit = textEdits.find(edit => edit.page === pageNumber && edit.index === index);
+
             currentEditingTextItem = {
                 original: textItem.str,
                 span: textSpan,
@@ -2836,7 +3157,20 @@
             };
 
             document.getElementById('originalText').textContent = textItem.str;
-            document.getElementById('editTextArea').value = textItem.str;
+            document.getElementById('editTextArea').value = existingEdit ? existingEdit.newText : textItem.str;
+
+            // Populate styling fields
+            const currentFontSize = existingEdit?.customFontSize || parseFloat(textSpan.style.fontSize) || 14;
+            const currentColor = existingEdit?.customColor || '#000000';
+            const currentBgColor = existingEdit?.customBgColor || '#ffffff';
+            const currentFontFamily = existingEdit?.customFontFamily || 'Arial, sans-serif';
+
+            document.getElementById('editTextFontSize').value = Math.round(currentFontSize);
+            document.getElementById('editTextFontSizeValue').textContent = Math.round(currentFontSize) + 'px';
+            document.getElementById('editTextColor').value = currentColor;
+            document.getElementById('editTextBgColor').value = currentBgColor;
+            document.getElementById('editTextFontFamily').value = currentFontFamily;
+
             document.getElementById('editModal').style.display = 'flex';
             document.getElementById('editTextArea').focus();
             document.getElementById('editTextArea').select();
@@ -2848,9 +3182,87 @@
             currentEditingTextItem = null;
         }
 
+        // Add Text modal functions
+        let addTextPosition = { x: 0, y: 0 };
+
+        function openAddTextModal() {
+            // Reset form fields
+            const defaultFontSize = document.getElementById('fontSize').value || 14;
+            document.getElementById('addTextArea').value = '';
+            document.getElementById('addTextFontSize').value = defaultFontSize;
+            document.getElementById('addTextFontSizeValue').textContent = defaultFontSize + 'px';
+            document.getElementById('addTextColor').value = document.getElementById('textColor').value || '#000000';
+            document.getElementById('addTextBgColor').value = '#ffffff';
+            document.getElementById('addTextFontFamily').value = 'Arial, sans-serif';
+
+            document.getElementById('addTextModal').style.display = 'flex';
+            document.getElementById('addTextArea').focus();
+        }
+
+        function closeAddTextModal() {
+            document.getElementById('addTextModal').style.display = 'none';
+            addTextPosition = { x: 0, y: 0 };
+        }
+
+        function saveAddText() {
+            const text = document.getElementById('addTextArea').value;
+            const fontSize = parseInt(document.getElementById('addTextFontSize').value) || 14;
+            const textColor = document.getElementById('addTextColor').value || '#000000';
+            const bgColor = document.getElementById('addTextBgColor').value || '#ffffff';
+            const fontFamily = document.getElementById('addTextFontFamily').value || 'Arial, sans-serif';
+
+            if (!text || !text.trim()) {
+                showAlert('Please enter some text.', 'warning');
+                return;
+            }
+
+            // Convert hex bg color to rgba
+            const r = parseInt(bgColor.slice(1, 3), 16);
+            const g = parseInt(bgColor.slice(3, 5), 16);
+            const b = parseInt(bgColor.slice(5, 7), 16);
+            const bgColorRgba = `rgba(${r}, ${g}, ${b}, 0.9)`;
+
+            // Create a text overlay
+            const overlay = {
+                id: 'overlay-' + Date.now(),
+                text: text.trim(),
+                x: addTextPosition.x,
+                y: addTextPosition.y,
+                width: Math.max(100, text.length * fontSize * 0.6),
+                height: fontSize + 10,
+                fontSize: fontSize,
+                color: textColor,
+                bgColor: bgColorRgba,
+                textOpacity: 1,
+                fontFamily: fontFamily,
+                alignment: 'left',
+                page: currentPage
+            };
+
+            textOverlays.push(overlay);
+            renderTextOverlays();
+            renderLayersPanel();
+
+            // Select the new overlay
+            selectOverlay(overlay.id);
+
+            closeAddTextModal();
+            showNotification('Text added! Click to edit or drag to move.', 'success');
+        }
+
+        // Helper function to set font size from preset buttons
+        function setFontSize(inputId, displayId, size) {
+            document.getElementById(inputId).value = size;
+            document.getElementById(displayId).textContent = size + 'px';
+        }
+
         // Save text edit
         function saveTextEdit() {
             const newText = document.getElementById('editTextArea').value;
+            const customFontSize = parseInt(document.getElementById('editTextFontSize').value) || 14;
+            const customColor = document.getElementById('editTextColor').value || '#000000';
+            const customBgColor = document.getElementById('editTextBgColor').value || '#ffffff';
+            const customFontFamily = document.getElementById('editTextFontFamily').value || 'Arial, sans-serif';
 
             if (!currentEditingTextItem) {
                 console.error('No text item being edited');
@@ -2858,22 +3270,30 @@
                 return;
             }
 
-            // Allow saving even if text is the same (user might want to dismiss)
+            // Allow saving even if text is the same (user might want to change styling)
             if (newText.trim() === '') {
                 showAlert('Text cannot be empty. Use the ✕ button to remove an edit.', 'warning');
                 return;
             }
 
-            // Only update if text actually changed
-            if (newText !== currentEditingTextItem.original) {
-                const textSpan = currentEditingTextItem.span;
-                const index = parseInt(textSpan.dataset.index);
+            const textSpan = currentEditingTextItem.span;
+            const index = parseInt(textSpan.dataset.index);
 
-                // Check if this text was already edited and update instead of adding
-                const existingEditIndex = textEdits.findIndex(edit =>
-                    edit.page === currentEditingTextItem.page && edit.index === index
-                );
+            // Check if this text was already edited and update instead of adding
+            const existingEditIndex = textEdits.findIndex(edit =>
+                edit.page === currentEditingTextItem.page && edit.index === index
+            );
 
+            // Check if anything changed (text or styling)
+            const hasTextChanged = newText !== currentEditingTextItem.original;
+            const hasStyleChanged = existingEditIndex >= 0 ? (
+                customFontSize !== textEdits[existingEditIndex].customFontSize ||
+                customColor !== textEdits[existingEditIndex].customColor ||
+                customBgColor !== textEdits[existingEditIndex].customBgColor ||
+                customFontFamily !== textEdits[existingEditIndex].customFontFamily
+            ) : true;
+
+            if (hasTextChanged || hasStyleChanged || existingEditIndex >= 0) {
                 // CRITICAL: Preserve original width when re-editing
                 // First edit: capture current width (which is original text width)
                 // Re-edit: reuse the stored width (don't capture the edited text width)
@@ -2899,11 +3319,16 @@
                     newText: newText,
                     x: currentX,
                     y: currentY,
-                    originalX: originalX,  // Store original position for white rectangle
-                    originalY: originalY,  // Will stay constant when dragging
+                    originalX: originalX,
+                    originalY: originalY,
                     fontSize: parseFloat(textSpan.style.fontSize),
                     fontName: currentEditingTextItem.item.fontName,
-                    width: originalWidth // Use preserved original width
+                    width: originalWidth,
+                    // Custom styling options
+                    customFontSize: customFontSize,
+                    customColor: customColor,
+                    customBgColor: customBgColor,
+                    customFontFamily: customFontFamily
                 };
 
                 if (existingEditIndex >= 0) {
@@ -2931,10 +3356,13 @@
                     });
                 }
 
-                // Update visual display
+                // Update visual display with custom styling
                 textSpan.textContent = newText;
                 textSpan.classList.add('edited');
                 textSpan.title = `Edited from: "${currentEditingTextItem.original}"`;
+                textSpan.style.fontSize = customFontSize + 'px';
+                textSpan.style.color = customColor;
+                textSpan.style.fontFamily = customFontFamily;
 
                 // Remove old overlay if this is a re-edit
                 const oldOverlay = document.querySelector(
@@ -2944,16 +3372,15 @@
                     oldOverlay.remove();
                 }
 
-                // Create a white overlay to cover the original text in the PDF canvas
-                // The text span itself will size naturally, but we need to cover the original text underneath
+                // Create a colored overlay to cover the original text in the PDF canvas
                 const overlay = document.createElement('div');
                 overlay.className = 'text-edit-overlay';
                 overlay.style.position = 'absolute';
                 overlay.style.left = textSpan.style.left;
                 overlay.style.top = textSpan.style.top;
                 overlay.style.width = originalWidth + 'px';
-                overlay.style.height = textSpan.style.fontSize;
-                overlay.style.backgroundColor = 'white';
+                overlay.style.height = customFontSize + 'px';
+                overlay.style.backgroundColor = customBgColor;
                 overlay.style.zIndex = '1';
                 overlay.dataset.editIndex = index;
                 overlay.dataset.editPage = currentEditingTextItem.page;
@@ -2962,10 +3389,10 @@
                 textSpan.parentElement.insertBefore(overlay, textSpan);
 
                 // Make text span sit above the overlay
-                // Keep position: absolute (from textLayer CSS) so text can move independently
                 textSpan.style.zIndex = '2';
-                textSpan.style.width = 'auto'; // Let text size naturally
+                textSpan.style.width = 'auto';
                 textSpan.style.display = 'inline-block';
+                textSpan.style.background = customBgColor;
 
                 // Enable drag-and-drop for repositioning edited text
                 enableTextDrag(textSpan, overlay);
@@ -3016,21 +3443,8 @@
 
         // Update edited text list in sidebar
         function updateEditedTextList() {
-            const listDiv = document.getElementById('editedTextList');
-
-            if (textEdits.length === 0) {
-                listDiv.innerHTML = '<em>No text edited yet</em>';
-                return;
-            }
-
-            listDiv.innerHTML = textEdits.map((edit, i) => `
-                <div style="padding: 8px; background: #f9f9f9; margin-bottom: 5px; border-radius: 4px;">
-                    <strong>Page ${edit.page}:</strong><br>
-                    <span style="text-decoration: line-through; color: #999;">${edit.originalText.substring(0, 30)}${edit.originalText.length > 30 ? '...' : ''}</span><br>
-                    <span style="color: #4CAF50;">→ ${edit.newText.substring(0, 30)}${edit.newText.length > 30 ? '...' : ''}</span>
-                    <button onclick="removeEdit(${i})" style="float: right; background: none; border: none; color: #DC1F26; cursor: pointer;">✕</button>
-                </div>
-            `).join('');
+            // Now handled by renderLayersPanel
+            renderLayersPanel();
         }
 
         // Remove a text edit
@@ -3206,8 +3620,8 @@
             let originalOverlay = null;
 
             textSpan.addEventListener('mousedown', function(e) {
-                // Only allow dragging in moveText mode
-                if (currentTool !== 'moveText') return;
+                // Allow dragging in both editText and moveText modes
+                if (currentTool !== 'moveText' && currentTool !== 'editText') return;
 
                 // Don't start drag on double-click
                 if (e.detail > 1) return;
@@ -3401,19 +3815,9 @@
             }
 
             if (currentTool === 'addText') {
-                const text = prompt('Enter text to add:');
-                if (text) {
-                    annotations.push({
-                        type: 'text',
-                        x,
-                        y,
-                        text,
-                        color: document.getElementById('textColor').value,
-                        fontSize: document.getElementById('fontSize').value,
-                        page: currentPage
-                    });
-                    redrawAnnotations();
-                }
+                // Store click position and open Add Text modal
+                addTextPosition = { x, y };
+                openAddTextModal();
                 return;
             }
 
@@ -3971,6 +4375,7 @@
 
                 textOverlays.push(overlay);
                 renderTextOverlays();
+                renderLayersPanel();
                 closeOCRModal();
 
                 console.log('✓ Text overlay created:', overlay);
@@ -4085,44 +4490,303 @@
                 if (result) {
                     textOverlays = textOverlays.filter(o => o.id !== overlayId);
                     renderTextOverlays();
+                    renderLayersPanel();
                     selectedOverlay = null;
+                    selectedLayerId = null;
                     console.log('✓ Overlay deleted:', overlayId);
                 }
             });
         }
 
-        // Render overlay list in sidebar
-        function renderOverlayList() {
-            const overlayList = document.getElementById('overlayList');
+        // Track selected layer
+        let selectedLayerId = null;
 
-            if (textOverlays.length === 0) {
-                overlayList.innerHTML = '<em style="font-size: 12px; color: #666;">No overlays yet</em>';
+        // Render overlay list in sidebar (legacy - now calls renderLayersPanel)
+        function renderOverlayList() {
+            renderLayersPanel();
+        }
+
+        // Render the unified layers panel
+        function renderLayersPanel() {
+            const layersList = document.getElementById('layersList');
+            const layerCount = document.getElementById('layerCount');
+
+            if (!layersList || !layerCount) return;
+
+            // Collect all layers from current page
+            const layers = [];
+
+            // Add text edits (edited text spans)
+            textEdits.forEach((edit, index) => {
+                if (edit.page === currentPage) {
+                    layers.push({
+                        type: 'text-edit',
+                        id: `edit-${edit.page}-${edit.index}`,
+                        title: 'Text Edit',
+                        preview: edit.newText,
+                        page: edit.page,
+                        editIndex: index,
+                        dataIndex: edit.index
+                    });
+                }
+            });
+
+            // Add text overlays (OCR/added text)
+            textOverlays.forEach((overlay, index) => {
+                if (overlay.page === currentPage) {
+                    layers.push({
+                        type: 'text-overlay',
+                        id: overlay.id,
+                        title: 'Text Overlay',
+                        preview: overlay.text,
+                        page: overlay.page,
+                        overlayIndex: index
+                    });
+                }
+            });
+
+            // Add signatures from the signatures array
+            signatures.forEach((sig, index) => {
+                if (sig.page === currentPage) {
+                    layers.push({
+                        type: 'signature',
+                        id: sig.id,
+                        title: 'Signature',
+                        preview: 'Signature element',
+                        page: sig.page,
+                        signatureIndex: index,
+                        signatureData: sig
+                    });
+                }
+            });
+
+            // Update count (show total across all pages)
+            const totalLayers = textEdits.length + textOverlays.length + signatures.length;
+            layerCount.textContent = totalLayers;
+
+            // Show empty state or layers
+            if (layers.length === 0) {
+                layersList.innerHTML = `
+                    <div class="layers-empty">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                            <polyline points="2 17 12 22 22 17"/>
+                            <polyline points="2 12 12 17 22 12"/>
+                        </svg>
+                        <div>No layers on this page</div>
+                        <div style="font-size: 11px; margin-top: 4px;">Edit or add text to create layers</div>
+                    </div>
+                `;
                 return;
             }
 
-            overlayList.innerHTML = '';
-            textOverlays.forEach((overlay, index) => {
+            // Render layers
+            layersList.innerHTML = '';
+            layers.forEach((layer, index) => {
                 const item = document.createElement('div');
-                item.className = 'overlay-list-item';
-                if (selectedOverlay === overlay.id) {
-                    item.classList.add('active');
+                item.className = 'layer-item';
+                item.dataset.layerId = layer.id;
+                item.dataset.layerType = layer.type;
+
+                if (selectedLayerId === layer.id) {
+                    item.classList.add('selected');
                 }
 
+                // Icon based on type
+                let iconSvg = '';
+                let iconClass = '';
+                if (layer.type === 'text-edit') {
+                    iconClass = 'text-edit';
+                    iconSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>`;
+                } else if (layer.type === 'text-overlay') {
+                    iconClass = 'text-overlay';
+                    iconSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>`;
+                } else if (layer.type === 'signature') {
+                    iconClass = 'signature';
+                    iconSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 17c3.5-3.5 7-7 11-4s3 6-1 9"/>
+                        <path d="M17 22l4-4"/>
+                    </svg>`;
+                }
+
+                const previewText = layer.preview.length > 25
+                    ? layer.preview.substring(0, 25) + '...'
+                    : layer.preview;
+
                 item.innerHTML = `
-                    <div><strong>Overlay ${index + 1}</strong> (Page ${overlay.page})</div>
-                    <div class="overlay-text-preview">"${overlay.text.substring(0, 30)}${overlay.text.length > 30 ? '...' : ''}"</div>
+                    <div class="layer-item-icon ${iconClass}">
+                        ${iconSvg}
+                    </div>
+                    <div class="layer-item-content">
+                        <div class="layer-item-title">${layer.title}</div>
+                        <div class="layer-item-preview">"${previewText}"</div>
+                    </div>
+                    <div class="layer-item-actions">
+                        <button class="layer-action-btn edit" title="Edit" data-action="edit">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="layer-action-btn delete" title="Delete" data-action="delete">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
                 `;
 
-                item.onclick = () => {
-                    if (overlay.page !== currentPage) {
-                        currentPage = overlay.page;
-                        renderPage(currentPage);
-                    }
-                    selectOverlay(overlay.id);
-                };
+                // Click to select layer
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('.layer-action-btn')) return; // Don't trigger on action buttons
+                    selectLayer(layer);
+                });
 
-                overlayList.appendChild(item);
+                // Action buttons
+                item.querySelector('[data-action="edit"]').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    editLayer(layer);
+                });
+
+                item.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteLayer(layer);
+                });
+
+                layersList.appendChild(item);
             });
+        }
+
+        // Select a layer and highlight its element on canvas
+        function selectLayer(layer) {
+            selectedLayerId = layer.id;
+
+            // Update panel selection
+            document.querySelectorAll('.layer-item').forEach(item => {
+                item.classList.remove('selected');
+                if (item.dataset.layerId === layer.id) {
+                    item.classList.add('selected');
+                }
+            });
+
+            // Highlight element on canvas based on type
+            if (layer.type === 'text-edit') {
+                // Find and highlight the edited text span
+                const textSpan = document.querySelector(
+                    `#textLayer span[data-index="${layer.dataIndex}"][data-page="${layer.page}"]`
+                );
+                if (textSpan) {
+                    highlightElement(textSpan);
+                    textSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } else if (layer.type === 'text-overlay') {
+                // Find and highlight the overlay
+                selectOverlay(layer.id);
+                const element = document.getElementById(layer.id);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } else if (layer.type === 'signature') {
+                // Find and highlight the signature
+                const element = document.querySelector(`[data-signature-id="${layer.id}"]`);
+                if (element) {
+                    // Select the signature
+                    selectedSignature = layer.signatureData;
+                    renderSignatures();
+                    highlightElement(element);
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        // Highlight an element temporarily
+        function highlightElement(element) {
+            // Remove previous highlights
+            document.querySelectorAll('.layer-highlight').forEach(el => {
+                el.classList.remove('layer-highlight');
+            });
+
+            element.classList.add('layer-highlight');
+
+            // Add highlight animation
+            element.style.animation = 'layerHighlight 0.5s ease-out';
+            setTimeout(() => {
+                element.style.animation = '';
+            }, 500);
+        }
+
+        // Edit a layer
+        function editLayer(layer) {
+            if (layer.type === 'text-edit') {
+                // Find the text span and trigger edit
+                const textSpan = document.querySelector(
+                    `#textLayer span[data-index="${layer.dataIndex}"][data-page="${layer.page}"]`
+                );
+                if (textSpan) {
+                    // Trigger edit modal for this span
+                    const edit = textEdits[layer.editIndex];
+                    if (edit) {
+                        currentEditingTextItem = {
+                            span: textSpan,
+                            original: edit.originalText,
+                            page: edit.page,
+                            index: edit.index,
+                            item: { str: edit.originalText, fontName: edit.fontName },
+                            originalWidth: edit.originalWidth || textSpan.offsetWidth
+                        };
+                        document.getElementById('originalText').textContent = edit.originalText;
+                        document.getElementById('editTextArea').value = edit.newText;
+
+                        // Populate styling fields with saved values
+                        const fontSize = edit.customFontSize || Math.round(parseFloat(textSpan.style.fontSize)) || 14;
+                        document.getElementById('editTextFontSize').value = fontSize;
+                        document.getElementById('editTextFontSizeValue').textContent = fontSize + 'px';
+                        document.getElementById('editTextColor').value = edit.customColor || '#000000';
+                        document.getElementById('editTextBgColor').value = edit.customBgColor || '#ffffff';
+                        document.getElementById('editTextFontFamily').value = edit.customFontFamily || 'Arial, sans-serif';
+
+                        document.getElementById('editModal').style.display = 'flex';
+                    }
+                }
+            } else if (layer.type === 'text-overlay') {
+                editOverlay(layer.id);
+            } else if (layer.type === 'signature') {
+                showNotification('Signatures cannot be edited directly. Delete and add a new one.', 'info');
+            }
+        }
+
+        // Delete a layer
+        function deleteLayer(layer) {
+            if (layer.type === 'text-edit') {
+                showConfirm('Delete this text edit?', (result) => {
+                    if (result) {
+                        removeEdit(layer.editIndex);
+                        selectedLayerId = null;
+                        renderLayersPanel();
+                    }
+                });
+            } else if (layer.type === 'text-overlay') {
+                deleteOverlay(layer.id);
+            } else if (layer.type === 'signature') {
+                showConfirm('Delete this signature?', (result) => {
+                    if (result) {
+                        // Remove from signatures array
+                        signatures.splice(layer.signatureIndex, 1);
+                        selectedSignature = null;
+                        selectedLayerId = null;
+                        renderSignatures();
+                        renderLayersPanel();
+                        showNotification('Signature deleted', 'success');
+                    }
+                });
+            }
         }
 
         // Edit an existing overlay
@@ -4130,64 +4794,66 @@
             const overlay = textOverlays.find(o => o.id === overlayId);
             if (!overlay) return;
 
-            // Create edit modal
+            // Create edit modal with dark theme
             const modal = document.createElement('div');
-            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+            modal.className = 'overlay-edit-modal';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000; animation: fadeIn 0.2s ease-out;';
 
             modal.innerHTML = `
-                <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%;">
-                    <h3 style="margin: 0 0 20px 0; color: #333;">Edit Text Overlay</h3>
+                <div style="background: #1a1a1a; padding: 32px; border-radius: 16px; max-width: 520px; width: 90%; border: 1px solid #333; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8); animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                    <h3 style="margin: 0 0 24px 0; color: #ffffff; font-size: 22px; display: flex; align-items: center; gap: 10px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Edit Text
+                    </h3>
 
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Text:</label>
-                        <textarea id="editOverlayText" style="width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; resize: vertical;">${overlay.text}</textarea>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text:</label>
+                        <textarea id="editOverlayText" style="width: 100%; height: 100px; padding: 12px; border: 2px solid #333; border-radius: 8px; font-family: inherit; resize: vertical; background: #2a2a2a; color: #ffffff; font-size: 14px; transition: border-color 0.3s; box-sizing: border-box;" onfocus="this.style.borderColor='#E50914'" onblur="this.style.borderColor='#333'">${overlay.text}</textarea>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <!-- Font Size with slider and presets -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font Size: <span id="editOverlayFontSizeValue" style="color: #E50914; font-weight: 600;">${overlay.fontSize}px</span></label>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <input type="range" id="editFontSize" value="${overlay.fontSize}" min="8" max="72" style="flex: 1; height: 6px; accent-color: #E50914; cursor: pointer;" oninput="document.getElementById('editOverlayFontSizeValue').textContent = this.value + 'px'">
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 10px;">
+                            <button type="button" onclick="setFontSize('editFontSize', 'editOverlayFontSizeValue', 10)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">10</button>
+                            <button type="button" onclick="setFontSize('editFontSize', 'editOverlayFontSizeValue', 12)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">12</button>
+                            <button type="button" onclick="setFontSize('editFontSize', 'editOverlayFontSizeValue', 14)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">14</button>
+                            <button type="button" onclick="setFontSize('editFontSize', 'editOverlayFontSizeValue', 18)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">18</button>
+                            <button type="button" onclick="setFontSize('editFontSize', 'editOverlayFontSizeValue', 24)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">24</button>
+                            <button type="button" onclick="setFontSize('editFontSize', 'editOverlayFontSizeValue', 36)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3a3a3a'; this.style.borderColor='#E50914'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#444'">36</button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
                         <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Font Size:</label>
-                            <input type="number" id="editFontSize" value="${overlay.fontSize}" min="8" max="72" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text Color:</label>
+                            <input type="color" id="editTextColor" value="${overlay.color}" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
                         </div>
                         <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Text Color:</label>
-                            <input type="color" id="editTextColor" value="${overlay.color}" style="width: 100%; height: 38px; border: 1px solid #ddd; border-radius: 6px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Background:</label>
+                            <input type="color" id="editBgColor" value="${rgbaToHex(overlay.bgColor)}" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
                         </div>
                         <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Background:</label>
-                            <input type="color" id="editBgColor" value="${rgbaToHex(overlay.bgColor)}" style="width: 100%; height: 38px; border: 1px solid #ddd; border-radius: 6px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Text Opacity:</label>
-                            <input type="range" id="editTextOpacity" value="${(overlay.textOpacity !== undefined ? overlay.textOpacity : 1) * 100}" min="0" max="100" style="width: 100%;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Font Family:</label>
-                            <select id="editFontFamily" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font:</label>
+                            <select id="editFontFamily" style="width: 100%; padding: 10px 8px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; color: #ffffff; font-size: 13px; cursor: pointer; box-sizing: border-box;">
                                 <option value="Arial, sans-serif" ${(overlay.fontFamily || 'Arial, sans-serif') === 'Arial, sans-serif' ? 'selected' : ''}>Arial</option>
                                 <option value="'Times New Roman', serif" ${overlay.fontFamily === "'Times New Roman', serif" ? 'selected' : ''}>Times New Roman</option>
                                 <option value="'Courier New', monospace" ${overlay.fontFamily === "'Courier New', monospace" ? 'selected' : ''}>Courier New</option>
                                 <option value="Georgia, serif" ${overlay.fontFamily === 'Georgia, serif' ? 'selected' : ''}>Georgia</option>
                                 <option value="Verdana, sans-serif" ${overlay.fontFamily === 'Verdana, sans-serif' ? 'selected' : ''}>Verdana</option>
-                                <option value="'Trebuchet MS', sans-serif" ${overlay.fontFamily === "'Trebuchet MS', sans-serif" ? 'selected' : ''}>Trebuchet MS</option>
-                                <option value="'Comic Sans MS', cursive" ${overlay.fontFamily === "'Comic Sans MS', cursive" ? 'selected' : ''}>Comic Sans MS</option>
-                                <option value="Impact, sans-serif" ${overlay.fontFamily === 'Impact, sans-serif' ? 'selected' : ''}>Impact</option>
-                                <option value="'Lucida Console', monospace" ${overlay.fontFamily === "'Lucida Console', monospace" ? 'selected' : ''}>Lucida Console</option>
-                                <option value="Tahoma, sans-serif" ${overlay.fontFamily === 'Tahoma, sans-serif' ? 'selected' : ''}>Tahoma</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Alignment:</label>
-                            <select id="editAlignment" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-                                <option value="left" ${overlay.alignment === 'left' ? 'selected' : ''}>Left</option>
-                                <option value="center" ${overlay.alignment === 'center' ? 'selected' : ''}>Center</option>
-                                <option value="right" ${overlay.alignment === 'right' ? 'selected' : ''}>Right</option>
                             </select>
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button onclick="this.closest('div[style*=\\'position: fixed\\']').remove()" style="padding: 10px 20px; background: #f5f5f5; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
-                        <button onclick="saveOverlayEdit('${overlayId}')" style="padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Save Changes</button>
+                    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                        <button onclick="this.closest('.overlay-edit-modal').remove()" style="padding: 12px 24px; background: #2a2a2a; color: #ffffff; border: 2px solid #333; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s;" onmouseover="this.style.background='#3a3a3a'" onmouseout="this.style.background='#2a2a2a'">Cancel</button>
+                        <button onclick="saveOverlayEdit('${overlayId}')" style="padding: 12px 24px; background: #E50914; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4); transition: all 0.3s;" onmouseover="this.style.background='#C40812'; this.style.boxShadow='0 6px 18px rgba(229, 9, 20, 0.5)'" onmouseout="this.style.background='#E50914'; this.style.boxShadow='0 4px 12px rgba(229, 9, 20, 0.4)'">Save Changes</button>
                     </div>
                 </div>
             `;
@@ -4225,9 +4891,10 @@
             overlay.alignment = document.getElementById('editAlignment').value;
 
             renderTextOverlays();
-            document.querySelector('div[style*="position: fixed"]').remove();
+            renderLayersPanel();
+            document.querySelector('.overlay-edit-modal').remove();
 
-            console.log('✓ Overlay updated:', overlayId);
+            showNotification('Text overlay updated!', 'success');
         }
 
         // Drag functionality

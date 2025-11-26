@@ -1,0 +1,593 @@
+/**
+ * PDFOX Application Module
+ * Main application initialization and coordination
+ * Single Responsibility: Application bootstrapping and global coordination
+ */
+
+const PDFoxApp = (function() {
+    'use strict';
+
+    const core = PDFoxCore;
+    const ui = PDFoxUI;
+    const { hexToRgba } = PDFoxUtils;
+
+    // Module references
+    let renderer, textEditor, layers, annotations, signatures, overlays;
+
+    /**
+     * Set current tool
+     * @param {string} tool - Tool name
+     */
+    function setTool(tool) {
+        const toolButton = document.getElementById(tool + 'Tool');
+        if (toolButton && toolButton.disabled) {
+            console.log(`Tool "${tool}" is disabled`);
+            return;
+        }
+
+        core.set('currentTool', tool);
+
+        // Update button states
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        if (toolButton) toolButton.classList.add('active');
+
+        // Update cursor and pointer events
+        const annCanvas = document.getElementById('annotationCanvas');
+        const textLayer = document.getElementById('textLayer');
+
+        if (tool === 'editText' || tool === 'moveText') {
+            if (annCanvas) {
+                annCanvas.style.cursor = 'default';
+                annCanvas.style.pointerEvents = 'none';
+            }
+            if (textLayer) textLayer.classList.add('editable');
+        } else {
+            if (annCanvas) {
+                annCanvas.style.cursor = 'crosshair';
+                annCanvas.style.pointerEvents = 'auto';
+            }
+            if (textLayer) textLayer.classList.remove('editable');
+        }
+    }
+
+    /**
+     * Undo last action
+     */
+    function undo() {
+        const action = core.popHistory();
+        if (!action) {
+            ui.showAlert('Nothing to undo', 'info');
+            return;
+        }
+
+        const currentPage = core.get('currentPage');
+
+        switch (action.type) {
+            case 'annotation':
+                core.remove('annotations', ann => ann === action.data);
+                annotations.redraw();
+                ui.showNotification('Drawing removed', 'success');
+                break;
+
+            case 'signature':
+                core.remove('signatures', sig => sig === action.data);
+                ui.showNotification('Signature removed', 'success');
+                break;
+
+            case 'textEditCreate':
+                core.remove('textEdits', edit =>
+                    edit.page === action.edit.page && edit.index === action.edit.index
+                );
+                renderer.renderPage(currentPage);
+                ui.showNotification('Text edit removed', 'success');
+                break;
+
+            case 'textEditUpdate':
+                core.updateAt('textEdits', action.editIndex, action.previousState);
+                renderer.renderPage(currentPage);
+                ui.showNotification('Text edit reverted', 'success');
+                break;
+
+            case 'textMove':
+                const textEdits = core.get('textEdits');
+                if (textEdits[action.editIndex]) {
+                    textEdits[action.editIndex].x = action.previousX;
+                    textEdits[action.editIndex].y = action.previousY;
+                    renderer.renderPage(currentPage);
+                }
+                ui.showNotification('Text position restored', 'success');
+                break;
+
+            case 'removeArea':
+                annotations.restoreRemovedArea(action.data);
+                ui.showNotification('Removed area restored', 'success');
+                break;
+        }
+    }
+
+    /**
+     * Save PDF with all modifications
+     */
+    async function savePDF() {
+        const pdfBytes = core.get('pdfBytes');
+
+        if (!pdfBytes || pdfBytes.length === 0) {
+            ui.showAlert('PDF data not loaded. Please reload the page.', 'error');
+            return;
+        }
+
+        ui.showLoading('Saving PDF...');
+
+        try {
+            // Load PDF with pdf-lib
+            const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+            const pages = pdfDoc.getPages();
+            const SCALE_FACTOR = 1.5;
+
+            const textEdits = core.get('textEdits');
+            const textOverlays = core.get('textOverlays');
+            const allAnnotations = core.get('annotations');
+            const allSignatures = core.get('signatures');
+            const removedAreas = annotations.getRemovedAreas();
+
+            // Apply text edits
+            for (const edit of textEdits) {
+                const page = pages[edit.page - 1];
+                const { width, height } = page.getSize();
+
+                const actualX = edit.x / SCALE_FACTOR;
+                const actualY = edit.y / SCALE_FACTOR;
+                const originalX = (edit.originalX !== undefined ? edit.originalX : edit.x) / SCALE_FACTOR;
+                const originalY = (edit.originalY !== undefined ? edit.originalY : edit.y) / SCALE_FACTOR;
+                const actualFontSize = edit.fontSize / SCALE_FACTOR;
+                const actualWidth = (edit.width || (edit.originalText.length * edit.fontSize * 0.5)) / SCALE_FACTOR;
+                const actualPadding = (actualFontSize * 0.2) / SCALE_FACTOR;
+
+                const fontAscent = actualFontSize;
+                const baselineFromTop = actualY + fontAscent;
+                const baselineFromBottom = height - baselineFromTop;
+
+                const originalBaselineFromTop = originalY + fontAscent;
+                const originalBaselineFromBottom = height - originalBaselineFromTop;
+
+                const rectY = originalBaselineFromBottom - (actualFontSize * 0.2);
+                const rectHeight = actualFontSize * 1.5;
+
+                // Cover original text
+                page.drawRectangle({
+                    x: originalX - actualPadding,
+                    y: rectY,
+                    width: actualWidth + (actualPadding * 2),
+                    height: rectHeight,
+                    color: PDFLib.rgb(1, 1, 1)
+                });
+
+                // Draw new text
+                const rgb = hexToRgb(edit.customColor || '#000000');
+                page.drawText(edit.newText, {
+                    x: actualX,
+                    y: baselineFromBottom,
+                    size: actualFontSize,
+                    color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255)
+                });
+            }
+
+            // Apply annotations
+            for (const ann of allAnnotations) {
+                const page = pages[ann.page - 1];
+                const { height } = page.getSize();
+                const rgb = hexToRgb(ann.color);
+
+                if (ann.type === 'draw' && ann.points && ann.points.length > 1) {
+                    for (let i = 0; i < ann.points.length - 1; i++) {
+                        const [x1, y1] = ann.points[i];
+                        const [x2, y2] = ann.points[i + 1];
+
+                        page.drawLine({
+                            start: { x: x1 / SCALE_FACTOR, y: height - (y1 / SCALE_FACTOR) },
+                            end: { x: x2 / SCALE_FACTOR, y: height - (y2 / SCALE_FACTOR) },
+                            thickness: ann.size / SCALE_FACTOR,
+                            color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
+                            lineCap: PDFLib.LineCapStyle.Round
+                        });
+                    }
+                } else if (ann.type === 'rectangle') {
+                    const w = ann.endX - ann.startX;
+                    const h = ann.endY - ann.startY;
+
+                    page.drawRectangle({
+                        x: ann.startX / SCALE_FACTOR,
+                        y: height - (ann.startY / SCALE_FACTOR) - (h / SCALE_FACTOR),
+                        width: w / SCALE_FACTOR,
+                        height: h / SCALE_FACTOR,
+                        borderColor: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
+                        borderWidth: ann.size / SCALE_FACTOR
+                    });
+                } else if (ann.type === 'circle') {
+                    const radius = Math.sqrt(
+                        Math.pow(ann.endX - ann.startX, 2) +
+                        Math.pow(ann.endY - ann.startY, 2)
+                    );
+
+                    page.drawCircle({
+                        x: ann.startX / SCALE_FACTOR,
+                        y: height - (ann.startY / SCALE_FACTOR),
+                        size: radius / SCALE_FACTOR,
+                        borderColor: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
+                        borderWidth: ann.size / SCALE_FACTOR
+                    });
+                }
+            }
+
+            // Apply removed areas
+            for (const area of removedAreas) {
+                const page = pages[area.page - 1];
+                const { height } = page.getSize();
+
+                page.drawRectangle({
+                    x: area.x / SCALE_FACTOR,
+                    y: height - (area.y / SCALE_FACTOR) - (area.height / SCALE_FACTOR),
+                    width: area.width / SCALE_FACTOR,
+                    height: area.height / SCALE_FACTOR,
+                    color: PDFLib.rgb(1, 1, 1),
+                    borderWidth: 0
+                });
+            }
+
+            // Apply text overlays
+            for (const overlay of textOverlays) {
+                const page = pages[overlay.page - 1];
+                const { height } = page.getSize();
+
+                const actualX = overlay.x / SCALE_FACTOR;
+                const actualY = overlay.y / SCALE_FACTOR;
+                const actualWidth = overlay.width / SCALE_FACTOR;
+                const actualHeight = overlay.height / SCALE_FACTOR;
+                const actualFontSize = overlay.fontSize / SCALE_FACTOR;
+
+                const pdfX = actualX;
+                const pdfY = height - actualY - actualHeight;
+
+                // Font mapping
+                const fontMap = {
+                    'courier': PDFLib.StandardFonts.Courier,
+                    'monospace': PDFLib.StandardFonts.Courier,
+                    'times': PDFLib.StandardFonts.TimesRoman,
+                    'georgia': PDFLib.StandardFonts.TimesRoman
+                };
+
+                let pdfFont = PDFLib.StandardFonts.Helvetica;
+                const fontLower = (overlay.fontFamily || '').toLowerCase();
+                for (const [key, value] of Object.entries(fontMap)) {
+                    if (fontLower.includes(key)) {
+                        pdfFont = value;
+                        break;
+                    }
+                }
+
+                const font = await pdfDoc.embedFont(pdfFont);
+
+                // Draw background
+                const bgMatch = overlay.bgColor.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/);
+                if (bgMatch) {
+                    const bgR = parseInt(bgMatch[1]) / 255;
+                    const bgG = parseInt(bgMatch[2]) / 255;
+                    const bgB = parseInt(bgMatch[3]) / 255;
+                    const bgOpacity = bgMatch[4] !== undefined ? parseFloat(bgMatch[4]) : 1;
+
+                    if (bgOpacity > 0) {
+                        page.drawRectangle({
+                            x: pdfX,
+                            y: pdfY,
+                            width: actualWidth,
+                            height: actualHeight,
+                            color: PDFLib.rgb(bgR, bgG, bgB),
+                            opacity: bgOpacity,
+                            borderWidth: 0
+                        });
+                    }
+                }
+
+                // Draw text
+                const textColor = hexToRgb(overlay.color);
+                const textOpacity = overlay.textOpacity !== undefined ? overlay.textOpacity : 1;
+
+                const paddingX = 8 / SCALE_FACTOR;
+                const paddingY = 4 / SCALE_FACTOR;
+                const textHeightAboveBaseline = actualFontSize * 0.75;
+                const startY = pdfY + actualHeight - paddingY - textHeightAboveBaseline;
+
+                page.drawText(overlay.text, {
+                    x: pdfX + paddingX,
+                    y: startY,
+                    size: actualFontSize,
+                    font: font,
+                    color: PDFLib.rgb(textColor.r / 255, textColor.g / 255, textColor.b / 255),
+                    opacity: textOpacity
+                });
+            }
+
+            // Apply signatures
+            for (const signature of allSignatures) {
+                const page = pages[signature.page - 1];
+                const { height } = page.getSize();
+
+                const actualX = signature.x / SCALE_FACTOR;
+                const actualY = signature.y / SCALE_FACTOR;
+                const actualWidth = signature.width / SCALE_FACTOR;
+                const actualHeight = signature.height / SCALE_FACTOR;
+
+                const pdfX = actualX;
+                const pdfY = height - actualY - actualHeight;
+
+                const imageBytes = await fetch(signature.image).then(res => res.arrayBuffer());
+                let signatureImage;
+
+                if (signature.image.startsWith('data:image/png')) {
+                    signatureImage = await pdfDoc.embedPng(imageBytes);
+                } else {
+                    signatureImage = await pdfDoc.embedJpg(imageBytes);
+                }
+
+                page.drawImage(signatureImage, {
+                    x: pdfX,
+                    y: pdfY,
+                    width: actualWidth,
+                    height: actualHeight
+                });
+            }
+
+            // Save and download
+            const pdfBytesModified = await pdfDoc.save();
+            const blob = new Blob([pdfBytesModified], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (document.getElementById('docName')?.value || 'edited') + '.pdf';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            ui.hideLoading();
+            ui.showAlert('PDF saved successfully!', 'success');
+        } catch (error) {
+            console.error('Error saving PDF:', error);
+            ui.hideLoading();
+            ui.showAlert('Failed to save PDF: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Helper: hex to RGB
+     */
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+    }
+
+    /**
+     * Go back to home
+     */
+    function goBack() {
+        const textEdits = core.get('textEdits');
+        const textOverlays = core.get('textOverlays');
+        const allAnnotations = core.get('annotations');
+
+        if (textEdits.length > 0 || allAnnotations.length > 0 || textOverlays.length > 0) {
+            ui.showConfirm('You have unsaved changes. Go back anyway?', (confirmed) => {
+                if (confirmed) {
+                    window.location.href = '/';
+                }
+            });
+        } else {
+            window.location.href = '/';
+        }
+    }
+
+    /**
+     * Handle file open
+     * @param {Event} event - File input event
+     */
+    function handleFileOpen(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const processFile = async () => {
+            ui.showLoading('Loading PDF...');
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    sessionStorage.setItem('pdfToEdit', e.target.result);
+                    sessionStorage.setItem('pdfFileName', file.name);
+                    window.location.reload();
+                } catch (error) {
+                    ui.hideLoading();
+                    ui.showAlert('Failed to load PDF: ' + error.message, 'error');
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+
+        const textEdits = core.get('textEdits');
+        const textOverlays = core.get('textOverlays');
+        const allAnnotations = core.get('annotations');
+
+        if (textEdits.length > 0 || allAnnotations.length > 0 || textOverlays.length > 0) {
+            ui.showConfirm('Opening a new file will discard unsaved changes. Continue?', (confirmed) => {
+                if (confirmed) {
+                    processFile();
+                } else {
+                    event.target.value = '';
+                }
+            });
+        } else {
+            processFile();
+        }
+    }
+
+    /**
+     * Setup keyboard shortcuts
+     */
+    function setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Escape - close modals
+            if (e.key === 'Escape') {
+                const editModal = document.getElementById('editModal');
+                const addTextModal = document.getElementById('addTextModal');
+                const signatureModal = document.getElementById('signatureModal');
+
+                if (editModal?.style.display === 'flex') {
+                    textEditor.closeEditModal();
+                } else if (addTextModal?.style.display === 'flex') {
+                    textEditor.closeAddTextModal();
+                } else if (signatureModal?.style.display === 'flex') {
+                    signatures.closeModal();
+                }
+            }
+
+            // Ctrl+S - Save
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                savePDF();
+            }
+
+            // Ctrl+Z - Undo
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            }
+        });
+    }
+
+    /**
+     * Setup beforeunload warning
+     */
+    function setupBeforeUnloadWarning() {
+        window.addEventListener('beforeunload', (e) => {
+            const textEdits = core.get('textEdits');
+            const textOverlays = core.get('textOverlays');
+            const allAnnotations = core.get('annotations');
+
+            if (textEdits.length > 0 || allAnnotations.length > 0 || textOverlays.length > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+                return 'You have unsaved changes.';
+            }
+        });
+    }
+
+    return {
+        /**
+         * Initialize application
+         */
+        async init() {
+            // Get canvas elements
+            const pdfCanvas = document.getElementById('pdfCanvas');
+            const annotationCanvas = document.getElementById('annotationCanvas');
+            const textLayer = document.getElementById('textLayer');
+
+            if (!pdfCanvas || !annotationCanvas || !textLayer) {
+                console.error('Required canvas elements not found');
+                return;
+            }
+
+            // Initialize modules
+            renderer = PDFoxRenderer;
+            textEditor = PDFoxTextEditor;
+            layers = PDFoxLayers;
+            annotations = PDFoxAnnotations;
+            signatures = PDFoxSignatures;
+            overlays = PDFoxOverlays;
+
+            renderer.init({
+                pdfCanvas,
+                annotationCanvas,
+                textLayer
+            });
+
+            annotations.init({
+                annotationCanvas,
+                pdfCanvas
+            });
+
+            textEditor.init();
+            layers.init();
+            signatures.init();
+            overlays.init();
+
+            // Note: addText:click is now handled directly in annotations module
+
+            // Setup event handlers
+            setupKeyboardShortcuts();
+            setupBeforeUnloadWarning();
+
+            // Wire up file input
+            const fileInput = document.getElementById('openFileInput');
+            if (fileInput) {
+                fileInput.addEventListener('change', handleFileOpen);
+            }
+
+            // Wire up brush size display
+            const brushSize = document.getElementById('brushSize');
+            const sizeValue = document.getElementById('sizeValue');
+            if (brushSize && sizeValue) {
+                brushSize.addEventListener('input', () => {
+                    sizeValue.textContent = brushSize.value;
+                });
+            }
+
+            // Load PDF from session storage
+            const pdfData = sessionStorage.getItem('pdfToEdit');
+            const fileName = sessionStorage.getItem('pdfFileName');
+
+            if (!pdfData) {
+                ui.showAlert('No PDF file found. Redirecting to home...', 'error');
+                setTimeout(() => window.location.href = '/', 2000);
+                return;
+            }
+
+            // Set document name
+            const docName = document.getElementById('docName');
+            if (docName && fileName) {
+                docName.value = fileName.replace('.pdf', '');
+            }
+
+            try {
+                // Convert data URL to bytes
+                const base64Data = pdfData.split(',')[1];
+                if (!base64Data) {
+                    throw new Error('Invalid PDF data format');
+                }
+
+                const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+                core.set('pdfBytes', pdfBytes);
+
+                // Load PDF
+                await renderer.loadPDF(new Uint8Array(pdfBytes));
+
+                // Set default tool
+                setTool('editText');
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                ui.showAlert('Failed to load PDF: ' + error.message, 'error');
+            }
+        },
+
+        // Expose public methods
+        setTool,
+        undo,
+        savePDF,
+        goBack
+    };
+})();
+
+// Export for ES modules if supported
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = PDFoxApp;
+}
