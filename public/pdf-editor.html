@@ -2563,12 +2563,20 @@
                         // Check if one text contains the other (substring relationship)
                         if (text1.includes(text2) && text1.length > text2.length) {
                             // text1 is longer and contains text2, skip text2
+                            // Use left-most x position for the longer text
+                            if (item2.x < item1.x) {
+                                item1.original.transform[4] = item2.original.transform[4];
+                            }
                             processedItems[j].skip = true;
                             console.log(`Filtering duplicate: "${text2}" (contained in "${text1}") at positions (${item1.x}, ${item1.y}) and (${item2.x}, ${item2.y})`);
                         } else if (text2.includes(text1) && text2.length > text1.length) {
                             // text2 is longer and contains text1, skip text1
+                            // Use left-most x position for the longer text
+                            if (item1.x < item2.x) {
+                                item2.original.transform[4] = item1.original.transform[4];
+                            }
                             processedItems[i].skip = true;
-                            console.log(`Filtering duplicate: "${text1}" (contained in "${text2}") at positions (${item1.x}, ${item1.y}) and (${item2.x}, ${item2.y})`);
+                            console.log(`Filtering duplicate: "${text1}" (contained in "${text2}") at positions (${item1.x}, ${item1.y}) and (${item2.x}, ${item2.y}). Using left-most position.`);
                             break; // Move to next i since this one is skipped
                         }
                     }
