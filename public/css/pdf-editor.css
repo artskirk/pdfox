@@ -162,38 +162,72 @@ body {
    ========================================================================== */
 .toolbar {
     background: var(--color-bg-primary);
-    padding: 18px 35px;
+    padding: 12px 24px;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.8);
     display: flex;
-    gap: 12px;
+    gap: 8px;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
     border-bottom: 1px solid #222;
 }
 
 .tool-group {
     display: flex;
-    gap: 5px;
-    padding: 5px;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px;
     border-right: 1px solid var(--color-border);
+    position: relative;
 }
 
 .tool-group:last-child { border-right: none; }
 
+.tool-group-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--color-text-muted);
+    text-align: center;
+    margin-bottom: 2px;
+}
+
+.tool-group .tool-buttons {
+    display: flex;
+    gap: 5px;
+}
+
 .tool-btn {
     background: var(--color-bg-tertiary);
     border: 2px solid transparent;
-    padding: 12px 18px;
+    padding: 10px 14px;
     border-radius: 6px;
     cursor: pointer;
     transition: all var(--transition-normal);
     font-size: 20px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     box-shadow: var(--shadow-sm);
     color: var(--color-text-primary);
     position: relative;
+    min-width: 60px;
+}
+
+.tool-btn small {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    transition: color var(--transition-fast);
+}
+
+.tool-btn:hover small {
+    color: var(--color-text-primary);
+}
+
+.tool-btn.active small {
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .tool-btn:hover {
@@ -206,14 +240,14 @@ body {
 .tool-btn[data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
-    bottom: -38px;
+    top: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%);
     background: var(--color-bg-secondary);
     color: var(--color-text-primary);
     padding: 6px 12px;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     white-space: nowrap;
     opacity: 0;
@@ -228,7 +262,7 @@ body {
 .tool-btn[data-tooltip]::before {
     content: '';
     position: absolute;
-    bottom: -10px;
+    top: 100%;
     left: 50%;
     transform: translateX(-50%);
     border: 6px solid transparent;

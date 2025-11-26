@@ -90,85 +90,113 @@
     <input type="file" id="openFileInput" accept=".pdf" style="display: none;">
 
     <div class="toolbar">
-        <div class="tool-group">
-            <button class="tool-btn active" id="editTextTool" data-tool="editText" onclick="PDFoxApp.setTool('editText')" data-tooltip="Edit existing text in the PDF">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <small>Edit Text</small>
-            </button>
-            <button class="tool-btn" id="addTextTool" data-tool="addText" onclick="PDFoxApp.setTool('addText')" data-tooltip="Add new text to the PDF">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                    <path d="M8 3h8M12 3v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <small>Add Text</small>
-            </button>
-            <button class="tool-btn" id="moveTextTool" data-tool="moveText" onclick="PDFoxApp.setTool('moveText')" data-tooltip="Move and resize text overlays">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <circle cx="12" cy="12" r="2" fill="currentColor"/>
-                </svg>
-                <small>Move Text</small>
-            </button>
-            <button class="tool-btn" id="ocrSelectTool" data-tool="ocrSelect" onclick="PDFoxApp.setTool('ocrSelect')" data-tooltip="Select area for OCR text extraction">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"/>
-                    <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <small>Select Text</small>
-            </button>
-            <button class="tool-btn" id="eraseTool" data-tool="erase" onclick="PDFoxApp.setTool('erase')" data-tooltip="Erase/redact content from PDF">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 6h16v2H4z" fill="currentColor"/>
-                    <path d="M5 16l2-8h10l2 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-                    <rect x="7" y="16" width="10" height="5" rx="1" fill="currentColor"/>
-                    <path d="M9 8l3-4 3 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <small>Erase</small>
-            </button>
+        <!-- GROUP 1: Text Tools - Primary editing workflow -->
+        <div class="tool-group" data-group="text">
+            <span class="tool-group-label">Text</span>
+            <div class="tool-buttons">
+                <button class="tool-btn active" id="editTextTool" data-tool="editText" onclick="PDFoxApp.setTool('editText')" data-tooltip="Click on text to edit it">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>Edit</small>
+                </button>
+                <button class="tool-btn" id="addTextTool" data-tool="addText" onclick="PDFoxApp.setTool('addText')" data-tooltip="Click anywhere to add new text">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M8 3h8M12 3v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>Add</small>
+                </button>
+                <button class="tool-btn" id="moveTextTool" data-tool="moveText" onclick="PDFoxApp.setTool('moveText')" data-tooltip="Drag to move or resize added text">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                    </svg>
+                    <small>Move</small>
+                </button>
+            </div>
         </div>
 
-        <div class="tool-group">
-            <button class="tool-btn" id="drawTool" data-tool="draw" onclick="PDFoxApp.setTool('draw')" data-tooltip="Freehand drawing">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 19l7 2-2-7-7-7-5 5 7 7z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </button>
-            <button class="tool-btn" id="rectangleTool" data-tool="rectangle" onclick="PDFoxApp.setTool('rectangle')" data-tooltip="Draw rectangle shape">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
-                </svg>
-            </button>
-            <button class="tool-btn" id="circleTool" data-tool="circle" onclick="PDFoxApp.setTool('circle')" data-tooltip="Draw circle shape">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>
-                </svg>
-            </button>
+        <!-- GROUP 2: Selection & Extraction -->
+        <div class="tool-group" data-group="select">
+            <span class="tool-group-label">Select</span>
+            <div class="tool-buttons">
+                <button class="tool-btn" id="ocrSelectTool" data-tool="ocrSelect" onclick="PDFoxApp.setTool('ocrSelect')" data-tooltip="Draw area to extract text with OCR">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"/>
+                        <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>OCR</small>
+                </button>
+            </div>
         </div>
 
-        <div class="tool-group">
-            <button class="tool-btn" id="signatureTool" onclick="PDFoxSignatures.openModal()" data-tooltip="Add your signature">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 17l2.5-2.5M6 10l4-4 4 4-4 4-4-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M14 14l4.5 4.5M18.5 18.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M3 21h4.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
-                <small>Signature</small>
-            </button>
+        <!-- GROUP 3: Annotations - Drawing and shapes -->
+        <div class="tool-group" data-group="annotate">
+            <span class="tool-group-label">Annotate</span>
+            <div class="tool-buttons">
+                <button class="tool-btn" id="drawTool" data-tool="draw" onclick="PDFoxApp.setTool('draw')" data-tooltip="Freehand pen drawing">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 19l7 2-2-7-7-7-5 5 7 7z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>Draw</small>
+                </button>
+                <button class="tool-btn" id="rectangleTool" data-tool="rectangle" onclick="PDFoxApp.setTool('rectangle')" data-tooltip="Draw a rectangle shape">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <small>Rect</small>
+                </button>
+                <button class="tool-btn" id="circleTool" data-tool="circle" onclick="PDFoxApp.setTool('circle')" data-tooltip="Draw a circle shape">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <small>Circle</small>
+                </button>
+            </div>
         </div>
 
-        <!-- Hidden color picker and brush size for internal use -->
+        <!-- GROUP 4: Sign & Redact - Finalization tools -->
+        <div class="tool-group" data-group="finalize">
+            <span class="tool-group-label">Finalize</span>
+            <div class="tool-buttons">
+                <button class="tool-btn" id="signatureTool" onclick="PDFoxSignatures.openModal()" data-tooltip="Add your signature to the document">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 17l2.5-2.5M6 10l4-4 4 4-4 4-4-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M14 14l4.5 4.5M18.5 18.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M3 21h4.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                    <small>Sign</small>
+                </button>
+                <button class="tool-btn" id="eraseTool" data-tool="erase" onclick="PDFoxApp.setTool('erase')" data-tooltip="Draw area to redact/remove content">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M3 3l18 18M21 3l-18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>Redact</small>
+                </button>
+            </div>
+        </div>
+
+        <!-- Hidden inputs for internal use -->
         <input type="color" id="colorPicker" value="#DC1F26" style="display: none;">
         <input type="hidden" id="brushSize" value="3">
         <span id="sizeValue" style="display: none;">3</span>
 
-        <div class="tool-group">
-            <button class="tool-btn" onclick="PDFoxApp.undo()" data-tooltip="Undo last action (Ctrl+Z)">
-                <span>↶</span>
-            </button>
+        <!-- GROUP 5: Actions -->
+        <div class="tool-group" data-group="actions">
+            <span class="tool-group-label">Actions</span>
+            <div class="tool-buttons">
+                <button class="tool-btn" onclick="PDFoxApp.undo()" data-tooltip="Undo last action (Ctrl+Z)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 10h10c4 0 7 3 7 7s-3 7-7 7H3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M7 6l-4 4 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <small>Undo</small>
+                </button>
+            </div>
         </div>
     </div>
 
