@@ -1531,6 +1531,13 @@
                     </button>
                     <span style="color: #666; font-size: 14px;">Sign above with your mouse or touchscreen</span>
                 </div>
+                <div class="signature-background-option" style="margin-top: 15px; padding: 10px; background: #f8f8f8; border-radius: 8px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 14px; color: #333;">
+                        <input type="checkbox" id="signatureTransparentBg" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                        <span>Transparent Background</span>
+                    </label>
+                    <p style="margin: 8px 0 0 26px; font-size: 12px; color: #666;">Uncheck to add a white background to your signature</p>
+                </div>
             </div>
 
             <!-- Type Tab -->
@@ -1920,6 +1927,31 @@
             });
         }
 
+        // Add white background to signature image
+        function addWhiteBackgroundToSignature(dataURL) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = function() {
+                    // Create a new canvas with white background
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    // Fill with white background
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Draw signature on top
+                    ctx.drawImage(img, 0, 0);
+
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.src = dataURL;
+            });
+        }
+
         // Apply signature to PDF
         async function applySignature() {
             let signatureDataURL = null;
@@ -1948,6 +1980,14 @@
                     return;
                 }
                 signatureDataURL = currentSignatureImage;
+            }
+
+            // Apply white background if option is unchecked (for draw tab)
+            if (activeTab === 'draw') {
+                const transparentBg = document.getElementById('signatureTransparentBg');
+                if (transparentBg && !transparentBg.checked) {
+                    signatureDataURL = await addWhiteBackgroundToSignature(signatureDataURL);
+                }
             }
 
             // Close modal
@@ -2044,10 +2084,28 @@
                 img.style.pointerEvents = 'none';
 
                 sigElement.appendChild(img);
+
+                // Add resize handle
+                const resizeHandle = document.createElement('div');
+                resizeHandle.className = 'signature-resize-handle';
+                resizeHandle.style.position = 'absolute';
+                resizeHandle.style.right = '-5px';
+                resizeHandle.style.bottom = '-5px';
+                resizeHandle.style.width = '12px';
+                resizeHandle.style.height = '12px';
+                resizeHandle.style.backgroundColor = '#DC1F26';
+                resizeHandle.style.border = '2px solid #FFFFFF';
+                resizeHandle.style.borderRadius = '50%';
+                resizeHandle.style.cursor = 'nwse-resize';
+                resizeHandle.style.zIndex = '10';
+                resizeHandle.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
+                sigElement.appendChild(resizeHandle);
+
                 overlayLayer.appendChild(sigElement);
 
-                // Make signature draggable
+                // Make signature draggable and resizable
                 makeSignatureDraggable(sigElement, signature);
+                makeSignatureResizable(resizeHandle, sigElement, signature);
             });
         }
 
@@ -2082,6 +2140,56 @@
 
             document.addEventListener('mouseup', () => {
                 isDragging = false;
+            });
+        }
+
+        // Make signature resizable
+        function makeSignatureResizable(resizeHandle, element, signature) {
+            let isResizing = false;
+            let startX, startY, startWidth, startHeight;
+            const aspectRatio = signature.height / signature.width;
+
+            resizeHandle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startWidth = signature.width;
+                startHeight = signature.height;
+                e.stopPropagation(); // Prevent dragging when resizing
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const dx = e.clientX - startX;
+
+                // Calculate new width based on mouse movement
+                let newWidth = startWidth + dx;
+
+                // Minimum size constraint
+                if (newWidth < 50) newWidth = 50;
+
+                // Maximum size constraint (don't exceed canvas bounds)
+                const maxWidth = pdfCanvas.width - signature.x - 20;
+                if (newWidth > maxWidth) newWidth = maxWidth;
+
+                // Calculate new height maintaining aspect ratio
+                let newHeight = newWidth * aspectRatio;
+
+                // Update signature dimensions
+                signature.width = newWidth;
+                signature.height = newHeight;
+
+                // Update element styles
+                element.style.width = newWidth + 'px';
+                element.style.height = newHeight + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                }
             });
         }
 
