@@ -296,8 +296,8 @@
             white-space: pre;
             cursor: pointer;
             transform-origin: 0% 0%;
-            padding: 0;
-            margin: 0;
+            padding: 2px;
+            margin: -2px;
             text-indent: 0;
             letter-spacing: 0;
             word-spacing: 0;
@@ -2660,10 +2660,17 @@
 
                 const textSpan = document.createElement('span');
                 textSpan.textContent = item.str.trim(); // Remove leading/trailing whitespace
-                textSpan.style.left = tx[4] + 'px';
+                // Compensate for font rendering and left-side bearing
+                const leftAdjustment = fontHeight * 0.20; // 20% of font size for stronger correction
+                textSpan.style.left = (tx[4] - leftAdjustment) + 'px';
                 textSpan.style.top = (tx[5] - fontAscent) + 'px';
                 textSpan.style.fontSize = fontHeight + 'px';
                 textSpan.style.fontFamily = 'Helvetica, Arial, sans-serif';
+                textSpan.style.marginLeft = '0';
+                textSpan.style.paddingLeft = '0';
+                textSpan.style.transform = 'translateX(-2px)'; // Additional pixel-perfect adjustment
+                textSpan.style.textIndent = '0';
+                textSpan.style.letterSpacing = 'normal';
                 textSpan.dataset.index = index;
                 textSpan.dataset.page = pageNumber;
 
