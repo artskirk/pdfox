@@ -2645,10 +2645,14 @@
 
             // Debug: Log first few items to check for duplicates
             if (pageNumber === 1 && itemsToRender.length > 0) {
-                console.log('First 3 text items:', itemsToRender.slice(0, 3).map(item => ({
+                console.log('First 10 text items:', itemsToRender.slice(0, 10).map(item => ({
                     text: item.str,
+                    textLength: item.str.length,
+                    hasLeadingSpace: item.str[0] === ' ',
+                    hasTrailingSpace: item.str[item.str.length - 1] === ' ',
                     x: item.transform[4],
-                    y: item.transform[5]
+                    y: item.transform[5],
+                    width: item.width
                 })));
             }
 
@@ -2659,13 +2663,11 @@
                 const fontAscent = item.fontName ? fontHeight : fontHeight * 0.8;
 
                 const textSpan = document.createElement('span');
-                textSpan.textContent = item.str.trim(); // Remove leading/trailing whitespace
+                textSpan.textContent = item.str; // Preserve original spacing from PDF
                 textSpan.style.left = tx[4] + 'px';
                 textSpan.style.top = (tx[5] - fontAscent) + 'px';
                 textSpan.style.fontSize = fontHeight + 'px';
-                textSpan.style.fontFamily = 'Helvetica, Arial, sans-serif';
-                textSpan.style.letterSpacing = '-0.02em'; // Tighter spacing to prevent visual indent
-                textSpan.style.textIndent = '0';
+                textSpan.style.fontFamily = 'Arial, Helvetica, sans-serif';
                 textSpan.dataset.index = index;
                 textSpan.dataset.page = pageNumber;
 
