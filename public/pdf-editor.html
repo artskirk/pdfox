@@ -1736,7 +1736,7 @@
             const canvas = document.getElementById('signatureCanvas');
             if (!signaturePad && canvas) {
                 signaturePad = new SignaturePad(canvas, {
-                    backgroundColor: 'rgb(255, 255, 255)',
+                    backgroundColor: 'rgba(0, 0, 0, 0)', // Transparent background
                     penColor: 'rgb(0, 0, 0)',
                     minWidth: 1,
                     maxWidth: 2.5
