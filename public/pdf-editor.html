@@ -1867,7 +1867,7 @@
             reader.readAsDataURL(file);
         }
 
-        // Enhanced background removal using canvas
+        // Smart background removal using adaptive color detection
         async function removeBackgroundFromImage(img) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -1882,36 +1882,29 @@
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
 
-            // Enhanced background removal with better color detection
+            // Step 1: Detect background color by sampling edges
+            const bgColor = detectBackgroundColor(data, canvas.width, canvas.height);
+
+            // Step 2: Remove pixels similar to background color
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
                 const b = data[i + 2];
 
-                // Calculate luminance (perceptual brightness) - more accurate than simple average
-                const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                // Calculate color distance from background
+                const colorDistance = Math.sqrt(
+                    Math.pow(r - bgColor.r, 2) +
+                    Math.pow(g - bgColor.g, 2) +
+                    Math.pow(b - bgColor.b, 2)
+                );
 
-                // Check if pixel is light colored (background)
-                // Also check color uniformity - backgrounds tend to have similar RGB values
-                const colorDiff = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
-
-                // Remove light pixels (white/light gray backgrounds)
-                // Lower threshold to 180 for more aggressive removal
-                if (luminance > 180) {
-                    // Gradually fade based on luminance for smoother edges
-                    if (luminance > 240) {
-                        data[i + 3] = 0; // Fully transparent
-                    } else {
-                        // Partial transparency for gray areas
-                        const alpha = Math.max(0, (240 - luminance) * 4);
-                        data[i + 3] = Math.min(data[i + 3], alpha);
-                    }
-                }
-
-                // Also remove pixels that are very uniform in color (typical of backgrounds)
-                // but only if they're also relatively light
-                if (colorDiff < 15 && luminance > 150) {
-                    data[i + 3] = 0;
+                // If pixel is similar to background, make it transparent
+                if (colorDistance < 60) {
+                    data[i + 3] = 0; // Fully transparent
+                } else if (colorDistance < 90) {
+                    // Gradual fade for edge smoothing
+                    const alpha = ((colorDistance - 60) / 30) * 255;
+                    data[i + 3] = Math.min(data[i + 3], alpha);
                 }
             }
 
@@ -1919,6 +1912,43 @@
             ctx.putImageData(imageData, 0, 0);
 
             return canvas.toDataURL('image/png');
+        }
+
+        // Detect background color by sampling edges and corners
+        function detectBackgroundColor(data, width, height) {
+            const samples = [];
+            const sampleSize = 5; // Sample 5 pixels from each edge
+
+            // Sample top edge
+            for (let x = 0; x < width; x += Math.floor(width / sampleSize)) {
+                const i = (0 * width + x) * 4;
+                samples.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
+            }
+
+            // Sample bottom edge
+            for (let x = 0; x < width; x += Math.floor(width / sampleSize)) {
+                const i = ((height - 1) * width + x) * 4;
+                samples.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
+            }
+
+            // Sample left edge
+            for (let y = 0; y < height; y += Math.floor(height / sampleSize)) {
+                const i = (y * width + 0) * 4;
+                samples.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
+            }
+
+            // Sample right edge
+            for (let y = 0; y < height; y += Math.floor(height / sampleSize)) {
+                const i = (y * width + (width - 1)) * 4;
+                samples.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
+            }
+
+            // Calculate average background color
+            const avgR = samples.reduce((sum, s) => sum + s.r, 0) / samples.length;
+            const avgG = samples.reduce((sum, s) => sum + s.g, 0) / samples.length;
+            const avgB = samples.reduce((sum, s) => sum + s.b, 0) / samples.length;
+
+            return { r: avgR, g: avgG, b: avgB };
         }
 
         // Drag and drop for signature upload
