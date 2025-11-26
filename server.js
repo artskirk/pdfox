@@ -77,9 +77,6 @@ const upload = multer({
 
 // Serve static files
 app.use(express.static('public'));
-app.use('/lib', express.static('lib')); // Serve layout engine for reflow editor
-app.use('/uploads', express.static(uploadsDir)); // Serve uploaded files for testing
-app.use('/outputs', express.static(outputsDir));
 
 // Extract text from scanned/image PDF using OCR
 async function extractTextWithOCR(filePath) {
@@ -560,66 +557,6 @@ app.post('/convert', upload.single('pdf'), async (req, res) => {
 
         res.status(500).json({
             error: 'Conversion failed',
-            details: error.message
-        });
-    }
-});
-
-// Reflow Editor API Routes
-const { PDFExporter } = require('./lib/pdf-exporter');
-const { PDFParser } = require('./lib/pdf-parser');
-const pdfExporter = new PDFExporter();
-const pdfParser = new PDFParser();
-
-// Export document to PDF with reflow
-app.post('/api/reflow/export-pdf', async (req, res) => {
-    try {
-        const document = req.body;
-
-        console.log('📄 Exporting reflow document:', document.metadata?.title);
-
-        // Generate PDF using pdf-lib with layout engine
-        const pdfBytes = await pdfExporter.exportToPDF(document);
-
-        res.contentType('application/pdf');
-        res.send(Buffer.from(pdfBytes));
-
-        console.log('✅ PDF exported successfully');
-    } catch (error) {
-        console.error('❌ Export error:', error);
-        res.status(500).json({
-            error: 'Failed to export PDF',
-            details: error.message
-        });
-    }
-});
-
-// Import PDF and convert to editable document model
-app.post('/api/reflow/import-pdf', upload.single('pdf'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No PDF file uploaded' });
-        }
-
-        console.log('📥 Importing PDF:', req.file.originalname);
-
-        // Read uploaded PDF file
-        const pdfBuffer = await fs.promises.readFile(req.file.path);
-
-        // Parse PDF to document model
-        const document = await pdfParser.parsePDF(pdfBuffer);
-
-        // Keep uploaded file for debugging (comment out to auto-delete)
-        // await fs.promises.unlink(req.file.path);
-        console.log('📁 Saved uploaded file to:', req.file.path);
-
-        console.log('✅ PDF imported successfully:', document.pages.length, 'pages');
-
-        res.json(document);
-    } catch (error) {
-        console.error('❌ Import error:', error);
-        res.status(500).json({
-            error: 'Failed to import PDF',
             details: error.message
         });
     }
