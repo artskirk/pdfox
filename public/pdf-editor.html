@@ -2660,14 +2660,17 @@
 
                 const textSpan = document.createElement('span');
                 textSpan.textContent = item.str.trim(); // Remove leading/trailing whitespace
-                // Adjust left position to compensate for font's left-side bearing
-                const leftAdjustment = fontHeight * 0.08; // 8% of font size
+                // Compensate for font rendering and left-side bearing
+                const leftAdjustment = fontHeight * 0.20; // 20% of font size for stronger correction
                 textSpan.style.left = (tx[4] - leftAdjustment) + 'px';
                 textSpan.style.top = (tx[5] - fontAscent) + 'px';
                 textSpan.style.fontSize = fontHeight + 'px';
                 textSpan.style.fontFamily = 'Helvetica, Arial, sans-serif';
                 textSpan.style.marginLeft = '0';
                 textSpan.style.paddingLeft = '0';
+                textSpan.style.transform = 'translateX(-2px)'; // Additional pixel-perfect adjustment
+                textSpan.style.textIndent = '0';
+                textSpan.style.letterSpacing = 'normal';
                 textSpan.dataset.index = index;
                 textSpan.dataset.page = pageNumber;
 
