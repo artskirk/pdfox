@@ -52,10 +52,32 @@ const PDFoxRenderer = (function() {
                     core.set('pdfBytes', source);
                 }
 
+                // Get first page dimensions for smart zoom calculation
+                const firstPage = await pdfDoc.getPage(1);
+                const viewport = firstPage.getViewport({ scale: 1.0 });
+                const pageInfo = {
+                    width: viewport.width,
+                    height: viewport.height
+                };
+
+                // Calculate and apply optimal zoom before rendering
+                const optimalScale = this.calculateOptimalZoom(pageInfo.width, pageInfo.height);
+                core.set('scale', optimalScale);
+
                 await this.renderPage(1);
                 ui.updatePageInfo(1, pdfDoc.numPages);
 
-                core.emit('pdf:loaded', { totalPages: pdfDoc.numPages });
+                // Hide empty state and show PDF viewer
+                const emptyState = document.getElementById('canvasEmptyState');
+                const pdfViewer = document.getElementById('pdfViewer');
+                if (emptyState) {
+                    emptyState.classList.add('hidden');
+                }
+                if (pdfViewer) {
+                    pdfViewer.classList.add('loaded');
+                }
+
+                core.emit('pdf:loaded', { totalPages: pdfDoc.numPages, pageInfo, optimalScale });
                 ui.hideLoading();
 
                 return pdfDoc;
@@ -64,6 +86,46 @@ const PDFoxRenderer = (function() {
                 ui.showAlert('Failed to load PDF: ' + error.message, 'error');
                 throw error;
             }
+        },
+
+        /**
+         * Calculate optimal zoom scale to fit document in viewport
+         * Uses "fit to width" with some padding, capped at 100%
+         * @param {number} pageWidth - PDF page width at scale 1.0
+         * @param {number} pageHeight - PDF page height at scale 1.0
+         * @returns {number} Optimal scale
+         */
+        calculateOptimalZoom(pageWidth, pageHeight) {
+            // Get available viewport dimensions
+            const pdfViewer = document.querySelector('.pdf-viewer');
+            const editorPanel = document.querySelector('.editor-panel');
+
+            if (!pdfViewer) return 1.0;
+
+            // Calculate available space (account for padding and sidebar)
+            const viewerRect = pdfViewer.getBoundingClientRect();
+            const availableWidth = viewerRect.width - 40; // 20px padding on each side
+            const availableHeight = window.innerHeight - 150; // Account for toolbar and margins
+
+            // Calculate scale to fit width
+            const scaleForWidth = availableWidth / pageWidth;
+
+            // Calculate scale to fit height
+            const scaleForHeight = availableHeight / pageHeight;
+
+            // Use the smaller of the two to ensure it fits both dimensions
+            let optimalScale = Math.min(scaleForWidth, scaleForHeight);
+
+            // Cap at 100% - we don't want to zoom in by default, only zoom out for large docs
+            optimalScale = Math.min(optimalScale, 1.0);
+
+            // Set a minimum scale of 25%
+            optimalScale = Math.max(optimalScale, 0.25);
+
+            // Round to nearest 5% for cleaner display
+            optimalScale = Math.round(optimalScale * 20) / 20;
+
+            return optimalScale;
         },
 
         /**
@@ -127,6 +189,15 @@ const PDFoxRenderer = (function() {
 
             const textContent = await page.getTextContent();
             textContentCache[pageNum] = textContent;
+
+            // Detect if PDF is image-based (no text content)
+            const hasTextContent = textContent.items.some(item => item.str && item.str.trim().length > 0);
+            core.set('isImageBasedPDF', !hasTextContent);
+
+            // Emit event for UI updates
+            if (!hasTextContent) {
+                core.emit('pdf:imageBasedDetected', { pageNum });
+            }
 
             const textEdits = core.get('textEdits');
 

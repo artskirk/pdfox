@@ -147,11 +147,15 @@ const PDFoxLayers = (function() {
 
         item.querySelector('[data-action="edit"]').addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
+            e.stopImmediatePropagation();
             editLayer(layer);
         });
 
         item.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
+            e.stopImmediatePropagation();
             deleteLayer(layer);
         });
 

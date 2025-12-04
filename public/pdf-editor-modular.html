@@ -94,7 +94,7 @@
         <!-- GROUP 0: Zoom Controls - Left side -->
         <div class="tool-group" data-group="zoom" data-priority="1">
             <span class="tool-group-label">Zoom</span>
-            <div class="tool-buttons">
+            <div class="tool-buttons zoom-controls">
                 <button class="tool-btn" id="zoomOutBtn" onclick="PDFoxApp.zoomOut()" data-tooltip="Zoom out (-)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
@@ -103,7 +103,44 @@
                     </svg>
                     <small>Out</small>
                 </button>
-                <span class="zoom-display" id="zoomDisplay">100%</span>
+                <div class="zoom-dropdown-container" id="zoomDropdownContainer">
+                    <button class="zoom-dropdown-trigger" id="zoomDropdownTrigger" data-tooltip="Zoom level">
+                        <span class="zoom-display" id="zoomDisplay">100%</span>
+                        <svg class="zoom-dropdown-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none">
+                            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="zoom-dropdown-menu" id="zoomDropdownMenu">
+                        <div class="zoom-dropdown-section">
+                            <button class="zoom-dropdown-item" data-zoom="fit">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M3 9h18M9 3v18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.5"/>
+                                </svg>
+                                Fit to View
+                                <span class="shortcut">0</span>
+                            </button>
+                            <button class="zoom-dropdown-item" data-zoom="width">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M6 12h12M6 12l2-2M6 12l2 2M18 12l-2-2M18 12l-2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Fit to Width
+                            </button>
+                        </div>
+                        <div class="zoom-dropdown-divider"></div>
+                        <div class="zoom-dropdown-section zoom-presets">
+                            <button class="zoom-dropdown-item" data-zoom="0.25">25%</button>
+                            <button class="zoom-dropdown-item" data-zoom="0.5">50%</button>
+                            <button class="zoom-dropdown-item" data-zoom="0.75">75%</button>
+                            <button class="zoom-dropdown-item" data-zoom="1.0">100%</button>
+                            <button class="zoom-dropdown-item" data-zoom="1.25">125%</button>
+                            <button class="zoom-dropdown-item" data-zoom="1.5">150%</button>
+                            <button class="zoom-dropdown-item" data-zoom="2.0">200%</button>
+                            <button class="zoom-dropdown-item" data-zoom="3.0">300%</button>
+                        </div>
+                    </div>
+                </div>
                 <button class="tool-btn" id="zoomInBtn" onclick="PDFoxApp.zoomIn()" data-tooltip="Zoom in (+)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
@@ -112,13 +149,6 @@
                     </svg>
                     <small>In</small>
                 </button>
-                <button class="tool-btn" id="zoomFitBtn" onclick="PDFoxApp.zoomFit()" data-tooltip="Fit to window">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
-                        <path d="M9 3v18M3 9h18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2"/>
-                    </svg>
-                    <small>Fit</small>
-                </button>
             </div>
         </div>
 
@@ -126,14 +156,14 @@
         <div class="tool-group" data-group="text" data-priority="2">
             <span class="tool-group-label">Text</span>
             <div class="tool-buttons">
-                <button class="tool-btn active" id="editTextTool" data-tool="editText" onclick="PDFoxApp.setTool('editText')" data-tooltip="Click on text to edit it">
+                <button class="tool-btn active" id="editTextTool" data-tool="editText" onclick="PDFoxApp.setTool('editText')" data-tooltip="Click on text to edit it (1)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                     <small>Edit</small>
                 </button>
-                <button class="tool-btn" id="addTextTool" data-tool="addText" onclick="PDFoxApp.setTool('addText')" data-tooltip="Click anywhere to add new text">
+                <button class="tool-btn" id="addTextTool" data-tool="addText" onclick="PDFoxApp.setTool('addText')" data-tooltip="Click anywhere to add new text (2)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                         <path d="M8 3h8M12 3v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -197,20 +227,20 @@
         <div class="tool-group" data-group="annotate" data-priority="4">
             <span class="tool-group-label">Annotate</span>
             <div class="tool-buttons">
-                <button class="tool-btn" id="drawTool" data-tool="draw" onclick="PDFoxApp.setTool('draw')" data-tooltip="Freehand pen drawing">
+                <button class="tool-btn" id="drawTool" data-tool="draw" onclick="PDFoxApp.setTool('draw')" data-tooltip="Freehand pen drawing (3)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M12 19l7 2-2-7-7-7-5 5 7 7z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                     <small>Draw</small>
                 </button>
-                <button class="tool-btn" id="rectangleTool" data-tool="rectangle" onclick="PDFoxApp.setTool('rectangle')" data-tooltip="Draw a rectangle shape">
+                <button class="tool-btn" id="rectangleTool" data-tool="rectangle" onclick="PDFoxApp.setTool('rectangle')" data-tooltip="Draw a rectangle shape (4)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
                     </svg>
                     <small>Rect</small>
                 </button>
-                <button class="tool-btn" id="circleTool" data-tool="circle" onclick="PDFoxApp.setTool('circle')" data-tooltip="Draw a circle shape">
+                <button class="tool-btn" id="circleTool" data-tool="circle" onclick="PDFoxApp.setTool('circle')" data-tooltip="Draw a circle shape (5)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>
                     </svg>
@@ -231,7 +261,7 @@
                     </svg>
                     <small>Sign</small>
                 </button>
-                <button class="tool-btn" id="eraseTool" data-tool="erase" onclick="PDFoxApp.setTool('erase')" data-tooltip="Draw area to redact/remove content">
+                <button class="tool-btn" id="eraseTool" data-tool="erase" onclick="PDFoxApp.setTool('erase')" data-tooltip="Draw area to redact/remove content (6)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
                         <path d="M3 3l18 18M21 3l-18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -314,6 +344,81 @@
 
     <div class="main-content">
         <div class="canvas-container">
+            <!-- Empty State - Shown before PDF loads -->
+            <div class="canvas-empty-state" id="canvasEmptyState">
+                <div class="empty-state-content">
+                    <!-- Animated Background Pattern -->
+                    <div class="empty-state-pattern"></div>
+
+                    <!-- Main Logo -->
+                    <div class="empty-state-logo">
+                        <svg width="120" height="120" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="pdfox-logo-animated">
+                            <defs>
+                                <linearGradient id="emptyDocGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#E50914;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#C40812;stop-opacity:1" />
+                                </linearGradient>
+                                <linearGradient id="emptyEditGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#E50914;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#B00610;stop-opacity:1" />
+                                </linearGradient>
+                                <filter id="emptyGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                                <filter id="emptyShadow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                                    <feOffset dx="0" dy="4" result="offsetblur"/>
+                                    <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
+                                    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+                                </filter>
+                            </defs>
+                            <!-- Document body -->
+                            <rect x="8" y="6" width="28" height="36" rx="3" fill="url(#emptyDocGradient)" filter="url(#emptyShadow)" stroke="rgba(229,9,20,0.8)" stroke-width="1.5" class="doc-body"/>
+                            <!-- Folded corner -->
+                            <path d="M36 6 L36 12 L30 12 L36 6 Z" fill="rgba(196,8,18,0.7)" class="doc-fold"/>
+                            <path d="M36 6 L36 12 L30 12" stroke="rgba(229,9,20,0.9)" stroke-width="1" fill="none"/>
+                            <!-- Text lines -->
+                            <line x1="14" y1="16" x2="30" y2="16" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" class="text-line line-1"/>
+                            <line x1="14" y1="21" x2="28" y2="21" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" class="text-line line-2"/>
+                            <line x1="14" y1="26" x2="30" y2="26" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" class="text-line line-3"/>
+                            <line x1="14" y1="31" x2="24" y2="31" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" class="text-line line-4"/>
+                            <!-- Edit circle -->
+                            <circle cx="36" cy="36" r="9" fill="url(#emptyEditGradient)" filter="url(#emptyGlow)" stroke="rgba(255,255,255,0.9)" stroke-width="2" class="edit-circle"/>
+                            <!-- Pencil -->
+                            <path d="M32 36 L36 32 L38 34 L34 38 Z" fill="white" opacity="0.95" class="pencil-body"/>
+                            <path d="M38 34 L39 33 L40 34 L39 35 Z" fill="white" opacity="0.95" class="pencil-tip"/>
+                            <line x1="32" y1="38" x2="31" y2="39" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+                        </svg>
+                    </div>
+
+                    <!-- Brand Name -->
+                    <h2 class="empty-state-title">PDFOX</h2>
+                    <p class="empty-state-subtitle">Professional PDF Editor</p>
+
+                    <!-- Loading indicator -->
+                    <div class="empty-state-loader">
+                        <div class="loader-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <p class="loader-text">Loading your document...</p>
+                    </div>
+
+                    <!-- Drop zone hint -->
+                    <div class="empty-state-hint">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Drop a PDF file or click "Open File" to begin</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="pdf-viewer" id="pdfViewer">
                 <canvas id="pdfCanvas"></canvas>
                 <div id="textLayer"></div>
@@ -407,126 +512,8 @@
         <button class="page-btn" id="nextPage" onclick="PDFoxRenderer.nextPage()">Next ▶</button>
     </div>
 
-    <!-- Edit Text Modal -->
-    <div id="editModal" class="custom-modal" style="display: none;">
-        <div class="custom-modal-content" style="max-width: 520px; text-align: left;">
-            <div style="margin-bottom: 20px;">
-                <h3 style="font-size: 22px; color: #ffffff; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                    Edit Text
-                </h3>
-                <p style="font-size: 13px; color: #999; margin: 0;">
-                    Original: <span id="originalText" style="color: #ccc; font-style: italic;"></span>
-                </p>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text:</label>
-                <textarea id="editTextArea" style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #333; border-radius: 8px; font-size: 14px; font-family: Arial, sans-serif; resize: vertical; background: #2a2a2a; color: #ffffff; box-sizing: border-box;"></textarea>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font Size: <span id="editTextFontSizeValue" style="color: #E50914; font-weight: 600;">14px</span></label>
-                <input type="range" id="editTextFontSize" value="14" min="8" max="72" style="width: 100%; height: 6px; accent-color: #E50914; cursor: pointer;" oninput="document.getElementById('editTextFontSizeValue').textContent = this.value + 'px'">
-                <div style="display: flex; gap: 8px; margin-top: 10px;">
-                    <button type="button" onclick="PDFoxUI.setFontSize('editTextFontSize', 'editTextFontSizeValue', 10)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">10</button>
-                    <button type="button" onclick="PDFoxUI.setFontSize('editTextFontSize', 'editTextFontSizeValue', 12)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">12</button>
-                    <button type="button" onclick="PDFoxUI.setFontSize('editTextFontSize', 'editTextFontSizeValue', 14)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">14</button>
-                    <button type="button" onclick="PDFoxUI.setFontSize('editTextFontSize', 'editTextFontSizeValue', 18)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">18</button>
-                    <button type="button" onclick="PDFoxUI.setFontSize('editTextFontSize', 'editTextFontSizeValue', 24)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">24</button>
-                    <button type="button" onclick="PDFoxUI.setFontSize('editTextFontSize', 'editTextFontSizeValue', 36)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">36</button>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                <div>
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text Color:</label>
-                    <input type="color" id="editTextColor" value="#000000" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Background:</label>
-                    <input type="color" id="editTextBgColor" value="#ffffff" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font:</label>
-                    <select id="editTextFontFamily" style="width: 100%; padding: 10px 8px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; color: #ffffff; font-size: 13px; cursor: pointer; box-sizing: border-box;">
-                        <option value="Arial, sans-serif">Arial</option>
-                        <option value="'Times New Roman', serif">Times New Roman</option>
-                        <option value="'Courier New', monospace">Courier New</option>
-                        <option value="Georgia, serif">Georgia</option>
-                        <option value="Verdana, sans-serif">Verdana</option>
-                    </select>
-                </div>
-            </div>
-
-            <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
-                <button onclick="PDFoxTextEditor.closeEditModal()" style="padding: 12px 24px; background: #2a2a2a; color: #ffffff; border: 2px solid #333; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">Cancel</button>
-                <button onclick="PDFoxTextEditor.saveTextEdit()" style="padding: 12px 24px; background: #E50914; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);">Save Changes</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Text Modal -->
-    <div id="addTextModal" class="custom-modal" style="display: none;">
-        <div class="custom-modal-content" style="max-width: 520px; text-align: left;">
-            <div style="margin-bottom: 20px;">
-                <h3 style="font-size: 22px; color: #ffffff; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
-                        <path d="M12 5v14M5 12h14"/>
-                    </svg>
-                    Add Text
-                </h3>
-                <p style="font-size: 13px; color: #999; margin: 0;">Add new text to the document</p>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text:</label>
-                <textarea id="addTextArea" style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #333; border-radius: 8px; font-size: 14px; font-family: Arial, sans-serif; resize: vertical; background: #2a2a2a; color: #ffffff; box-sizing: border-box;" placeholder="Enter your text here..."></textarea>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font Size: <span id="addTextFontSizeValue" style="color: #E50914; font-weight: 600;">14px</span></label>
-                <input type="range" id="addTextFontSize" value="14" min="8" max="72" style="width: 100%; height: 6px; accent-color: #E50914; cursor: pointer;" oninput="document.getElementById('addTextFontSizeValue').textContent = this.value + 'px'">
-                <div style="display: flex; gap: 8px; margin-top: 10px;">
-                    <button type="button" onclick="PDFoxUI.setFontSize('addTextFontSize', 'addTextFontSizeValue', 10)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">10</button>
-                    <button type="button" onclick="PDFoxUI.setFontSize('addTextFontSize', 'addTextFontSizeValue', 12)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">12</button>
-                    <button type="button" onclick="PDFoxUI.setFontSize('addTextFontSize', 'addTextFontSizeValue', 14)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">14</button>
-                    <button type="button" onclick="PDFoxUI.setFontSize('addTextFontSize', 'addTextFontSizeValue', 18)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">18</button>
-                    <button type="button" onclick="PDFoxUI.setFontSize('addTextFontSize', 'addTextFontSizeValue', 24)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">24</button>
-                    <button type="button" onclick="PDFoxUI.setFontSize('addTextFontSize', 'addTextFontSizeValue', 36)" style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">36</button>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                <div>
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text Color:</label>
-                    <input type="color" id="addTextColor" value="#000000" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Background:</label>
-                    <input type="color" id="addTextBgColor" value="#ffffff" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font:</label>
-                    <select id="addTextFontFamily" style="width: 100%; padding: 10px 8px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; color: #ffffff; font-size: 13px; cursor: pointer; box-sizing: border-box;">
-                        <option value="Arial, sans-serif">Arial</option>
-                        <option value="'Times New Roman', serif">Times New Roman</option>
-                        <option value="'Courier New', monospace">Courier New</option>
-                        <option value="Georgia, serif">Georgia</option>
-                        <option value="Verdana, sans-serif">Verdana</option>
-                    </select>
-                </div>
-            </div>
-
-            <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
-                <button onclick="PDFoxTextEditor.closeAddTextModal()" style="padding: 12px 24px; background: #2a2a2a; color: #ffffff; border: 2px solid #333; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">Cancel</button>
-                <button onclick="PDFoxTextEditor.saveAddText()" style="padding: 12px 24px; background: #E50914; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);">Add Text</button>
-            </div>
-        </div>
-    </div>
+    <!-- Legacy Edit/Add Text Modals - Now replaced by Unified Text Editor -->
+    <!-- These modals are no longer used - the unified text editor handles all text operations -->
 
     <!-- Signature Modal -->
     <div id="signatureModal" class="custom-modal" style="display: none;">
@@ -679,6 +666,7 @@
     <script src="/js/modules/utils.js"></script>
     <script src="/js/modules/core.js"></script>
     <script src="/js/modules/ui.js"></script>
+    <script src="/js/modules/unified-text-editor.js"></script>
     <script src="/js/modules/toolbar.js"></script>
     <script src="/js/modules/pdf-renderer.js"></script>
     <script src="/js/modules/text-editor.js"></script>
@@ -686,6 +674,7 @@
     <script src="/js/modules/annotations.js"></script>
     <script src="/js/modules/signatures.js"></script>
     <script src="/js/modules/overlays.js"></script>
+    <script src="/js/modules/ocr.js"></script>
     <script src="/js/modules/app.js"></script>
 
     <!-- Initialize Application -->
@@ -693,6 +682,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             PDFoxApp.init();
             PDFoxToolbar.init();
+            PDFoxOCR.init();
         });
     </script>
 </body>

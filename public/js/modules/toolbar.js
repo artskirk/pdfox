@@ -131,6 +131,26 @@ const PDFoxToolbar = (function() {
         hiddenGroups.forEach(group => {
             const clone = group.cloneNode(true);
             clone.classList.remove('hidden-in-toolbar');
+
+            // For zoom controls, replace complex dropdown with simple display
+            const zoomControls = clone.querySelector('.zoom-controls');
+            const zoomContainer = clone.querySelector('.zoom-dropdown-container');
+
+            if (zoomControls && zoomContainer) {
+                // Get current zoom value from the original display
+                const originalDisplay = document.getElementById('zoomDisplay');
+                const currentZoom = originalDisplay ? originalDisplay.textContent : '100%';
+
+                // Create simple zoom display element
+                const simpleDisplay = document.createElement('span');
+                simpleDisplay.className = 'zoom-display-simple';
+                simpleDisplay.id = 'zoomDisplayOverflow';
+                simpleDisplay.textContent = currentZoom;
+
+                // Replace the complex dropdown with simple display
+                zoomContainer.replaceWith(simpleDisplay);
+            }
+
             overflowDropdown.appendChild(clone);
         });
     }

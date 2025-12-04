@@ -14,41 +14,124 @@ const PDFoxApp = (function() {
     // Module references
     let renderer, textEditor, layers, annotations, signatures, overlays;
 
+    // Default tool - what we return to after actions
+    const DEFAULT_TOOL = 'editText';
+
+    // One-shot tools that auto-reset after use
+    const ONE_SHOT_TOOLS = ['addText', 'ocrSelect', 'erase'];
+
+    // Persistent tools that stay active until manually changed
+    const PERSISTENT_TOOLS = ['editText', 'moveText', 'draw', 'rectangle', 'circle'];
+
+    // Tool-specific cursors for better UX
+    const TOOL_CURSORS = {
+        editText: 'text',
+        addText: 'cell',
+        moveText: 'move',
+        draw: 'crosshair',
+        rectangle: 'crosshair',
+        circle: 'crosshair',
+        ocrSelect: 'crosshair',
+        erase: 'crosshair',
+        default: 'default'
+    };
+
     /**
      * Set current tool
      * @param {string} tool - Tool name
      */
     function setTool(tool) {
+        const previousTool = core.get('currentTool');
         const toolButton = document.getElementById(tool + 'Tool');
+
         if (toolButton && toolButton.disabled) {
             console.log(`Tool "${tool}" is disabled`);
             return;
         }
 
+        // If clicking the same tool, don't do anything (it's already active)
+        if (previousTool === tool) {
+            return;
+        }
+
         core.set('currentTool', tool);
 
-        // Update button states
-        document.querySelectorAll('.tool-btn').forEach(btn => {
+        // Update button states - clear all first
+        document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
             btn.classList.remove('active');
         });
-        if (toolButton) toolButton.classList.add('active');
 
-        // Update cursor and pointer events
+        // Set active state on the new tool button
+        if (toolButton) {
+            toolButton.classList.add('active');
+        }
+
+        // Update cursor and pointer events based on tool type
         const annCanvas = document.getElementById('annotationCanvas');
         const textLayer = document.getElementById('textLayer');
+        const pdfViewer = document.querySelector('.pdf-viewer');
+
+        // Set tool-specific cursor
+        const cursor = TOOL_CURSORS[tool] || TOOL_CURSORS.default;
 
         if (tool === 'editText' || tool === 'moveText') {
             if (annCanvas) {
                 annCanvas.style.cursor = 'default';
                 annCanvas.style.pointerEvents = 'none';
             }
-            if (textLayer) textLayer.classList.add('editable');
+            if (textLayer) {
+                textLayer.classList.add('editable');
+                textLayer.style.cursor = cursor;
+            }
+            if (pdfViewer) pdfViewer.style.cursor = cursor;
         } else {
             if (annCanvas) {
-                annCanvas.style.cursor = 'crosshair';
+                annCanvas.style.cursor = cursor;
                 annCanvas.style.pointerEvents = 'auto';
             }
-            if (textLayer) textLayer.classList.remove('editable');
+            if (textLayer) {
+                textLayer.classList.remove('editable');
+            }
+            if (pdfViewer) pdfViewer.style.cursor = cursor;
+        }
+
+        // Emit tool change event
+        core.emit('tool:changed', { tool, previousTool });
+
+        // Show brief notification for tool change (except for default tool)
+        if (tool !== DEFAULT_TOOL) {
+            const toolNames = {
+                editText: 'Edit Text',
+                addText: 'Add Text',
+                moveText: 'Move Text',
+                draw: 'Draw',
+                rectangle: 'Rectangle',
+                circle: 'Circle',
+                ocrSelect: 'OCR Select',
+                erase: 'Redact'
+            };
+            ui.showNotification(`Tool: ${toolNames[tool] || tool}`, 'info');
+        }
+    }
+
+    /**
+     * Reset to default tool
+     */
+    function resetToDefaultTool() {
+        setTool(DEFAULT_TOOL);
+    }
+
+    /**
+     * Called when a one-shot tool completes its action
+     * Automatically resets to the default tool
+     */
+    function onToolActionComplete() {
+        const currentTool = core.get('currentTool');
+        if (ONE_SHOT_TOOLS.includes(currentTool)) {
+            // Small delay so user sees the result before tool changes
+            setTimeout(() => {
+                resetToDefaultTool();
+            }, 300);
         }
     }
 
@@ -440,8 +523,8 @@ const PDFoxApp = (function() {
         } : { r: 0, g: 0, b: 0 };
     }
 
-    // Zoom levels
-    const ZOOM_LEVELS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
+    // Zoom levels (25% to 300%)
+    const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
 
     /**
      * Update stored PDF (supports large files via IndexedDB)
@@ -473,14 +556,107 @@ const PDFoxApp = (function() {
     }
 
     /**
-     * Update zoom display
+     * Update zoom display (updates all instances including cloned ones in overflow menu)
      */
     function updateZoomDisplay() {
         const scale = core.get('scale');
-        const display = document.getElementById('zoomDisplay');
-        if (display) {
-            display.textContent = Math.round(scale * 100) + '%';
+        const zoomText = Math.round(scale * 100) + '%';
+
+        // Update all zoom display elements (original and any clones in overflow dropdown)
+        document.querySelectorAll('#zoomDisplay, .zoom-display, .zoom-display-simple').forEach(display => {
+            display.textContent = zoomText;
+        });
+
+        // Update active state in zoom dropdown
+        updateZoomDropdownActiveState(scale);
+    }
+
+    /**
+     * Update the active state indicator in zoom dropdown
+     * @param {number} scale - Current zoom scale
+     */
+    function updateZoomDropdownActiveState(scale) {
+        const zoomItems = document.querySelectorAll('.zoom-dropdown-item[data-zoom]');
+        zoomItems.forEach(item => {
+            const itemZoom = item.dataset.zoom;
+            if (itemZoom && !isNaN(parseFloat(itemZoom))) {
+                const isActive = Math.abs(parseFloat(itemZoom) - scale) < 0.01;
+                item.classList.toggle('active', isActive);
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    /**
+     * Initialize zoom dropdown functionality
+     */
+    function initZoomDropdown() {
+        const container = document.getElementById('zoomDropdownContainer');
+        const trigger = document.getElementById('zoomDropdownTrigger');
+        const menu = document.getElementById('zoomDropdownMenu');
+
+        if (!container || !trigger || !menu) return;
+
+        // Toggle dropdown on trigger click
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            container.classList.toggle('open');
+        });
+
+        // Handle zoom item clicks
+        menu.addEventListener('click', async (e) => {
+            const item = e.target.closest('.zoom-dropdown-item');
+            if (!item) return;
+
+            const zoomValue = item.dataset.zoom;
+            if (!zoomValue) return;
+
+            // Close dropdown
+            container.classList.remove('open');
+
+            if (zoomValue === 'fit') {
+                await zoomFit();
+            } else if (zoomValue === 'width') {
+                await zoomFitWidth();
+            } else {
+                const scale = parseFloat(zoomValue);
+                if (!isNaN(scale)) {
+                    await setZoomLevel(scale);
+                }
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) {
+                container.classList.remove('open');
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && container.classList.contains('open')) {
+                container.classList.remove('open');
+            }
+        });
+    }
+
+    /**
+     * Set zoom to specific level
+     * @param {number} scale - Zoom scale to apply
+     */
+    async function setZoomLevel(scale) {
+        const pdfDoc = core.get('pdfDoc');
+        if (!renderer || !pdfDoc) {
+            ui.showNotification('Please load a PDF first', 'info');
+            return;
         }
+
+        core.set('scale', scale);
+        renderer.renderPage(core.get('currentPage'));
+        updateZoomDisplay();
+        ui.showNotification(`Zoom: ${Math.round(scale * 100)}%`, 'success');
     }
 
     /**
@@ -526,18 +702,63 @@ const PDFoxApp = (function() {
     }
 
     /**
-     * Fit to window
+     * Fit to window - calculates optimal zoom based on document and viewport size
      */
-    function zoomFit() {
+    async function zoomFit() {
         const pdfDoc = core.get('pdfDoc');
         if (!renderer || !pdfDoc) {
             ui.showNotification('Please load a PDF first', 'info');
             return;
         }
-        core.set('scale', 1.5);
-        renderer.renderPage(core.get('currentPage'));
+
+        // Get current page dimensions
+        const currentPage = core.get('currentPage');
+        const page = await pdfDoc.getPage(currentPage);
+        const viewport = page.getViewport({ scale: 1.0 });
+
+        // Calculate optimal zoom using renderer's smart zoom calculation
+        const optimalScale = renderer.calculateOptimalZoom(viewport.width, viewport.height);
+
+        core.set('scale', optimalScale);
+        renderer.renderPage(currentPage);
         updateZoomDisplay();
-        ui.showNotification('Zoom: 150% (Fit)', 'success');
+        ui.showNotification(`Zoom: ${Math.round(optimalScale * 100)}% (Fit to View)`, 'success');
+    }
+
+    /**
+     * Fit to width - zooms to fill the available width
+     */
+    async function zoomFitWidth() {
+        const pdfDoc = core.get('pdfDoc');
+        if (!renderer || !pdfDoc) {
+            ui.showNotification('Please load a PDF first', 'info');
+            return;
+        }
+
+        // Get current page dimensions
+        const currentPage = core.get('currentPage');
+        const page = await pdfDoc.getPage(currentPage);
+        const viewport = page.getViewport({ scale: 1.0 });
+
+        // Calculate scale to fit width
+        const pdfViewer = document.querySelector('.pdf-viewer');
+        if (!pdfViewer) return;
+
+        const viewerRect = pdfViewer.getBoundingClientRect();
+        const availableWidth = viewerRect.width - 40; // 20px padding on each side
+        let optimalScale = availableWidth / viewport.width;
+
+        // Cap at 300% max, 25% min
+        optimalScale = Math.min(optimalScale, 3.0);
+        optimalScale = Math.max(optimalScale, 0.25);
+
+        // Round to nearest 5%
+        optimalScale = Math.round(optimalScale * 20) / 20;
+
+        core.set('scale', optimalScale);
+        renderer.renderPage(currentPage);
+        updateZoomDisplay();
+        ui.showNotification(`Zoom: ${Math.round(optimalScale * 100)}% (Fit to Width)`, 'success');
     }
 
     /**
@@ -875,11 +1096,12 @@ const PDFoxApp = (function() {
      */
     function setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Escape - close modals
+            // Escape - close modals OR reset to default tool
             if (e.key === 'Escape') {
                 const editModal = document.getElementById('editModal');
                 const addTextModal = document.getElementById('addTextModal');
                 const signatureModal = document.getElementById('signatureModal');
+                const shareModal = document.getElementById('shareModal');
 
                 if (editModal?.style.display === 'flex') {
                     textEditor.closeEditModal();
@@ -887,6 +1109,15 @@ const PDFoxApp = (function() {
                     textEditor.closeAddTextModal();
                 } else if (signatureModal?.style.display === 'flex') {
                     signatures.closeModal();
+                } else if (shareModal?.style.display === 'flex') {
+                    closeShareModal();
+                } else {
+                    // No modal open - reset to default tool
+                    const currentTool = core.get('currentTool');
+                    if (currentTool !== DEFAULT_TOOL) {
+                        resetToDefaultTool();
+                        ui.showNotification('Tool reset to Edit Text', 'info');
+                    }
                 }
             }
 
@@ -917,7 +1148,59 @@ const PDFoxApp = (function() {
             if (e.key === '-' && !e.ctrlKey) {
                 zoomOut();
             }
+
+            // 0 - Fit to view (zoom fit)
+            if (e.key === '0' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                const activeElement = document.activeElement;
+                if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                    zoomFit();
+                }
+            }
+
+            // Number keys 1-6 for quick tool selection
+            if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+                const toolShortcuts = {
+                    '1': 'editText',
+                    '2': 'addText',
+                    '3': 'draw',
+                    '4': 'rectangle',
+                    '5': 'circle',
+                    '6': 'erase'
+                };
+                if (toolShortcuts[e.key]) {
+                    // Don't trigger if user is typing in an input
+                    if (document.activeElement.tagName !== 'INPUT' &&
+                        document.activeElement.tagName !== 'TEXTAREA') {
+                        e.preventDefault();
+                        setTool(toolShortcuts[e.key]);
+                    }
+                }
+            }
         });
+    }
+
+    /**
+     * Setup click handlers for tool behavior
+     */
+    function setupToolBehavior() {
+        // Click on canvas container (outside PDF) resets to default tool
+        const canvasContainer = document.querySelector('.canvas-container');
+        if (canvasContainer) {
+            canvasContainer.addEventListener('click', (e) => {
+                // Only reset if clicked directly on container (not on child elements)
+                if (e.target === canvasContainer) {
+                    const currentTool = core.get('currentTool');
+                    if (currentTool !== DEFAULT_TOOL && !PERSISTENT_TOOLS.includes(currentTool)) {
+                        resetToDefaultTool();
+                    }
+                }
+            });
+        }
+
+        // Listen for tool action completions from other modules
+        core.on('overlay:created', onToolActionComplete);  // When text is added
+        core.on('ocr:selectionComplete', onToolActionComplete);  // When OCR selection completes
+        core.on('area:removed', onToolActionComplete);  // When area is redacted
     }
 
     /**
@@ -935,6 +1218,129 @@ const PDFoxApp = (function() {
                 return 'You have unsaved changes.';
             }
         });
+    }
+
+    /**
+     * Show the empty state (when no PDF is loaded)
+     */
+    function showEmptyState() {
+        const emptyState = document.getElementById('canvasEmptyState');
+        const pdfViewer = document.getElementById('pdfViewer');
+        const loaderSection = emptyState?.querySelector('.empty-state-loader');
+
+        if (emptyState) {
+            emptyState.classList.remove('hidden');
+            // Hide the loader since we're not actually loading
+            if (loaderSection) {
+                loaderSection.style.display = 'none';
+            }
+        }
+        if (pdfViewer) {
+            pdfViewer.classList.remove('loaded');
+        }
+    }
+
+    /**
+     * Setup drag and drop for PDF files
+     */
+    function setupDragAndDrop() {
+        const canvasContainer = document.querySelector('.canvas-container');
+        const emptyState = document.getElementById('canvasEmptyState');
+
+        if (!canvasContainer) return;
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            canvasContainer.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight drop zone on drag over
+        ['dragenter', 'dragover'].forEach(eventName => {
+            canvasContainer.addEventListener(eventName, () => {
+                canvasContainer.classList.add('drag-over');
+                if (emptyState) {
+                    emptyState.classList.add('drag-over');
+                }
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            canvasContainer.addEventListener(eventName, () => {
+                canvasContainer.classList.remove('drag-over');
+                if (emptyState) {
+                    emptyState.classList.remove('drag-over');
+                }
+            }, false);
+        });
+
+        // Handle dropped files
+        canvasContainer.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                    loadDroppedFile(file);
+                } else {
+                    ui.showNotification('Please drop a PDF file', 'warning');
+                }
+            }
+        }
+
+        async function loadDroppedFile(file) {
+            ui.showLoading('Loading PDF...');
+
+            // Show loader in empty state
+            const loaderSection = emptyState?.querySelector('.empty-state-loader');
+            if (loaderSection) {
+                loaderSection.style.display = 'flex';
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    // Store in session/IndexedDB
+                    if (typeof PDFStorage !== 'undefined') {
+                        await PDFStorage.store(e.target.result, file.name);
+                    } else {
+                        sessionStorage.setItem('pdfToEdit', e.target.result);
+                        sessionStorage.setItem('pdfFileName', file.name);
+                    }
+
+                    // Set document name
+                    const docName = document.getElementById('docName');
+                    if (docName) {
+                        docName.value = file.name.replace('.pdf', '');
+                    }
+
+                    // Convert and load
+                    const base64Data = e.target.result.split(',')[1];
+                    const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+                    core.set('pdfBytes', pdfBytes);
+
+                    await renderer.loadPDF(new Uint8Array(pdfBytes));
+                    setTool('editText');
+                    updateZoomDisplay();
+
+                    const appliedZoom = Math.round(core.get('scale') * 100);
+                    ui.showNotification(`PDF loaded! Zoom: ${appliedZoom}%`, 'success');
+                } catch (error) {
+                    ui.hideLoading();
+                    ui.showAlert('Failed to load PDF: ' + error.message, 'error');
+                    showEmptyState();
+                }
+            };
+            reader.readAsDataURL(file);
+        }
     }
 
     return {
@@ -980,7 +1386,9 @@ const PDFoxApp = (function() {
 
             // Setup event handlers
             setupKeyboardShortcuts();
+            setupToolBehavior();
             setupBeforeUnloadWarning();
+            initZoomDropdown();
 
             // Wire up file input
             const fileInput = document.getElementById('openFileInput');
@@ -996,6 +1404,9 @@ const PDFoxApp = (function() {
                     sizeValue.textContent = brushSize.value;
                 });
             }
+
+            // Setup drag and drop on the canvas container
+            setupDragAndDrop();
 
             // Load PDF from storage (supports both sessionStorage and IndexedDB)
             try {
@@ -1015,8 +1426,8 @@ const PDFoxApp = (function() {
                 }
 
                 if (!pdfData) {
-                    ui.showAlert('No PDF file found. Redirecting to home...', 'error');
-                    setTimeout(() => window.location.href = '/', 2000);
+                    // No PDF found - show empty state (don't redirect)
+                    showEmptyState();
                     return;
                 }
 
@@ -1035,14 +1446,16 @@ const PDFoxApp = (function() {
                 const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
                 core.set('pdfBytes', pdfBytes);
 
-                // Load PDF
+                // Load PDF (renderer will calculate optimal zoom automatically)
                 await renderer.loadPDF(new Uint8Array(pdfBytes));
 
                 // Set default tool
                 setTool('editText');
 
-                // Initialize zoom display
+                // Initialize zoom display and notify user
                 updateZoomDisplay();
+                const appliedZoom = Math.round(core.get('scale') * 100);
+                ui.showNotification(`Zoom auto-adjusted to ${appliedZoom}% for best view`, 'success');
             } catch (error) {
                 console.error('Error loading PDF:', error);
                 ui.showAlert('Failed to load PDF: ' + error.message, 'error');
@@ -1051,6 +1464,7 @@ const PDFoxApp = (function() {
 
         // Expose public methods
         setTool,
+        resetToDefaultTool,
         undo,
         redo,
         savePDF,
@@ -1058,6 +1472,8 @@ const PDFoxApp = (function() {
         zoomIn,
         zoomOut,
         zoomFit,
+        zoomFitWidth,
+        setZoomLevel,
         rotatePage,
         deletePage,
         exportText,

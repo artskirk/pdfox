@@ -139,6 +139,9 @@ const PDFoxUI = (function() {
                     id: 'alertModal'
                 });
 
+                // Make modal visible (CSS has display: none by default)
+                modal.style.display = 'flex';
+
                 modal.innerHTML = `
                     <div class="custom-modal-content">
                         <div class="modal-icon">${icons[type]}</div>
@@ -153,6 +156,7 @@ const PDFoxUI = (function() {
 
                 const okBtn = modal.querySelector('#alertOkBtn');
                 const closeModal = () => {
+                    document.removeEventListener('keydown', escHandler);
                     modal.remove();
                     resolve();
                 };
@@ -161,6 +165,16 @@ const PDFoxUI = (function() {
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) closeModal();
                 });
+
+                // Escape key to close
+                const escHandler = (e) => {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        closeModal();
+                    }
+                };
+                document.addEventListener('keydown', escHandler);
             });
         },
 
@@ -170,10 +184,19 @@ const PDFoxUI = (function() {
          * @param {Function} callback - Callback with result (true/false)
          */
         showConfirm(message, callback) {
+            // Prevent multiple modals
+            const existingModal = document.getElementById('confirmModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
             const modal = createElement('div', {
                 className: 'custom-modal',
                 id: 'confirmModal'
             });
+
+            // Make modal visible (CSS has display: none by default)
+            modal.style.display = 'flex';
 
             modal.innerHTML = `
                 <div class="custom-modal-content">
@@ -193,16 +216,42 @@ const PDFoxUI = (function() {
 
             document.body.appendChild(modal);
 
+            // Escape key handler (declared early so closeModal can reference it)
+            let escHandler;
+
             const closeModal = (result) => {
+                document.removeEventListener('keydown', escHandler);
                 modal.remove();
-                if (callback) callback(result);
+                // Use setTimeout to prevent click events from falling through to elements beneath
+                if (callback) {
+                    setTimeout(() => callback(result), 0);
+                }
             };
 
-            modal.querySelector('#confirmOkBtn').addEventListener('click', () => closeModal(true));
-            modal.querySelector('#confirmCancelBtn').addEventListener('click', () => closeModal(false));
+            modal.querySelector('#confirmOkBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                closeModal(true);
+            });
+            modal.querySelector('#confirmCancelBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                closeModal(false);
+            });
             modal.addEventListener('click', (e) => {
+                e.stopPropagation();
                 if (e.target === modal) closeModal(false);
             });
+
+            // Escape key to close
+            escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeModal(false);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
         },
 
         /**

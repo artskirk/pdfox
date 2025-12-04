@@ -12,7 +12,7 @@ const PDFoxCore = (function() {
         pdfDoc: null,
         currentPage: 1,
         totalPages: 0,
-        scale: 1.5,
+        scale: 1.0,
         currentTool: 'editText',
         textEdits: [],
         textOverlays: [],
@@ -25,7 +25,8 @@ const PDFoxCore = (function() {
         selectedSignature: null,
         selectedLayerId: null,
         isDrawing: false,
-        pdfBytes: null
+        pdfBytes: null,
+        isImageBasedPDF: false
     };
 
     // Event subscribers

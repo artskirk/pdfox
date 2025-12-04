@@ -22,9 +22,37 @@ const PDFoxAnnotations = (function() {
     let ocrSelection = null;
     let isSelectingOCR = false;
     let ocrSelectionStart = null;
+    let selectionAnimationFrame = null;
 
     // Removed areas (redactions)
     let removedAreas = [];
+
+    /**
+     * Start marching ants animation for selection
+     */
+    function startSelectionAnimation() {
+        if (selectionAnimationFrame) return;
+
+        function animate() {
+            if (ocrSelection) {
+                redrawAnnotations();
+                selectionAnimationFrame = requestAnimationFrame(animate);
+            } else {
+                stopSelectionAnimation();
+            }
+        }
+        selectionAnimationFrame = requestAnimationFrame(animate);
+    }
+
+    /**
+     * Stop marching ants animation
+     */
+    function stopSelectionAnimation() {
+        if (selectionAnimationFrame) {
+            cancelAnimationFrame(selectionAnimationFrame);
+            selectionAnimationFrame = null;
+        }
+    }
 
     /**
      * Redraw all annotations on canvas
@@ -70,15 +98,80 @@ const PDFoxAnnotations = (function() {
             }
         });
 
-        // Draw OCR selection if active
+        // Draw OCR selection if active - Professional selection UI
         if (ocrSelection && ocrSelection.page === currentPage) {
+            const currentTool = core.get('currentTool');
+            const isErase = currentTool === 'erase';
+
             annotationContext.save();
-            annotationContext.strokeStyle = '#2196F3';
-            annotationContext.lineWidth = 3;
-            annotationContext.setLineDash([10, 5]);
-            annotationContext.fillStyle = 'rgba(33, 150, 243, 0.1)';
+
+            // Selection colors based on tool
+            const primaryColor = isErase ? '#E50914' : '#E50914'; // Brand red for both
+            const fillColor = isErase ? 'rgba(229, 9, 20, 0.08)' : 'rgba(229, 9, 20, 0.06)';
+
+            // Draw subtle fill
+            annotationContext.fillStyle = fillColor;
             annotationContext.fillRect(ocrSelection.x, ocrSelection.y, ocrSelection.width, ocrSelection.height);
+
+            // Draw refined border with marching ants animation effect
+            annotationContext.strokeStyle = primaryColor;
+            annotationContext.lineWidth = 1.5;
+            annotationContext.setLineDash([6, 4]);
+            annotationContext.lineDashOffset = -(Date.now() / 50) % 10; // Animated marching ants
             annotationContext.strokeRect(ocrSelection.x, ocrSelection.y, ocrSelection.width, ocrSelection.height);
+
+            // Draw corner handles for visual feedback
+            const handleSize = 8;
+            const corners = [
+                { x: ocrSelection.x, y: ocrSelection.y },
+                { x: ocrSelection.x + ocrSelection.width, y: ocrSelection.y },
+                { x: ocrSelection.x, y: ocrSelection.y + ocrSelection.height },
+                { x: ocrSelection.x + ocrSelection.width, y: ocrSelection.y + ocrSelection.height }
+            ];
+
+            annotationContext.setLineDash([]);
+            corners.forEach(corner => {
+                // White fill with colored border
+                annotationContext.fillStyle = '#FFFFFF';
+                annotationContext.strokeStyle = primaryColor;
+                annotationContext.lineWidth = 2;
+                annotationContext.beginPath();
+                annotationContext.arc(corner.x, corner.y, handleSize / 2, 0, Math.PI * 2);
+                annotationContext.fill();
+                annotationContext.stroke();
+            });
+
+            // Draw dimensions label if selection is large enough
+            if (Math.abs(ocrSelection.width) > 60 && Math.abs(ocrSelection.height) > 40) {
+                const labelText = isErase ? 'Redact Area' : 'OCR Region';
+                const labelX = ocrSelection.x + ocrSelection.width / 2;
+                const labelY = ocrSelection.y + ocrSelection.height / 2;
+
+                // Label background
+                annotationContext.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                const textMetrics = annotationContext.measureText(labelText);
+                const padding = 8;
+                const labelWidth = textMetrics.width + padding * 2;
+                const labelHeight = 24;
+
+                annotationContext.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                annotationContext.beginPath();
+                annotationContext.roundRect(
+                    labelX - labelWidth / 2,
+                    labelY - labelHeight / 2,
+                    labelWidth,
+                    labelHeight,
+                    4
+                );
+                annotationContext.fill();
+
+                // Label text
+                annotationContext.fillStyle = '#FFFFFF';
+                annotationContext.textAlign = 'center';
+                annotationContext.textBaseline = 'middle';
+                annotationContext.fillText(labelText, labelX, labelY);
+            }
+
             annotationContext.restore();
         }
 
@@ -106,6 +199,7 @@ const PDFoxAnnotations = (function() {
             isSelectingOCR = true;
             ocrSelectionStart = { x, y };
             ocrSelection = { x, y, width: 0, height: 0, page: core.get('currentPage') };
+            startSelectionAnimation(); // Start marching ants animation
             core.emit('ocr:selectionStart');
             return;
         }
@@ -206,6 +300,7 @@ const PDFoxAnnotations = (function() {
         // Handle OCR selection completion
         if (isSelectingOCR && currentTool === 'ocrSelect') {
             isSelectingOCR = false;
+            stopSelectionAnimation(); // Stop marching ants
             normalizeSelection();
 
             if (ocrSelection.width > 20 && ocrSelection.height > 20) {
@@ -220,6 +315,7 @@ const PDFoxAnnotations = (function() {
         // Handle Erase selection completion
         if (isSelectingOCR && currentTool === 'erase') {
             isSelectingOCR = false;
+            stopSelectionAnimation(); // Stop marching ants
             normalizeSelection();
 
             if (ocrSelection.width > 10 && ocrSelection.height > 10) {
@@ -328,6 +424,7 @@ const PDFoxAnnotations = (function() {
 
                 // Clear OCR selection when switching tools
                 if (value !== 'ocrSelect' && value !== 'erase' && ocrSelection) {
+                    stopSelectionAnimation();
                     ocrSelection = null;
                     redrawAnnotations();
                 }
@@ -363,6 +460,7 @@ const PDFoxAnnotations = (function() {
          * Clear OCR selection
          */
         clearOCRSelection() {
+            stopSelectionAnimation();
             ocrSelection = null;
             redrawAnnotations();
         },

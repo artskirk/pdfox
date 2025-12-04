@@ -146,70 +146,11 @@ const PDFoxOverlays = (function() {
      * @param {string} overlayId - Overlay ID
      */
     function editOverlay(overlayId) {
-        const textOverlays = core.get('textOverlays');
-        const overlay = textOverlays.find(o => o.id === overlayId);
-        if (!overlay) return;
-
-        // Create edit modal
-        const modal = document.createElement('div');
-        modal.className = 'overlay-edit-modal';
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000;';
-
-        modal.innerHTML = `
-            <div style="background: #1a1a1a; padding: 32px; border-radius: 16px; max-width: 520px; width: 90%; border: 1px solid #333; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);">
-                <h3 style="margin: 0 0 24px 0; color: #ffffff; font-size: 22px; display: flex; align-items: center; gap: 10px;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                    Edit Text
-                </h3>
-
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text:</label>
-                    <textarea id="editOverlayText" style="width: 100%; height: 100px; padding: 12px; border: 2px solid #333; border-radius: 8px; font-family: inherit; resize: vertical; background: #2a2a2a; color: #ffffff; font-size: 14px; box-sizing: border-box;">${overlay.text}</textarea>
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font Size: <span id="editOverlayFontSizeValue" style="color: #E50914; font-weight: 600;">${overlay.fontSize}px</span></label>
-                    <input type="range" id="editOverlayFontSize" value="${overlay.fontSize}" min="8" max="72" style="width: 100%; height: 6px; accent-color: #E50914; cursor: pointer;" oninput="document.getElementById('editOverlayFontSizeValue').textContent = this.value + 'px'">
-                    <div style="display: flex; gap: 8px; margin-top: 10px;">
-                        ${[10, 12, 14, 18, 24, 36].map(size => `
-                            <button type="button" onclick="PDFoxUI.setFontSize('editOverlayFontSize', 'editOverlayFontSizeValue', ${size})"
-                                style="flex: 1; padding: 6px 0; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer;">${size}</button>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                    <div>
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Text Color:</label>
-                        <input type="color" id="editOverlayTextColor" value="${overlay.color}" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Background:</label>
-                        <input type="color" id="editOverlayBgColor" value="${rgbaToHex(overlay.bgColor)}" style="width: 100%; height: 42px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; cursor: pointer; box-sizing: border-box;">
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Font:</label>
-                        <select id="editOverlayFontFamily" style="width: 100%; padding: 10px 8px; border: 2px solid #333; border-radius: 8px; background: #2a2a2a; color: #ffffff; font-size: 13px; cursor: pointer; box-sizing: border-box;">
-                            <option value="Arial, sans-serif" ${(overlay.fontFamily || 'Arial, sans-serif') === 'Arial, sans-serif' ? 'selected' : ''}>Arial</option>
-                            <option value="'Times New Roman', serif" ${overlay.fontFamily === "'Times New Roman', serif" ? 'selected' : ''}>Times New Roman</option>
-                            <option value="'Courier New', monospace" ${overlay.fontFamily === "'Courier New', monospace" ? 'selected' : ''}>Courier New</option>
-                            <option value="Georgia, serif" ${overlay.fontFamily === 'Georgia, serif' ? 'selected' : ''}>Georgia</option>
-                            <option value="Verdana, sans-serif" ${overlay.fontFamily === 'Verdana, sans-serif' ? 'selected' : ''}>Verdana</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                    <button onclick="this.closest('.overlay-edit-modal').remove()" style="padding: 12px 24px; background: #2a2a2a; color: #ffffff; border: 2px solid #333; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">Cancel</button>
-                    <button onclick="PDFoxOverlays.saveEdit('${overlayId}')" style="padding: 12px 24px; background: #E50914; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);">Save Changes</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
+        // Use unified text editor
+        if (typeof PDFoxUnifiedTextEditor !== 'undefined') {
+            if (PDFoxUnifiedTextEditor.isOpen()) return;
+            PDFoxUnifiedTextEditor.showEditOverlay(overlayId);
+        }
     }
 
     /**
@@ -398,21 +339,28 @@ const PDFoxOverlays = (function() {
             core.on('layer:delete', (layer) => {
                 if (layer.type === 'text-overlay') {
                     // Directly remove without confirmation (already confirmed in layers.js)
-                    core.remove('textOverlays', o => o.id === layer.id);
-                    if (selectedOverlay === layer.id) {
-                        selectedOverlay = null;
-                        core.set('selectedOverlay', null);
+                    const removed = core.remove('textOverlays', o => o.id === layer.id);
+                    if (removed) {
+                        if (selectedOverlay === layer.id) {
+                            selectedOverlay = null;
+                            core.set('selectedOverlay', null);
+                        }
+                        renderOverlays();
+                        ui.showNotification('Text overlay deleted', 'success');
                     }
-                    renderOverlays();
-                    ui.showNotification('Text overlay deleted', 'success');
                 }
             });
 
             // Delete key handler
             document.addEventListener('keydown', (e) => {
                 if ((e.key === 'Delete' || e.key === 'Backspace') && selectedOverlay) {
+                    // Don't trigger if a modal is open or input is focused
                     if (document.activeElement.tagName !== 'INPUT' &&
-                        document.activeElement.tagName !== 'TEXTAREA') {
+                        document.activeElement.tagName !== 'TEXTAREA' &&
+                        document.activeElement.tagName !== 'BUTTON' &&
+                        !document.querySelector('.custom-modal') &&
+                        !document.querySelector('.edit-modal-overlay') &&
+                        !document.getElementById('unifiedTextEditorModal')) {
                         deleteOverlay(selectedOverlay);
                         e.preventDefault();
                     }
@@ -456,29 +404,11 @@ const PDFoxOverlays = (function() {
         edit: editOverlay,
 
         /**
-         * Save overlay edit
+         * Save overlay edit (legacy - now handled by unified editor)
          * @param {string} overlayId - Overlay ID
          */
         saveEdit(overlayId) {
-            const textOverlays = core.get('textOverlays');
-            const index = textOverlays.findIndex(o => o.id === overlayId);
-            if (index === -1) return;
-
-            const overlay = textOverlays[index];
-            const bgColor = document.getElementById('editOverlayBgColor').value;
-
-            const updated = {
-                ...overlay,
-                text: document.getElementById('editOverlayText').value,
-                fontSize: parseInt(document.getElementById('editOverlayFontSize').value) || 14,
-                color: document.getElementById('editOverlayTextColor').value,
-                bgColor: hexToRgba(bgColor, 0.9),
-                fontFamily: document.getElementById('editOverlayFontFamily').value
-            };
-
-            core.updateAt('textOverlays', index, updated);
-            document.querySelector('.overlay-edit-modal')?.remove();
-            ui.showNotification('Text overlay updated!', 'success');
+            // Now handled by unified text editor
         },
 
         /**

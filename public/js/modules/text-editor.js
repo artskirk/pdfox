@@ -99,11 +99,10 @@ const PDFoxTextEditor = (function() {
         const currentTool = core.get('currentTool');
         if (currentTool !== 'editText') return;
 
-        const editModal = document.getElementById('editModal');
-        if (!editModal) return;
-
-        // Simple guard - just check if already visible
-        if (editModal.style.display === 'flex') return;
+        // Check if unified editor is already open
+        if (typeof PDFoxUnifiedTextEditor !== 'undefined' && PDFoxUnifiedTextEditor.isOpen()) {
+            return;
+        }
 
         const index = parseInt(span.dataset.index);
         const page = parseInt(span.dataset.page);
@@ -120,31 +119,28 @@ const PDFoxTextEditor = (function() {
             original: existingEdit ? existingEdit.originalText : originalText,
             page: page,
             index: index,
-            editIndex: existingEditIndex >= 0 ? existingEditIndex : undefined,
-            item: { str: existingEdit ? existingEdit.originalText : originalText },
+            editIndex: existingEditIndex >= 0 ? existingEditIndex : -1,
+            fontName: existingEdit?.fontName,
             originalWidth: span.offsetWidth
         };
 
-        // Populate the edit modal
-        const origTextEl = document.getElementById('originalText');
-        const editTextArea = document.getElementById('editTextArea');
-        const editFontSize = document.getElementById('editTextFontSize');
-        const editFontSizeValue = document.getElementById('editTextFontSizeValue');
-        const editTextColor = document.getElementById('editTextColor');
-        const editTextBgColor = document.getElementById('editTextBgColor');
-        const editTextFontFamily = document.getElementById('editTextFontFamily');
-
-        if (origTextEl) origTextEl.textContent = currentEditingTextItem.original;
-        if (editTextArea) editTextArea.value = originalText;
-
-        const currentFontSize = existingEdit?.customFontSize || Math.round(fontSize);
-        if (editFontSize) editFontSize.value = currentFontSize;
-        if (editFontSizeValue) editFontSizeValue.textContent = currentFontSize + 'px';
-        if (editTextColor) editTextColor.value = existingEdit?.customColor || '#000000';
-        if (editTextBgColor) editTextBgColor.value = existingEdit?.customBgColor || '#ffffff';
-        if (editTextFontFamily) editTextFontFamily.value = existingEdit?.customFontFamily || 'Arial, sans-serif';
-
-        editModal.style.display = 'flex';
+        // Use unified text editor
+        if (typeof PDFoxUnifiedTextEditor !== 'undefined') {
+            PDFoxUnifiedTextEditor.showEditText({
+                span: span,
+                original: currentEditingTextItem.original,
+                text: originalText,
+                page: page,
+                index: index,
+                editIndex: currentEditingTextItem.editIndex,
+                fontName: currentEditingTextItem.fontName,
+                originalWidth: currentEditingTextItem.originalWidth,
+                fontSize: existingEdit?.customFontSize || Math.round(fontSize),
+                textColor: existingEdit?.customColor || '#000000',
+                bgColor: existingEdit?.customBgColor || '#ffffff',
+                fontFamily: existingEdit?.customFontFamily || 'Arial, sans-serif'
+            });
+        }
     }
 
     /**
@@ -170,21 +166,17 @@ const PDFoxTextEditor = (function() {
             // Setup text layer click events
             setupTextLayerEvents();
 
-            // Subscribe to layer edit events
+            // Subscribe to layer edit events (only handle text-edit, text-overlay is handled by overlays.js)
             core.on('layer:edit', (layer) => {
                 if (layer.type === 'text-edit') {
                     this.openEditModal(layer);
-                } else if (layer.type === 'text-overlay') {
-                    this.openOverlayEditModal(layer.id);
                 }
             });
 
-            // Subscribe to layer delete events
+            // Subscribe to layer delete events (only handle text-edit, text-overlay is handled by overlays.js)
             core.on('layer:delete', (layer) => {
                 if (layer.type === 'text-edit') {
                     this.removeEdit(layer.editIndex);
-                } else if (layer.type === 'text-overlay') {
-                    this.deleteOverlay(layer.id);
                 }
             });
         },
@@ -195,74 +187,31 @@ const PDFoxTextEditor = (function() {
          * @param {number} y - Y position
          */
         openAddTextModal(x, y) {
-            const modal = document.getElementById('addTextModal');
-            if (!modal) return;
+            // Use unified text editor
+            if (typeof PDFoxUnifiedTextEditor !== 'undefined') {
+                if (PDFoxUnifiedTextEditor.isOpen()) return;
 
-            if (modal.style.display === 'flex') return;
+                const defaultFontSize = parseInt(document.getElementById('fontSize')?.value) || 14;
+                const defaultColor = document.getElementById('textColor')?.value || '#000000';
 
-            addTextPosition = { x, y };
-
-            // Reset form
-            const defaultFontSize = document.getElementById('fontSize')?.value || 14;
-            const defaultColor = document.getElementById('textColor')?.value || '#000000';
-
-            $('#addTextArea').value = '';
-            $('#addTextFontSize').value = defaultFontSize;
-            $('#addTextFontSizeValue').textContent = defaultFontSize + 'px';
-            $('#addTextColor').value = defaultColor;
-            $('#addTextBgColor').value = '#ffffff';
-            $('#addTextFontFamily').value = 'Arial, sans-serif';
-
-            modal.style.display = 'flex';
-            $('#addTextArea').focus();
+                PDFoxUnifiedTextEditor.showAddText(x, y, core.get('currentPage'));
+            }
         },
 
         /**
-         * Close Add Text modal
+         * Close Add Text modal (legacy - now handled by unified editor)
          */
         closeAddTextModal() {
-            const modal = document.getElementById('addTextModal');
-            if (modal) modal.style.display = 'none';
-            addTextPosition = { x: 0, y: 0 };
+            if (typeof PDFoxUnifiedTextEditor !== 'undefined') {
+                PDFoxUnifiedTextEditor.close();
+            }
         },
 
         /**
-         * Save new text overlay from Add Text modal
+         * Save new text overlay (legacy - now handled by unified editor)
          */
         saveAddText() {
-            const text = $('#addTextArea').value;
-            const fontSize = parseInt($('#addTextFontSize').value) || 14;
-            const textColor = $('#addTextColor').value || '#000000';
-            const bgColor = $('#addTextBgColor').value || '#ffffff';
-            const fontFamily = $('#addTextFontFamily').value || 'Arial, sans-serif';
-
-            if (!text || !text.trim()) {
-                ui.showAlert('Please enter some text.', 'warning');
-                return;
-            }
-
-            const overlay = {
-                id: generateId('overlay'),
-                text: text.trim(),
-                x: addTextPosition.x,
-                y: addTextPosition.y,
-                width: Math.max(100, text.length * fontSize * 0.6),
-                height: fontSize + 10,
-                fontSize: fontSize,
-                color: textColor,
-                bgColor: hexToRgba(bgColor, 0.9),
-                textOpacity: 1,
-                fontFamily: fontFamily,
-                alignment: 'left',
-                page: core.get('currentPage')
-            };
-
-            core.push('textOverlays', overlay);
-            core.emit('overlay:created', overlay);
-            core.emit('overlay:select', overlay.id);
-
-            this.closeAddTextModal();
-            ui.showNotification('Text added! Click to edit or drag to move.', 'success');
+            // Now handled by unified editor
         },
 
         /**
@@ -270,67 +219,61 @@ const PDFoxTextEditor = (function() {
          * @param {Object} layer - Layer data
          */
         openEditModal(layer) {
-            const editModal = document.getElementById('editModal');
-            if (!editModal) return;
+            // Use unified text editor
+            if (typeof PDFoxUnifiedTextEditor !== 'undefined') {
+                if (PDFoxUnifiedTextEditor.isOpen()) return;
 
-            // Simple guard - just check if already visible
-            if (editModal.style.display === 'flex') return;
+                const textEdits = core.get('textEdits');
+                const edit = textEdits[layer.editIndex];
+                if (!edit) return;
 
-            const textEdits = core.get('textEdits');
-            const edit = textEdits[layer.editIndex];
-            if (!edit) return;
+                const textSpan = document.querySelector(
+                    `#textLayer span[data-index="${layer.dataIndex}"][data-page="${layer.page}"]`
+                );
 
-            const textSpan = document.querySelector(
-                `#textLayer span[data-index="${layer.dataIndex}"][data-page="${layer.page}"]`
-            );
-
-            currentEditingTextItem = {
-                span: textSpan,
-                original: edit.originalText,
-                page: edit.page,
-                index: edit.index,
-                editIndex: layer.editIndex,
-                item: { str: edit.originalText, fontName: edit.fontName }
-            };
-
-            // Populate form
-            $('#originalText').textContent = edit.originalText;
-            $('#editTextArea').value = edit.newText;
-
-            const fontSize = edit.customFontSize || Math.round(parseFloat(textSpan?.style.fontSize)) || 14;
-            $('#editTextFontSize').value = fontSize;
-            $('#editTextFontSizeValue').textContent = fontSize + 'px';
-            $('#editTextColor').value = edit.customColor || '#000000';
-            $('#editTextBgColor').value = edit.customBgColor || '#ffffff';
-            $('#editTextFontFamily').value = edit.customFontFamily || 'Arial, sans-serif';
-
-            editModal.style.display = 'flex';
+                PDFoxUnifiedTextEditor.showEditText({
+                    span: textSpan,
+                    original: edit.originalText,
+                    text: edit.newText,
+                    page: edit.page,
+                    index: edit.index,
+                    editIndex: layer.editIndex,
+                    fontName: edit.fontName,
+                    originalWidth: textSpan?.offsetWidth || 100,
+                    fontSize: edit.customFontSize || Math.round(parseFloat(textSpan?.style.fontSize)) || 14,
+                    textColor: edit.customColor || '#000000',
+                    bgColor: edit.customBgColor || '#ffffff',
+                    fontFamily: edit.customFontFamily || 'Arial, sans-serif'
+                });
+            }
         },
 
         /**
-         * Close Edit Text modal
+         * Close Edit Text modal (legacy - now handled by unified editor)
          */
         closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-            currentEditingTextItem = null;
+            if (typeof PDFoxUnifiedTextEditor !== 'undefined') {
+                PDFoxUnifiedTextEditor.close();
+            }
         },
 
         /**
-         * Save text edit
+         * Save text edit (legacy - now handled by unified editor)
          */
         saveTextEdit() {
-            const newText = $('#editTextArea').value;
-            const customFontSize = parseInt($('#editTextFontSize').value) || 14;
-            const customColor = $('#editTextColor').value || '#000000';
-            const customBgColor = $('#editTextBgColor').value || '#ffffff';
-            const customFontFamily = $('#editTextFontFamily').value || 'Arial, sans-serif';
+            // Now handled by unified editor - keeping stub for compatibility
+            const newText = $('#editTextArea')?.value;
+            const customFontSize = parseInt($('#editTextFontSize')?.value) || 14;
+            const customColor = $('#editTextColor')?.value || '#000000';
+            const customBgColor = $('#editTextBgColor')?.value || '#ffffff';
+            const customFontFamily = $('#editTextFontFamily')?.value || 'Arial, sans-serif';
 
             if (!currentEditingTextItem) {
                 this.closeEditModal();
                 return;
             }
 
-            if (newText.trim() === '') {
+            if (!newText || newText.trim() === '') {
                 ui.showAlert('Text cannot be empty.', 'warning');
                 return;
             }
