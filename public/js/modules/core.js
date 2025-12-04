@@ -19,6 +19,8 @@ const PDFoxCore = (function() {
         signatures: [],
         annotations: [],
         actionHistory: [],
+        redoHistory: [],
+        pageRotations: {},
         selectedOverlay: null,
         selectedSignature: null,
         selectedLayerId: null,
@@ -177,6 +179,8 @@ const PDFoxCore = (function() {
          */
         addToHistory(action) {
             state.actionHistory.push(action);
+            // Clear redo history when new action is added
+            state.redoHistory = [];
             this.emit('history:added', action);
         },
 
@@ -190,6 +194,35 @@ const PDFoxCore = (function() {
                 this.emit('history:popped', action);
             }
             return action || null;
+        },
+
+        /**
+         * Add action to redo history
+         * @param {Object} action - Action object with type and data
+         */
+        addToRedoHistory(action) {
+            state.redoHistory.push(action);
+            this.emit('redoHistory:added', action);
+        },
+
+        /**
+         * Pop last action from redo history
+         * @returns {Object|null} Last action or null
+         */
+        popRedoHistory() {
+            const action = state.redoHistory.pop();
+            if (action) {
+                this.emit('redoHistory:popped', action);
+            }
+            return action || null;
+        },
+
+        /**
+         * Check if redo is available
+         * @returns {boolean}
+         */
+        canRedo() {
+            return state.redoHistory.length > 0;
         }
     };
 })();

@@ -397,7 +397,14 @@ const PDFoxOverlays = (function() {
 
             core.on('layer:delete', (layer) => {
                 if (layer.type === 'text-overlay') {
-                    this.delete(layer.id, true);
+                    // Directly remove without confirmation (already confirmed in layers.js)
+                    core.remove('textOverlays', o => o.id === layer.id);
+                    if (selectedOverlay === layer.id) {
+                        selectedOverlay = null;
+                        core.set('selectedOverlay', null);
+                    }
+                    renderOverlays();
+                    ui.showNotification('Text overlay deleted', 'success');
                 }
             });
 

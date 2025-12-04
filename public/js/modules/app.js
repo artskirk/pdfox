@@ -64,6 +64,9 @@ const PDFoxApp = (function() {
 
         const currentPage = core.get('currentPage');
 
+        // Save action for redo
+        core.addToRedoHistory(action);
+
         switch (action.type) {
             case 'annotation':
                 core.remove('annotations', ann => ann === action.data);
@@ -104,6 +107,73 @@ const PDFoxApp = (function() {
                 annotations.restoreRemovedArea(action.data);
                 ui.showNotification('Removed area restored', 'success');
                 break;
+        }
+    }
+
+    /**
+     * Redo last undone action
+     */
+    function redo() {
+        const action = core.popRedoHistory();
+        if (!action) {
+            ui.showAlert('Nothing to redo', 'info');
+            return;
+        }
+
+        const currentPage = core.get('currentPage');
+
+        switch (action.type) {
+            case 'annotation':
+                core.push('annotations', action.data);
+                annotations.redraw();
+                core.addToHistory(action);
+                ui.showNotification('Drawing restored', 'success');
+                break;
+
+            case 'signature':
+                core.push('signatures', action.data);
+                core.addToHistory(action);
+                ui.showNotification('Signature restored', 'success');
+                break;
+
+            case 'textEditCreate':
+                core.push('textEdits', action.edit);
+                renderer.renderPage(currentPage);
+                core.addToHistory(action);
+                ui.showNotification('Text edit restored', 'success');
+                break;
+
+            case 'textEditUpdate':
+                const textEditsForUpdate = core.get('textEdits');
+                if (textEditsForUpdate[action.editIndex]) {
+                    const current = { ...textEditsForUpdate[action.editIndex] };
+                    core.updateAt('textEdits', action.editIndex, action.newState || action.edit);
+                    action.previousState = current;
+                    renderer.renderPage(currentPage);
+                    core.addToHistory(action);
+                }
+                ui.showNotification('Text edit reapplied', 'success');
+                break;
+
+            case 'textMove':
+                const textEditsForMove = core.get('textEdits');
+                if (textEditsForMove[action.editIndex]) {
+                    textEditsForMove[action.editIndex].x = action.newX;
+                    textEditsForMove[action.editIndex].y = action.newY;
+                    renderer.renderPage(currentPage);
+                    core.addToHistory(action);
+                }
+                ui.showNotification('Text position reapplied', 'success');
+                break;
+
+            case 'removeArea':
+                annotations.addRemovedArea(action.data);
+                core.addToHistory(action);
+                ui.showNotification('Area redacted again', 'success');
+                break;
+
+            default:
+                ui.showAlert('Cannot redo this action', 'warning');
         }
     }
 
@@ -370,6 +440,375 @@ const PDFoxApp = (function() {
         } : { r: 0, g: 0, b: 0 };
     }
 
+    // Zoom levels
+    const ZOOM_LEVELS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
+
+    /**
+     * Update stored PDF (supports large files via IndexedDB)
+     * @param {Uint8Array} pdfBytes - PDF bytes to store
+     */
+    async function updateStoredPDF(pdfBytes) {
+        try {
+            // Convert to base64 data URL
+            let binary = '';
+            const chunkSize = 8192;
+            for (let i = 0; i < pdfBytes.length; i += chunkSize) {
+                const chunk = pdfBytes.subarray(i, i + chunkSize);
+                binary += String.fromCharCode.apply(null, chunk);
+            }
+            const base64 = btoa(binary);
+            const dataUrl = 'data:application/pdf;base64,' + base64;
+
+            // Use PDFStorage if available (supports IndexedDB for large files)
+            if (typeof PDFStorage !== 'undefined') {
+                await PDFStorage.update(dataUrl);
+            } else {
+                // Fallback to sessionStorage
+                sessionStorage.setItem('pdfToEdit', dataUrl);
+            }
+        } catch (error) {
+            console.error('Failed to update stored PDF:', error);
+            // Don't throw - the PDF is still in memory
+        }
+    }
+
+    /**
+     * Update zoom display
+     */
+    function updateZoomDisplay() {
+        const scale = core.get('scale');
+        const display = document.getElementById('zoomDisplay');
+        if (display) {
+            display.textContent = Math.round(scale * 100) + '%';
+        }
+    }
+
+    /**
+     * Zoom in
+     */
+    function zoomIn() {
+        const pdfDoc = core.get('pdfDoc');
+        if (!renderer || !pdfDoc) {
+            ui.showNotification('Please load a PDF first', 'info');
+            return;
+        }
+        const currentScale = core.get('scale') || 1.0;
+        const nextLevel = ZOOM_LEVELS.find(z => z > currentScale);
+        if (nextLevel) {
+            core.set('scale', nextLevel);
+            renderer.renderPage(core.get('currentPage'));
+            updateZoomDisplay();
+            ui.showNotification(`Zoom: ${Math.round(nextLevel * 100)}%`, 'success');
+        } else {
+            ui.showNotification('Maximum zoom reached', 'info');
+        }
+    }
+
+    /**
+     * Zoom out
+     */
+    function zoomOut() {
+        const pdfDoc = core.get('pdfDoc');
+        if (!renderer || !pdfDoc) {
+            ui.showNotification('Please load a PDF first', 'info');
+            return;
+        }
+        const currentScale = core.get('scale') || 1.0;
+        const prevLevel = [...ZOOM_LEVELS].reverse().find(z => z < currentScale);
+        if (prevLevel) {
+            core.set('scale', prevLevel);
+            renderer.renderPage(core.get('currentPage'));
+            updateZoomDisplay();
+            ui.showNotification(`Zoom: ${Math.round(prevLevel * 100)}%`, 'success');
+        } else {
+            ui.showNotification('Minimum zoom reached', 'info');
+        }
+    }
+
+    /**
+     * Fit to window
+     */
+    function zoomFit() {
+        const pdfDoc = core.get('pdfDoc');
+        if (!renderer || !pdfDoc) {
+            ui.showNotification('Please load a PDF first', 'info');
+            return;
+        }
+        core.set('scale', 1.5);
+        renderer.renderPage(core.get('currentPage'));
+        updateZoomDisplay();
+        ui.showNotification('Zoom: 150% (Fit)', 'success');
+    }
+
+    /**
+     * Rotate current page
+     * @param {number} degrees - Rotation degrees (90 or -90)
+     */
+    async function rotatePage(degrees) {
+        let pdfBytes = core.get('pdfBytes');
+        if (!pdfBytes) {
+            ui.showAlert('No PDF loaded', 'error');
+            return;
+        }
+
+        ui.showLoading('Rotating page...');
+
+        try {
+            // Ensure pdfBytes is in correct format for pdf-lib
+            if (pdfBytes instanceof Uint8Array) {
+                pdfBytes = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength);
+            }
+
+            const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+            const pages = pdfDoc.getPages();
+            const currentPage = core.get('currentPage');
+            const page = pages[currentPage - 1];
+
+            const currentRotation = page.getRotation().angle;
+            const newRotation = (currentRotation + degrees + 360) % 360;
+            page.setRotation(PDFLib.degrees(newRotation));
+
+            // Save the modified PDF
+            const modifiedPdfBytes = await pdfDoc.save();
+            const newPdfBytes = new Uint8Array(modifiedPdfBytes);
+            core.set('pdfBytes', newPdfBytes);
+
+            // Update storage (supports large files via IndexedDB)
+            await updateStoredPDF(newPdfBytes);
+
+            // Reload the PDF
+            await renderer.loadPDF(newPdfBytes);
+
+            ui.hideLoading();
+            ui.showNotification(`Page rotated ${degrees > 0 ? 'right' : 'left'}`, 'success');
+        } catch (error) {
+            ui.hideLoading();
+            console.error('Error rotating page:', error);
+            ui.showAlert('Failed to rotate page: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Delete current page
+     */
+    async function deletePage() {
+        const totalPages = core.get('totalPages');
+        if (totalPages <= 1) {
+            ui.showAlert('Cannot delete the only page in the document', 'error');
+            return;
+        }
+
+        ui.showConfirm('Are you sure you want to delete this page? This action cannot be undone.', async (confirmed) => {
+            if (!confirmed) return;
+
+            let pdfBytes = core.get('pdfBytes');
+            if (!pdfBytes) {
+                ui.showAlert('No PDF loaded', 'error');
+                return;
+            }
+
+            ui.showLoading('Deleting page...');
+
+            try {
+                // Ensure pdfBytes is in correct format for pdf-lib
+                if (pdfBytes instanceof Uint8Array) {
+                    pdfBytes = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength);
+                }
+
+                const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                const currentPage = core.get('currentPage');
+
+                // Remove the page (0-indexed)
+                pdfDoc.removePage(currentPage - 1);
+
+                // Save the modified PDF
+                const modifiedPdfBytes = await pdfDoc.save();
+
+                // Store as Uint8Array for consistency
+                const newPdfBytes = new Uint8Array(modifiedPdfBytes);
+                core.set('pdfBytes', newPdfBytes);
+
+                // Update storage (supports large files via IndexedDB)
+                await updateStoredPDF(newPdfBytes);
+
+                // Reload the PDF
+                await renderer.loadPDF(newPdfBytes);
+
+                // Adjust current page if needed
+                const newTotalPages = core.get('totalPages');
+                if (currentPage > newTotalPages) {
+                    renderer.goToPage(newTotalPages);
+                }
+
+                ui.hideLoading();
+                ui.showNotification('Page deleted successfully', 'success');
+            } catch (error) {
+                ui.hideLoading();
+                console.error('Error deleting page:', error);
+                ui.showAlert('Failed to delete page: ' + error.message, 'error');
+            }
+        });
+    }
+
+    /**
+     * Export text from all pages
+     */
+    async function exportText() {
+        const pdfDoc = core.get('pdfDoc');
+        if (!pdfDoc) {
+            ui.showAlert('No PDF loaded', 'error');
+            return;
+        }
+
+        ui.showLoading('Extracting text...');
+
+        try {
+            const totalPages = core.get('totalPages');
+            let allText = '';
+
+            for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                const page = await pdfDoc.getPage(pageNum);
+                const textContent = await page.getTextContent();
+
+                allText += `--- Page ${pageNum} ---\n`;
+
+                // Extract text items
+                const textItems = textContent.items;
+                let lastY = null;
+                let lineText = '';
+
+                for (const item of textItems) {
+                    const y = Math.round(item.transform[5]);
+
+                    // If Y position changed significantly, start new line
+                    if (lastY !== null && Math.abs(y - lastY) > 5) {
+                        allText += lineText.trim() + '\n';
+                        lineText = '';
+                    }
+
+                    lineText += item.str + ' ';
+                    lastY = y;
+                }
+
+                // Add remaining text
+                if (lineText.trim()) {
+                    allText += lineText.trim() + '\n';
+                }
+
+                allText += '\n';
+            }
+
+            // Create and download file
+            const blob = new Blob([allText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (document.getElementById('docName')?.value || 'extracted') + '.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            ui.hideLoading();
+            ui.showAlert('Text exported successfully!', 'success');
+        } catch (error) {
+            ui.hideLoading();
+            console.error('Error exporting text:', error);
+            ui.showAlert('Failed to export text: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Generate and show shareable link
+     */
+    async function shareLink() {
+        const pdfBytes = core.get('pdfBytes');
+        if (!pdfBytes) {
+            ui.showAlert('No PDF loaded', 'error');
+            return;
+        }
+
+        // Show modal
+        const modal = document.getElementById('shareLinkModal');
+        const input = document.getElementById('shareUrlInput');
+        const status = document.getElementById('shareLinkStatus');
+
+        if (modal) {
+            modal.style.display = 'flex';
+            input.value = 'Generating link...';
+            status.textContent = '';
+        }
+
+        try {
+            // Generate a unique ID for this document
+            const docId = generateShareId();
+
+            // Store in sessionStorage with expiry (in real app, use server)
+            const shareData = {
+                pdfData: sessionStorage.getItem('pdfToEdit'),
+                fileName: sessionStorage.getItem('pdfFileName'),
+                timestamp: Date.now(),
+                expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+            };
+
+            sessionStorage.setItem('share_' + docId, JSON.stringify(shareData));
+
+            // Generate URL
+            const shareUrl = `${window.location.origin}/pdf-editor-modular.html?share=${docId}`;
+
+            if (input) {
+                input.value = shareUrl;
+            }
+            if (status) {
+                status.textContent = 'Link generated! Valid for 24 hours.';
+                status.style.color = '#4CAF50';
+            }
+        } catch (error) {
+            console.error('Error generating share link:', error);
+            if (status) {
+                status.textContent = 'Failed to generate link: ' + error.message;
+                status.style.color = '#dc3545';
+            }
+        }
+    }
+
+    /**
+     * Generate a random share ID
+     */
+    function generateShareId() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < 12; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    }
+
+    /**
+     * Copy share link to clipboard
+     */
+    function copyShareLink() {
+        const input = document.getElementById('shareUrlInput');
+        if (input && input.value && !input.value.includes('Generating')) {
+            navigator.clipboard.writeText(input.value).then(() => {
+                ui.showNotification('Link copied to clipboard!', 'success');
+            }).catch(() => {
+                // Fallback for older browsers
+                input.select();
+                document.execCommand('copy');
+                ui.showNotification('Link copied to clipboard!', 'success');
+            });
+        }
+    }
+
+    /**
+     * Close share modal
+     */
+    function closeShareModal() {
+        const modal = document.getElementById('shareLinkModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
     /**
      * Go back to home
      */
@@ -458,9 +897,25 @@ const PDFoxApp = (function() {
             }
 
             // Ctrl+Z - Undo
-            if (e.ctrlKey && e.key === 'z') {
+            if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
                 e.preventDefault();
                 undo();
+            }
+
+            // Ctrl+Y or Ctrl+Shift+Z - Redo
+            if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
+                e.preventDefault();
+                redo();
+            }
+
+            // +/= - Zoom in
+            if ((e.key === '+' || e.key === '=') && !e.ctrlKey) {
+                zoomIn();
+            }
+
+            // - - Zoom out
+            if (e.key === '-' && !e.ctrlKey) {
+                zoomOut();
             }
         });
     }
@@ -542,23 +997,35 @@ const PDFoxApp = (function() {
                 });
             }
 
-            // Load PDF from session storage
-            const pdfData = sessionStorage.getItem('pdfToEdit');
-            const fileName = sessionStorage.getItem('pdfFileName');
-
-            if (!pdfData) {
-                ui.showAlert('No PDF file found. Redirecting to home...', 'error');
-                setTimeout(() => window.location.href = '/', 2000);
-                return;
-            }
-
-            // Set document name
-            const docName = document.getElementById('docName');
-            if (docName && fileName) {
-                docName.value = fileName.replace('.pdf', '');
-            }
-
+            // Load PDF from storage (supports both sessionStorage and IndexedDB)
             try {
+                let pdfData, fileName;
+
+                // Check if PDFStorage module is available (for IndexedDB support)
+                if (typeof PDFStorage !== 'undefined') {
+                    const stored = await PDFStorage.retrieve();
+                    if (stored) {
+                        pdfData = stored.data;
+                        fileName = stored.fileName;
+                    }
+                } else {
+                    // Fallback to sessionStorage only
+                    pdfData = sessionStorage.getItem('pdfToEdit');
+                    fileName = sessionStorage.getItem('pdfFileName');
+                }
+
+                if (!pdfData) {
+                    ui.showAlert('No PDF file found. Redirecting to home...', 'error');
+                    setTimeout(() => window.location.href = '/', 2000);
+                    return;
+                }
+
+                // Set document name
+                const docName = document.getElementById('docName');
+                if (docName && fileName) {
+                    docName.value = fileName.replace('.pdf', '');
+                }
+
                 // Convert data URL to bytes
                 const base64Data = pdfData.split(',')[1];
                 if (!base64Data) {
@@ -573,6 +1040,9 @@ const PDFoxApp = (function() {
 
                 // Set default tool
                 setTool('editText');
+
+                // Initialize zoom display
+                updateZoomDisplay();
             } catch (error) {
                 console.error('Error loading PDF:', error);
                 ui.showAlert('Failed to load PDF: ' + error.message, 'error');
@@ -582,8 +1052,18 @@ const PDFoxApp = (function() {
         // Expose public methods
         setTool,
         undo,
+        redo,
         savePDF,
-        goBack
+        goBack,
+        zoomIn,
+        zoomOut,
+        zoomFit,
+        rotatePage,
+        deletePage,
+        exportText,
+        shareLink,
+        copyShareLink,
+        closeShareModal
     };
 })();
 

@@ -166,9 +166,23 @@ body {
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.8);
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    flex-wrap: nowrap;
+    align-items: stretch;
     border-bottom: 1px solid #222;
+    position: relative;
+    overflow: visible;
+    z-index: 500;
+}
+
+.toolbar-visible {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    justify-content: flex-end;
 }
 
 .tool-group {
@@ -178,9 +192,14 @@ body {
     padding: 8px 12px;
     border-right: 1px solid var(--color-border);
     position: relative;
+    flex-shrink: 0;
 }
 
 .tool-group:last-child { border-right: none; }
+
+.tool-group.hidden-in-toolbar {
+    display: none !important;
+}
 
 .tool-group-label {
     font-size: 10px;
@@ -195,6 +214,130 @@ body {
 .tool-group .tool-buttons {
     display: flex;
     gap: 5px;
+}
+
+/* Overflow Menu Group - hidden by default, shown when overflow exists */
+.toolbar-overflow-group {
+    display: none;
+    order: -1;
+    border-right: 1px solid var(--color-border);
+}
+
+.toolbar-overflow-group.has-overflow {
+    display: flex;
+}
+
+/* Overflow button inherits .tool-btn styles, just add badge positioning */
+.toolbar-overflow-group .tool-btn {
+    position: relative;
+}
+
+.toolbar-overflow-group .tool-btn.active {
+    background: var(--color-primary);
+    color: white;
+}
+
+.toolbar-overflow-group .tool-btn.active small {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.overflow-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--color-primary);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+
+/* Overflow Dropdown */
+.toolbar-overflow-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 24px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    padding: 12px;
+    z-index: 10000;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 70vh;
+    overflow-y: auto;
+    min-width: 280px;
+}
+
+.toolbar-overflow-dropdown.open {
+    display: flex;
+}
+
+.toolbar-overflow-dropdown .tool-group {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: 8px 4px 12px;
+    display: flex !important;
+}
+
+.toolbar-overflow-dropdown .tool-group:last-child {
+    border-bottom: none;
+    padding-bottom: 4px;
+}
+
+.toolbar-overflow-dropdown .tool-buttons {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+
+/* Dropdown animation */
+.toolbar-overflow-dropdown {
+    animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dropdown header for each group */
+.toolbar-overflow-dropdown .tool-group-label {
+    text-align: left;
+    color: var(--color-primary);
+    font-size: 11px;
+    margin-bottom: 8px;
+}
+
+/* Smaller buttons in dropdown for better fit */
+.toolbar-overflow-dropdown .tool-btn {
+    min-width: 55px;
+    padding: 8px 10px;
+}
+
+.toolbar-overflow-dropdown .tool-btn small {
+    font-size: 9px;
+}
+
+/* Zoom display in dropdown */
+.toolbar-overflow-dropdown .zoom-display {
+    min-width: 50px;
+    padding: 6px 8px;
+    font-size: 12px;
 }
 
 .tool-btn {
@@ -292,6 +435,21 @@ body {
     font-weight: 500;
     color: var(--color-text-secondary);
     margin-right: 10px;
+}
+
+/* Zoom Display */
+.zoom-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 55px;
+    padding: 8px 10px;
+    background: var(--color-bg-tertiary);
+    border-radius: 6px;
+    color: var(--color-primary);
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--color-border);
 }
 
 .color-picker {

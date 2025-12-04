@@ -89,9 +89,41 @@
 
     <input type="file" id="openFileInput" accept=".pdf" style="display: none;">
 
-    <div class="toolbar">
+    <div class="toolbar" id="toolbar">
+        <div class="toolbar-visible" id="toolbarVisible">
+        <!-- GROUP 0: Zoom Controls - Left side -->
+        <div class="tool-group" data-group="zoom" data-priority="1">
+            <span class="tool-group-label">Zoom</span>
+            <div class="tool-buttons">
+                <button class="tool-btn" id="zoomOutBtn" onclick="PDFoxApp.zoomOut()" data-tooltip="Zoom out (-)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M8 11h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>Out</small>
+                </button>
+                <span class="zoom-display" id="zoomDisplay">100%</span>
+                <button class="tool-btn" id="zoomInBtn" onclick="PDFoxApp.zoomIn()" data-tooltip="Zoom in (+)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M11 8v6M8 11h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>In</small>
+                </button>
+                <button class="tool-btn" id="zoomFitBtn" onclick="PDFoxApp.zoomFit()" data-tooltip="Fit to window">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M9 3v18M3 9h18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2"/>
+                    </svg>
+                    <small>Fit</small>
+                </button>
+            </div>
+        </div>
+
         <!-- GROUP 1: Text Tools - Primary editing workflow -->
-        <div class="tool-group" data-group="text">
+        <div class="tool-group" data-group="text" data-priority="2">
             <span class="tool-group-label">Text</span>
             <div class="tool-buttons">
                 <button class="tool-btn active" id="editTextTool" data-tool="editText" onclick="PDFoxApp.setTool('editText')" data-tooltip="Click on text to edit it">
@@ -119,7 +151,7 @@
         </div>
 
         <!-- GROUP 2: Selection & Extraction -->
-        <div class="tool-group" data-group="select">
+        <div class="tool-group" data-group="select" data-priority="3">
             <span class="tool-group-label">Select</span>
             <div class="tool-buttons">
                 <button class="tool-btn" id="ocrSelectTool" data-tool="ocrSelect" onclick="PDFoxApp.setTool('ocrSelect')" data-tooltip="Draw area to extract text with OCR">
@@ -132,8 +164,37 @@
             </div>
         </div>
 
+        <!-- GROUP 2.5: Page Tools -->
+        <div class="tool-group" data-group="page" data-priority="6">
+            <span class="tool-group-label">Page</span>
+            <div class="tool-buttons">
+                <button class="tool-btn" id="rotateLeftBtn" onclick="PDFoxApp.rotatePage(-90)" data-tooltip="Rotate page left 90°">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M2.5 12a9.5 9.5 0 1 1 2.1 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M2 17l1-5 5 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <small>Left</small>
+                </button>
+                <button class="tool-btn" id="rotateRightBtn" onclick="PDFoxApp.rotatePage(90)" data-tooltip="Rotate page right 90°">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M21.5 12a9.5 9.5 0 1 0-2.1 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M22 17l-1-5-5 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <small>Right</small>
+                </button>
+                <button class="tool-btn" id="deletePageBtn" onclick="PDFoxApp.deletePage()" data-tooltip="Delete current page">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M14 2v6h6" stroke="currentColor" stroke-width="2"/>
+                        <path d="M9 15h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>Delete</small>
+                </button>
+            </div>
+        </div>
+
         <!-- GROUP 3: Annotations - Drawing and shapes -->
-        <div class="tool-group" data-group="annotate">
+        <div class="tool-group" data-group="annotate" data-priority="4">
             <span class="tool-group-label">Annotate</span>
             <div class="tool-buttons">
                 <button class="tool-btn" id="drawTool" data-tool="draw" onclick="PDFoxApp.setTool('draw')" data-tooltip="Freehand pen drawing">
@@ -159,7 +220,7 @@
         </div>
 
         <!-- GROUP 4: Sign & Redact - Finalization tools -->
-        <div class="tool-group" data-group="finalize">
+        <div class="tool-group" data-group="finalize" data-priority="5">
             <span class="tool-group-label">Finalize</span>
             <div class="tool-buttons">
                 <button class="tool-btn" id="signatureTool" onclick="PDFoxSignatures.openModal()" data-tooltip="Add your signature to the document">
@@ -186,7 +247,7 @@
         <span id="sizeValue" style="display: none;">3</span>
 
         <!-- GROUP 5: Actions -->
-        <div class="tool-group" data-group="actions">
+        <div class="tool-group" data-group="actions" data-priority="7">
             <span class="tool-group-label">Actions</span>
             <div class="tool-buttons">
                 <button class="tool-btn" onclick="PDFoxApp.undo()" data-tooltip="Undo last action (Ctrl+Z)">
@@ -196,8 +257,59 @@
                     </svg>
                     <small>Undo</small>
                 </button>
+                <button class="tool-btn" onclick="PDFoxApp.redo()" data-tooltip="Redo last action (Ctrl+Y)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 10H11c-4 0-7 3-7 7s3 7 7 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M17 6l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <small>Redo</small>
+                </button>
             </div>
         </div>
+
+        <!-- GROUP 6: Export & Share -->
+        <div class="tool-group" data-group="export" data-priority="8">
+            <span class="tool-group-label">Export</span>
+            <div class="tool-buttons">
+                <button class="tool-btn" onclick="PDFoxApp.exportText()" data-tooltip="Export all text to .txt file">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M14 2v6h6" stroke="currentColor" stroke-width="2"/>
+                        <path d="M9 13h6M9 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>Text</small>
+                </button>
+                <button class="tool-btn" onclick="PDFoxApp.shareLink()" data-tooltip="Generate shareable link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2"/>
+                        <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <small>Share</small>
+                </button>
+            </div>
+        </div>
+        </div><!-- end toolbar-visible -->
+
+        <!-- Overflow Menu Group (matches tool-group structure) -->
+        <div class="tool-group toolbar-overflow-group" id="toolbarOverflowGroup">
+            <span class="tool-group-label">More</span>
+            <div class="tool-buttons">
+                <button class="tool-btn" id="toolbarOverflowBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="5" r="2" fill="currentColor"/>
+                        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                        <circle cx="12" cy="19" r="2" fill="currentColor"/>
+                    </svg>
+                    <small>Menu</small>
+                    <span class="overflow-badge" id="overflowBadge">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Overflow Dropdown -->
+        <div class="toolbar-overflow-dropdown" id="toolbarOverflowDropdown"></div>
     </div>
 
     <div class="main-content">
@@ -267,6 +379,14 @@
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="color: #888;">Undo</span>
                         <kbd style="background: #2a2a2a; padding: 4px 8px; border-radius: 4px; color: #E50914; font-family: monospace; font-size: 11px;">Ctrl+Z</kbd>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #888;">Redo</span>
+                        <kbd style="background: #2a2a2a; padding: 4px 8px; border-radius: 4px; color: #E50914; font-family: monospace; font-size: 11px;">Ctrl+Y</kbd>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #888;">Zoom In/Out</span>
+                        <kbd style="background: #2a2a2a; padding: 4px 8px; border-radius: 4px; color: #E50914; font-family: monospace; font-size: 11px;">+ / -</kbd>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="color: #888;">Delete selected</span>
@@ -496,6 +616,49 @@
         </div>
     </div>
 
+    <!-- Share Link Modal -->
+    <div id="shareLinkModal" class="custom-modal" style="display: none;">
+        <div class="custom-modal-content" style="max-width: 480px; text-align: left;">
+            <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 22px; color: #ffffff; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
+                        <circle cx="18" cy="5" r="3"/>
+                        <circle cx="6" cy="12" r="3"/>
+                        <circle cx="18" cy="19" r="3"/>
+                        <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/>
+                    </svg>
+                    Share Document
+                </h3>
+                <p style="font-size: 13px; color: #999; margin: 0;">Generate a shareable link for this PDF</p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #aaaaaa; font-size: 14px;">Shareable Link:</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="shareUrlInput" readonly style="flex: 1; padding: 12px; border: 2px solid #333; border-radius: 8px; font-size: 13px; background: #2a2a2a; color: #ffffff; box-sizing: border-box;">
+                    <button onclick="PDFoxApp.copyShareLink()" style="padding: 12px 16px; background: #E50914; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+                            <rect x="9" y="9" width="13" height="13" rx="2"/>
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <p id="shareLinkStatus" style="font-size: 12px; color: #888; margin-top: 8px;"></p>
+            </div>
+
+            <div style="padding: 12px; background: rgba(229, 9, 20, 0.1); border-radius: 8px; border: 1px solid rgba(229, 9, 20, 0.3); margin-bottom: 20px;">
+                <p style="font-size: 12px; color: #ccc; margin: 0;">
+                    <strong style="color: #E50914;">Note:</strong> The link will be valid for 24 hours. Anyone with this link can view the document.
+                </p>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="PDFoxApp.closeShareModal()" style="padding: 12px 24px; background: #2a2a2a; color: #ffffff; border: 2px solid #333; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Loading Overlay -->
     <div class="loading" id="loading" style="display: none;">
         <div class="loading-content">
@@ -509,10 +672,14 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
+    <!-- PDF Storage Module for large files -->
+    <script src="/js/pdf-storage.js"></script>
+
     <!-- Application Modules (order matters for dependencies) -->
     <script src="/js/modules/utils.js"></script>
     <script src="/js/modules/core.js"></script>
     <script src="/js/modules/ui.js"></script>
+    <script src="/js/modules/toolbar.js"></script>
     <script src="/js/modules/pdf-renderer.js"></script>
     <script src="/js/modules/text-editor.js"></script>
     <script src="/js/modules/layers.js"></script>
@@ -525,6 +692,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             PDFoxApp.init();
+            PDFoxToolbar.init();
         });
     </script>
 </body>
