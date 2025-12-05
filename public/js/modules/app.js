@@ -332,6 +332,15 @@ const PDFoxApp = (function() {
                 const page = pages[ann.page - 1];
                 const { height } = page.getSize();
                 const rgb = hexToRgb(ann.color);
+                const opacity = (ann.opacity !== undefined ? ann.opacity : 100) / 100;
+
+                // Get dash array based on line style
+                let dashArray = undefined;
+                if (ann.lineStyle === 'dashed') {
+                    dashArray = [ann.size * 3, ann.size * 2];
+                } else if (ann.lineStyle === 'dotted') {
+                    dashArray = [ann.size, ann.size * 1.5];
+                }
 
                 if (ann.type === 'draw' && ann.points && ann.points.length > 1) {
                     for (let i = 0; i < ann.points.length - 1; i++) {
@@ -343,34 +352,58 @@ const PDFoxApp = (function() {
                             end: { x: x2 / SCALE_FACTOR, y: height - (y2 / SCALE_FACTOR) },
                             thickness: ann.size / SCALE_FACTOR,
                             color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
-                            lineCap: PDFLib.LineCapStyle.Round
+                            opacity: opacity,
+                            lineCap: PDFLib.LineCapStyle.Round,
+                            dashArray: dashArray
                         });
                     }
                 } else if (ann.type === 'rectangle') {
                     const w = ann.endX - ann.startX;
                     const h = ann.endY - ann.startY;
 
-                    page.drawRectangle({
+                    const rectOptions = {
                         x: ann.startX / SCALE_FACTOR,
                         y: height - (ann.startY / SCALE_FACTOR) - (h / SCALE_FACTOR),
                         width: w / SCALE_FACTOR,
                         height: h / SCALE_FACTOR,
                         borderColor: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
-                        borderWidth: ann.size / SCALE_FACTOR
-                    });
+                        borderWidth: ann.size / SCALE_FACTOR,
+                        borderOpacity: opacity,
+                        borderDashArray: dashArray
+                    };
+
+                    // Add fill if enabled
+                    if (ann.fillEnabled && ann.fillColor) {
+                        const fillRgb = hexToRgb(ann.fillColor);
+                        rectOptions.color = PDFLib.rgb(fillRgb.r / 255, fillRgb.g / 255, fillRgb.b / 255);
+                        rectOptions.opacity = opacity * 0.3;
+                    }
+
+                    page.drawRectangle(rectOptions);
                 } else if (ann.type === 'circle') {
                     const radius = Math.sqrt(
                         Math.pow(ann.endX - ann.startX, 2) +
                         Math.pow(ann.endY - ann.startY, 2)
                     );
 
-                    page.drawCircle({
+                    const circleOptions = {
                         x: ann.startX / SCALE_FACTOR,
                         y: height - (ann.startY / SCALE_FACTOR),
                         size: radius / SCALE_FACTOR,
                         borderColor: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
-                        borderWidth: ann.size / SCALE_FACTOR
-                    });
+                        borderWidth: ann.size / SCALE_FACTOR,
+                        borderOpacity: opacity,
+                        borderDashArray: dashArray
+                    };
+
+                    // Add fill if enabled
+                    if (ann.fillEnabled && ann.fillColor) {
+                        const fillRgb = hexToRgb(ann.fillColor);
+                        circleOptions.color = PDFLib.rgb(fillRgb.r / 255, fillRgb.g / 255, fillRgb.b / 255);
+                        circleOptions.opacity = opacity * 0.3;
+                    }
+
+                    page.drawCircle(circleOptions);
                 }
             }
 
@@ -1118,8 +1151,13 @@ const PDFoxApp = (function() {
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
-                    sessionStorage.setItem('pdfToEdit', e.target.result);
-                    sessionStorage.setItem('pdfFileName', file.name);
+                    // Use PDFStorage to handle large files via IndexedDB
+                    if (typeof PDFStorage !== 'undefined') {
+                        await PDFStorage.store(e.target.result, file.name);
+                    } else {
+                        sessionStorage.setItem('pdfToEdit', e.target.result);
+                        sessionStorage.setItem('pdfFileName', file.name);
+                    }
                     window.location.reload();
                 } catch (error) {
                     ui.hideLoading();

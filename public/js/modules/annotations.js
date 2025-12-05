@@ -55,6 +55,44 @@ const PDFoxAnnotations = (function() {
     }
 
     /**
+     * Apply annotation styles to context
+     * @param {Object} ann - Annotation object with style properties
+     */
+    function applyAnnotationStyles(ann) {
+        // Get RGBA color with opacity
+        const opacity = ann.opacity !== undefined ? ann.opacity : 100;
+        const r = parseInt(ann.color.slice(1, 3), 16);
+        const g = parseInt(ann.color.slice(3, 5), 16);
+        const b = parseInt(ann.color.slice(5, 7), 16);
+
+        annotationContext.strokeStyle = `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
+        annotationContext.lineWidth = ann.size;
+        annotationContext.lineCap = 'round';
+        annotationContext.lineJoin = 'round';
+
+        // Apply line style
+        const lineStyle = ann.lineStyle || 'solid';
+        switch (lineStyle) {
+            case 'dashed':
+                annotationContext.setLineDash([ann.size * 3, ann.size * 2]);
+                break;
+            case 'dotted':
+                annotationContext.setLineDash([ann.size, ann.size * 1.5]);
+                break;
+            default:
+                annotationContext.setLineDash([]);
+        }
+
+        // Set fill style if fill is enabled
+        if (ann.fillEnabled && ann.fillColor) {
+            const fr = parseInt(ann.fillColor.slice(1, 3), 16);
+            const fg = parseInt(ann.fillColor.slice(3, 5), 16);
+            const fb = parseInt(ann.fillColor.slice(5, 7), 16);
+            annotationContext.fillStyle = `rgba(${fr}, ${fg}, ${fb}, ${(opacity / 100) * 0.3})`;
+        }
+    }
+
+    /**
      * Redraw all annotations on canvas
      */
     function redrawAnnotations() {
@@ -66,10 +104,10 @@ const PDFoxAnnotations = (function() {
         annotationContext.clearRect(0, 0, annotationCanvas.width, annotationCanvas.height);
 
         annotations.filter(ann => ann.page === currentPage).forEach(ann => {
+            // Apply styles for this annotation
+            applyAnnotationStyles(ann);
+
             if (ann.type === 'draw') {
-                annotationContext.strokeStyle = ann.color;
-                annotationContext.lineWidth = ann.size;
-                annotationContext.lineCap = 'round';
                 annotationContext.beginPath();
                 ann.points.forEach((point, index) => {
                     if (index === 0) {
@@ -80,22 +118,27 @@ const PDFoxAnnotations = (function() {
                 });
                 annotationContext.stroke();
             } else if (ann.type === 'rectangle') {
-                annotationContext.strokeStyle = ann.color;
-                annotationContext.lineWidth = ann.size;
                 const width = ann.endX - ann.startX;
                 const height = ann.endY - ann.startY;
+                if (ann.fillEnabled) {
+                    annotationContext.fillRect(ann.startX, ann.startY, width, height);
+                }
                 annotationContext.strokeRect(ann.startX, ann.startY, width, height);
             } else if (ann.type === 'circle') {
-                annotationContext.strokeStyle = ann.color;
-                annotationContext.lineWidth = ann.size;
                 const radius = Math.sqrt(
                     Math.pow(ann.endX - ann.startX, 2) +
                     Math.pow(ann.endY - ann.startY, 2)
                 );
                 annotationContext.beginPath();
                 annotationContext.arc(ann.startX, ann.startY, radius, 0, 2 * Math.PI);
+                if (ann.fillEnabled) {
+                    annotationContext.fill();
+                }
                 annotationContext.stroke();
             }
+
+            // Reset line dash after each annotation
+            annotationContext.setLineDash([]);
         });
 
         // Draw OCR selection if active - Professional selection UI
@@ -214,17 +257,38 @@ const PDFoxAnnotations = (function() {
             return;
         }
 
-        // Start drawing annotation
-        const colorPicker = document.getElementById('colorPicker');
-        const brushSize = document.getElementById('brushSize');
+        // Start drawing annotation - get styles from annotation styles module or fallback to legacy inputs
+        let styles = {
+            strokeColor: '#E50914',
+            fillColor: '#E50914',
+            fillEnabled: false,
+            opacity: 100,
+            lineStyle: 'solid',
+            size: 3
+        };
+
+        // Try to get styles from the new annotation styles module
+        if (typeof PDFoxAnnotationStyles !== 'undefined') {
+            styles = PDFoxAnnotationStyles.getStyles();
+        } else {
+            // Fallback to legacy inputs
+            const colorPicker = document.getElementById('colorPicker');
+            const brushSize = document.getElementById('brushSize');
+            if (colorPicker) styles.strokeColor = colorPicker.value;
+            if (brushSize) styles.size = parseInt(brushSize.value);
+        }
 
         isDrawing = true;
         currentAnnotation = {
             type: currentTool,
             startX: x,
             startY: y,
-            color: colorPicker ? colorPicker.value : '#000000',
-            size: brushSize ? parseInt(brushSize.value) : 2,
+            color: styles.strokeColor,
+            fillColor: styles.fillColor,
+            fillEnabled: styles.fillEnabled,
+            opacity: styles.opacity,
+            lineStyle: styles.lineStyle,
+            size: styles.size,
             page: core.get('currentPage'),
             points: currentTool === 'draw' ? [[x, y]] : []
         };
@@ -259,24 +323,25 @@ const PDFoxAnnotations = (function() {
         if (currentTool === 'draw') {
             currentAnnotation.points.push([x, y]);
 
-            // Draw in real-time
-            annotationContext.strokeStyle = currentAnnotation.color;
-            annotationContext.lineWidth = currentAnnotation.size;
-            annotationContext.lineCap = 'round';
+            // Draw in real-time with full styles
+            applyAnnotationStyles(currentAnnotation);
             annotationContext.beginPath();
             const points = currentAnnotation.points;
             annotationContext.moveTo(points[points.length - 2][0], points[points.length - 2][1]);
             annotationContext.lineTo(x, y);
             annotationContext.stroke();
+            annotationContext.setLineDash([]);
         } else {
-            // Preview shapes
+            // Preview shapes with full styles
             redrawAnnotations();
-            annotationContext.strokeStyle = currentAnnotation.color;
-            annotationContext.lineWidth = currentAnnotation.size;
+            applyAnnotationStyles(currentAnnotation);
 
             if (currentTool === 'rectangle') {
                 const width = x - currentAnnotation.startX;
                 const height = y - currentAnnotation.startY;
+                if (currentAnnotation.fillEnabled) {
+                    annotationContext.fillRect(currentAnnotation.startX, currentAnnotation.startY, width, height);
+                }
                 annotationContext.strokeRect(currentAnnotation.startX, currentAnnotation.startY, width, height);
             } else if (currentTool === 'circle') {
                 const radius = Math.sqrt(
@@ -285,8 +350,12 @@ const PDFoxAnnotations = (function() {
                 );
                 annotationContext.beginPath();
                 annotationContext.arc(currentAnnotation.startX, currentAnnotation.startY, radius, 0, 2 * Math.PI);
+                if (currentAnnotation.fillEnabled) {
+                    annotationContext.fill();
+                }
                 annotationContext.stroke();
             }
+            annotationContext.setLineDash([]);
         }
     }
 
@@ -414,12 +483,47 @@ const PDFoxAnnotations = (function() {
 
             // Subscribe to tool changes
             core.on('currentTool:changed', ({ value }) => {
+                // Text tools - disable annotation canvas but set appropriate cursor
                 if (value === 'editText' || value === 'moveText') {
-                    annotationCanvas.style.cursor = 'default';
+                    annotationCanvas.style.cursor = '';
                     annotationCanvas.style.pointerEvents = 'none';
-                } else {
-                    annotationCanvas.style.cursor = 'crosshair';
+                    annotationCanvas.classList.remove('cursor-draw', 'cursor-rectangle', 'cursor-circle', 'cursor-erase', 'cursor-ocr', 'cursor-addText');
+                } else if (value === 'addText') {
+                    // Add text tool - show text cursor but handle clicks on annotation canvas
                     annotationCanvas.style.pointerEvents = 'auto';
+                    annotationCanvas.style.cursor = '';
+                    annotationCanvas.classList.remove('cursor-draw', 'cursor-rectangle', 'cursor-circle', 'cursor-erase', 'cursor-ocr');
+                    annotationCanvas.classList.add('cursor-addText');
+                } else {
+                    // Annotation tools - enable canvas with appropriate cursor
+                    annotationCanvas.style.pointerEvents = 'auto';
+                    // Clear inline cursor style so class-based cursor takes effect
+                    annotationCanvas.style.cursor = '';
+
+                    // Remove all cursor classes first
+                    annotationCanvas.classList.remove('cursor-draw', 'cursor-rectangle', 'cursor-circle', 'cursor-erase', 'cursor-ocr');
+
+                    // Add the appropriate cursor class
+                    switch (value) {
+                        case 'draw':
+                            annotationCanvas.classList.add('cursor-draw');
+                            break;
+                        case 'rectangle':
+                            annotationCanvas.classList.add('cursor-rectangle');
+                            break;
+                        case 'circle':
+                            annotationCanvas.classList.add('cursor-circle');
+                            break;
+                        case 'erase':
+                            annotationCanvas.classList.add('cursor-erase');
+                            break;
+                        case 'ocrSelect':
+                            annotationCanvas.classList.add('cursor-ocr');
+                            break;
+                        default:
+                            // Fallback to crosshair for unknown tools
+                            annotationCanvas.style.cursor = 'crosshair';
+                    }
                 }
 
                 // Clear OCR selection when switching tools

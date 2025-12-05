@@ -512,6 +512,83 @@
         <button class="page-btn" id="nextPage" onclick="PDFoxRenderer.nextPage()">Next ▶</button>
     </div>
 
+    <!-- Annotation Style Panel -->
+    <div class="annotation-style-panel" id="annotationStylePanel">
+        <button class="style-panel-close" onclick="PDFoxAnnotationStyles.hide()" title="Close">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="annotation-style-panel-inner">
+            <!-- Stroke Color -->
+            <div class="style-group">
+                <span class="style-group-label">Stroke</span>
+                <div class="style-group-content">
+                    <input type="color" id="annotationStrokeColor" class="style-color-picker" value="#E50914" title="Stroke Color">
+                </div>
+            </div>
+
+            <!-- Fill (for shapes only) -->
+            <div class="style-group" id="fillStyleGroup">
+                <span class="style-group-label">Fill</span>
+                <div class="style-group-content">
+                    <button class="style-fill-toggle" id="fillToggle" onclick="PDFoxAnnotationStyles.toggleFill()" title="Toggle Fill">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                    <input type="color" id="annotationFillColor" class="style-color-picker" value="#E50914" title="Fill Color" disabled>
+                </div>
+            </div>
+
+            <div class="style-divider"></div>
+
+            <!-- Opacity -->
+            <div class="style-group">
+                <span class="style-group-label">Opacity</span>
+                <div class="style-group-content style-opacity-container">
+                    <input type="range" id="annotationOpacity" class="style-slider" min="10" max="100" value="100">
+                    <span class="style-value" id="opacityValue">100%</span>
+                </div>
+            </div>
+
+            <div class="style-divider"></div>
+
+            <!-- Line Style -->
+            <div class="style-group">
+                <span class="style-group-label">Line Style</span>
+                <div class="style-group-content style-line-options">
+                    <button class="style-line-btn active" data-line-style="solid" onclick="PDFoxAnnotationStyles.setLineStyle('solid')" title="Solid">
+                        <svg width="20" height="4" viewBox="0 0 20 4">
+                            <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                    <button class="style-line-btn" data-line-style="dashed" onclick="PDFoxAnnotationStyles.setLineStyle('dashed')" title="Dashed">
+                        <svg width="20" height="4" viewBox="0 0 20 4">
+                            <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"/>
+                        </svg>
+                    </button>
+                    <button class="style-line-btn" data-line-style="dotted" onclick="PDFoxAnnotationStyles.setLineStyle('dotted')" title="Dotted">
+                        <svg width="20" height="4" viewBox="0 0 20 4">
+                            <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="style-divider"></div>
+
+            <!-- Size -->
+            <div class="style-group">
+                <span class="style-group-label">Size</span>
+                <div class="style-group-content style-size-container">
+                    <input type="range" id="annotationSize" class="style-size-slider" min="1" max="20" value="3">
+                    <span class="style-value" id="sizeValueDisplay">3px</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Legacy Edit/Add Text Modals - Now replaced by Unified Text Editor -->
     <!-- These modals are no longer used - the unified text editor handles all text operations -->
 
@@ -671,6 +748,7 @@
     <script src="/js/modules/pdf-renderer.js"></script>
     <script src="/js/modules/text-editor.js"></script>
     <script src="/js/modules/layers.js"></script>
+    <script src="/js/modules/annotation-styles.js"></script>
     <script src="/js/modules/annotations.js"></script>
     <script src="/js/modules/signatures.js"></script>
     <script src="/js/modules/overlays.js"></script>
@@ -683,6 +761,7 @@
             PDFoxApp.init();
             PDFoxToolbar.init();
             PDFoxOCR.init();
+            PDFoxAnnotationStyles.init();
         });
     </script>
 </body>
