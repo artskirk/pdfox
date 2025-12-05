@@ -503,7 +503,8 @@ const PDFoxSignatures = (function() {
                     };
                     img.src = e.target.result;
                 } catch (error) {
-                    ui.showAlert('Failed to process image: ' + error.message, 'error');
+                    console.error('Failed to process image:', error);
+                    ui.showAlert('Sorry, we couldn\'t process this image. Please try a different file.', 'error');
                 }
             };
             reader.readAsDataURL(file);

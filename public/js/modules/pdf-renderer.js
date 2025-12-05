@@ -83,7 +83,8 @@ const PDFoxRenderer = (function() {
                 return pdfDoc;
             } catch (error) {
                 ui.hideLoading();
-                ui.showAlert('Failed to load PDF: ' + error.message, 'error');
+                console.error('Failed to load PDF:', error);
+                ui.showAlert('Sorry, we couldn\'t load the PDF. Please check the file and try again.', 'error');
                 throw error;
             }
         },

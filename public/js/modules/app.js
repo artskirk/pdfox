@@ -507,7 +507,8 @@ const PDFoxApp = (function() {
         } catch (error) {
             console.error('Error saving PDF:', error);
             ui.hideLoading();
-            ui.showAlert('Failed to save PDF: ' + error.message, 'error');
+            console.error('Failed to save PDF:', error);
+            ui.showAlert('Sorry, we couldn\'t save your PDF. Please try again.', 'error');
         }
     }
 
@@ -525,6 +526,45 @@ const PDFoxApp = (function() {
 
     // Zoom levels (25% to 300%)
     const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
+
+    /**
+     * Get stored PDF from storage (IndexedDB or sessionStorage)
+     * @returns {Promise<Uint8Array|null>} PDF bytes or null if not found
+     */
+    async function getStoredPDF() {
+        try {
+            let dataUrl = null;
+
+            // Try PDFStorage first (IndexedDB or sessionStorage)
+            if (typeof PDFStorage !== 'undefined') {
+                const result = await PDFStorage.retrieve();
+                if (result && result.data) {
+                    dataUrl = result.data;
+                }
+            }
+
+            // Fallback to sessionStorage directly
+            if (!dataUrl) {
+                dataUrl = sessionStorage.getItem('pdfToEdit');
+            }
+
+            if (!dataUrl) {
+                return null;
+            }
+
+            // Convert data URL to Uint8Array
+            const base64 = dataUrl.split(',')[1];
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return bytes;
+        } catch (error) {
+            console.error('Failed to get stored PDF:', error);
+            return null;
+        }
+    }
 
     /**
      * Update stored PDF (supports large files via IndexedDB)
@@ -766,21 +806,27 @@ const PDFoxApp = (function() {
      * @param {number} degrees - Rotation degrees (90 or -90)
      */
     async function rotatePage(degrees) {
-        let pdfBytes = core.get('pdfBytes');
-        if (!pdfBytes) {
-            ui.showAlert('No PDF loaded', 'error');
-            return;
-        }
-
         ui.showLoading('Rotating page...');
 
         try {
-            // Ensure pdfBytes is in correct format for pdf-lib
-            if (pdfBytes instanceof Uint8Array) {
-                pdfBytes = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength);
+            // Always get fresh PDF bytes from storage to avoid detached ArrayBuffer issues
+            let pdfBytes = await getStoredPDF();
+
+            if (!pdfBytes) {
+                // Fallback to memory if storage fails
+                pdfBytes = core.get('pdfBytes');
             }
 
-            const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+            if (!pdfBytes) {
+                ui.hideLoading();
+                ui.showAlert('No PDF loaded', 'error');
+                return;
+            }
+
+            // Store fresh copy in core
+            core.set('pdfBytes', pdfBytes);
+
+            const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes.buffer || pdfBytes);
             const pages = pdfDoc.getPages();
             const currentPage = core.get('currentPage');
             const page = pages[currentPage - 1];
@@ -805,7 +851,7 @@ const PDFoxApp = (function() {
         } catch (error) {
             ui.hideLoading();
             console.error('Error rotating page:', error);
-            ui.showAlert('Failed to rotate page: ' + error.message, 'error');
+            ui.showAlert('Sorry, we couldn\'t rotate the page. Please try again.', 'error');
         }
     }
 
@@ -822,21 +868,27 @@ const PDFoxApp = (function() {
         ui.showConfirm('Are you sure you want to delete this page? This action cannot be undone.', async (confirmed) => {
             if (!confirmed) return;
 
-            let pdfBytes = core.get('pdfBytes');
-            if (!pdfBytes) {
-                ui.showAlert('No PDF loaded', 'error');
-                return;
-            }
-
             ui.showLoading('Deleting page...');
 
             try {
-                // Ensure pdfBytes is in correct format for pdf-lib
-                if (pdfBytes instanceof Uint8Array) {
-                    pdfBytes = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength);
+                // Always get fresh PDF bytes from storage to avoid detached ArrayBuffer issues
+                let pdfBytes = await getStoredPDF();
+
+                if (!pdfBytes) {
+                    // Fallback to memory if storage fails
+                    pdfBytes = core.get('pdfBytes');
                 }
 
-                const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                if (!pdfBytes) {
+                    ui.hideLoading();
+                    ui.showAlert('No PDF loaded', 'error');
+                    return;
+                }
+
+                // Store fresh copy in core
+                core.set('pdfBytes', pdfBytes);
+
+                const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes.buffer || pdfBytes);
                 const currentPage = core.get('currentPage');
 
                 // Remove the page (0-indexed)
@@ -866,7 +918,8 @@ const PDFoxApp = (function() {
             } catch (error) {
                 ui.hideLoading();
                 console.error('Error deleting page:', error);
-                ui.showAlert('Failed to delete page: ' + error.message, 'error');
+                console.error('Failed to delete page:', error);
+                ui.showAlert('Sorry, we couldn\'t delete the page. Please try again.', 'error');
             }
         });
     }
@@ -933,7 +986,8 @@ const PDFoxApp = (function() {
         } catch (error) {
             ui.hideLoading();
             console.error('Error exporting text:', error);
-            ui.showAlert('Failed to export text: ' + error.message, 'error');
+            console.error('Failed to export text:', error);
+            ui.showAlert('Sorry, we couldn\'t export the text. Please try again.', 'error');
         }
     }
 
@@ -985,7 +1039,8 @@ const PDFoxApp = (function() {
         } catch (error) {
             console.error('Error generating share link:', error);
             if (status) {
-                status.textContent = 'Failed to generate link: ' + error.message;
+                console.error('Failed to generate link:', error);
+                status.textContent = 'Sorry, we couldn\'t generate the link. Please try again.';
                 status.style.color = '#dc3545';
             }
         }
@@ -1068,7 +1123,8 @@ const PDFoxApp = (function() {
                     window.location.reload();
                 } catch (error) {
                     ui.hideLoading();
-                    ui.showAlert('Failed to load PDF: ' + error.message, 'error');
+                    console.error('Failed to load PDF:', error);
+                    ui.showAlert('Sorry, we couldn\'t load the PDF. Please check the file and try again.', 'error');
                 }
             };
             reader.readAsDataURL(file);
@@ -1335,7 +1391,8 @@ const PDFoxApp = (function() {
                     ui.showNotification(`PDF loaded! Zoom: ${appliedZoom}%`, 'success');
                 } catch (error) {
                     ui.hideLoading();
-                    ui.showAlert('Failed to load PDF: ' + error.message, 'error');
+                    console.error('Failed to load PDF:', error);
+                    ui.showAlert('Sorry, we couldn\'t load the PDF. Please check the file and try again.', 'error');
                     showEmptyState();
                 }
             };
@@ -1458,7 +1515,8 @@ const PDFoxApp = (function() {
                 ui.showNotification(`Zoom auto-adjusted to ${appliedZoom}% for best view`, 'success');
             } catch (error) {
                 console.error('Error loading PDF:', error);
-                ui.showAlert('Failed to load PDF: ' + error.message, 'error');
+                console.error('Failed to load PDF:', error);
+                ui.showAlert('Sorry, we couldn\'t load the PDF. Please check the file and try again.', 'error');
             }
         },
 

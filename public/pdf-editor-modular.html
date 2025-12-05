@@ -180,8 +180,8 @@
             </div>
         </div>
 
-        <!-- GROUP 2: Selection & Extraction -->
-        <div class="tool-group" data-group="select" data-priority="3">
+        <!-- GROUP 2: Selection & Extraction (Hidden - OCR is activated via Edit tool for image PDFs) -->
+        <div class="tool-group" data-group="select" data-priority="3" style="display: none;">
             <span class="tool-group-label">Select</span>
             <div class="tool-buttons">
                 <button class="tool-btn" id="ocrSelectTool" data-tool="ocrSelect" onclick="PDFoxApp.setTool('ocrSelect')" data-tooltip="Draw area to extract text with OCR">

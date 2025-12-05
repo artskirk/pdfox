@@ -54,10 +54,16 @@ const PDFoxOverlays = (function() {
         const deleteBtn = document.createElement('div');
         deleteBtn.className = 'delete-btn';
         deleteBtn.textContent = '×';
-        deleteBtn.onclick = (e) => {
+        deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            e.stopImmediatePropagation();
+            e.preventDefault();
             deleteOverlay(overlay.id);
-        };
+        });
+        deleteBtn.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        });
         div.appendChild(deleteBtn);
 
         // Resize handles
@@ -72,16 +78,20 @@ const PDFoxOverlays = (function() {
         });
 
         // Event handlers
-        div.onclick = () => selectOverlay(overlay.id);
-        div.ondblclick = (e) => {
+        div.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectOverlay(overlay.id);
+        });
+        div.addEventListener('dblclick', (e) => {
             e.stopPropagation();
             editOverlay(overlay.id);
-        };
-        div.onmousedown = (e) => {
-            if (e.target === div) {
+        });
+        div.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            if (e.target === div || e.target.closest('.text-overlay') === div) {
                 startDrag(e, overlay.id);
             }
-        };
+        });
 
         return div;
     }
@@ -106,14 +116,23 @@ const PDFoxOverlays = (function() {
     }
 
     /**
+     * Deselect all overlays
+     */
+    function deselectAll() {
+        document.querySelectorAll('.text-overlay').forEach(el => {
+            el.classList.remove('selected');
+        });
+        selectedOverlay = null;
+        core.set('selectedOverlay', null);
+    }
+
+    /**
      * Select an overlay
      * @param {string} overlayId - Overlay ID
      */
     function selectOverlay(overlayId) {
-        // Deselect all
-        document.querySelectorAll('.text-overlay').forEach(el => {
-            el.classList.remove('selected');
-        });
+        // Deselect all first
+        deselectAll();
 
         // Select this one
         const element = document.getElementById(overlayId);
@@ -353,19 +372,80 @@ const PDFoxOverlays = (function() {
 
             // Delete key handler
             document.addEventListener('keydown', (e) => {
-                if ((e.key === 'Delete' || e.key === 'Backspace') && selectedOverlay) {
-                    // Don't trigger if a modal is open or input is focused
-                    if (document.activeElement.tagName !== 'INPUT' &&
-                        document.activeElement.tagName !== 'TEXTAREA' &&
-                        document.activeElement.tagName !== 'BUTTON' &&
-                        !document.querySelector('.custom-modal') &&
-                        !document.querySelector('.edit-modal-overlay') &&
+                // Check if Delete or Backspace key
+                if (e.key === 'Delete' || e.key === 'Backspace') {
+                    // Check if we have a selected overlay
+                    if (!selectedOverlay) {
+                        return;
+                    }
+
+                    // Don't trigger if typing in an input field
+                    const activeTag = document.activeElement.tagName;
+                    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
+                        return;
+                    }
+
+                    // Don't trigger if a modal is open
+                    if (document.querySelector('.custom-modal[style*="flex"]') ||
+                        document.querySelector('.overlay-edit-modal') ||
+                        document.getElementById('unifiedTextEditorModal')) {
+                        return;
+                    }
+
+                    // Delete the overlay
+                    e.preventDefault();
+                    e.stopPropagation();
+                    deleteOverlay(selectedOverlay);
+                }
+
+                // Escape key to deselect
+                if (e.key === 'Escape' && selectedOverlay) {
+                    if (!document.querySelector('.custom-modal[style*="flex"]') &&
+                        !document.querySelector('.overlay-edit-modal') &&
                         !document.getElementById('unifiedTextEditorModal')) {
-                        deleteOverlay(selectedOverlay);
-                        e.preventDefault();
+                        deselectAll();
                     }
                 }
             });
+
+            // Click-away deselection: click on canvas/overlay layer deselects overlay
+            const overlayLayer = document.getElementById('overlayLayer');
+            const canvasContainer = document.querySelector('.canvas-container');
+
+            // Handler for clicking on empty space
+            const handleClickAway = (e) => {
+                // Don't deselect if clicking on an overlay or its controls
+                if (e.target.closest('.text-overlay') ||
+                    e.target.closest('.signature-overlay') ||
+                    e.target.closest('.resize-handle') ||
+                    e.target.closest('.delete-btn')) {
+                    return;
+                }
+
+                // Don't deselect if a modal is open
+                if (document.querySelector('.custom-modal') ||
+                    document.querySelector('.edit-modal-overlay') ||
+                    document.getElementById('unifiedTextEditorModal')) {
+                    return;
+                }
+
+                // Deselect when clicking on canvas area
+                if (selectedOverlay) {
+                    deselectAll();
+                }
+            };
+
+            if (overlayLayer) {
+                overlayLayer.addEventListener('click', handleClickAway);
+            }
+
+            // Also listen on canvas container for clicks outside overlays
+            if (canvasContainer) {
+                canvasContainer.addEventListener('click', handleClickAway);
+            }
+
+            // Listen for overlay:deselect event
+            core.on('overlay:deselect', () => deselectAll());
         },
 
         /**
@@ -378,6 +458,11 @@ const PDFoxOverlays = (function() {
          * @param {string} id - Overlay ID
          */
         select: selectOverlay,
+
+        /**
+         * Deselect all overlays
+         */
+        deselectAll: deselectAll,
 
         /**
          * Delete overlay

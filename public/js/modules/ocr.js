@@ -126,7 +126,8 @@ const PDFoxOCR = (function() {
         } catch (error) {
             ui.hideLoading();
             console.error('OCR error:', error);
-            ui.showAlert('OCR failed: ' + error.message, 'error');
+            console.error('OCR failed:', error);
+            ui.showAlert('Sorry, we couldn\'t extract text from this area. Please try again.', 'error');
         }
     }
 

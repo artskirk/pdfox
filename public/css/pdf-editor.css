@@ -1109,7 +1109,7 @@ body {
     position: absolute;
     padding: 4px 8px;
     background: rgba(255, 255, 255, 0.9);
-    border: 2px solid rgba(33, 150, 243, 0.5);
+    border: 2px solid transparent;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     cursor: move;
     user-select: none;
@@ -1120,14 +1120,13 @@ body {
 }
 
 .text-overlay:hover {
-    border-color: rgba(33, 150, 243, 0.8);
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+    border-color: rgba(229, 9, 20, 0.5);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
 }
 
 .text-overlay.selected {
-    border-color: var(--color-info);
-    border-width: 3px;
-    box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
+    border: 2px solid var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.2), 0 4px 16px rgba(0, 0, 0, 0.3);
     z-index: 200;
 }
 
@@ -1158,11 +1157,16 @@ body {
     position: absolute;
     width: 10px;
     height: 10px;
-    background: var(--color-info);
+    background: var(--color-primary);
     border: 2px solid white;
     border-radius: 50%;
     display: none;
     z-index: 202;
+    transition: transform 0.15s ease;
+}
+
+.resize-handle:hover {
+    transform: scale(1.2);
 }
 
 .text-overlay.selected .resize-handle { display: block; }
