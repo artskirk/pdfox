@@ -13,7 +13,7 @@ const PDFoxCore = (function() {
         currentPage: 1,
         totalPages: 0,
         scale: 1.0,
-        currentTool: 'editText',
+        currentTool: 'addText',
         textEdits: [],
         textOverlays: [],
         signatures: [],

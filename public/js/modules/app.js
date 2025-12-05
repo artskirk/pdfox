@@ -15,7 +15,7 @@ const PDFoxApp = (function() {
     let renderer, textEditor, layers, annotations, signatures, overlays;
 
     // Default tool - what we return to after actions
-    const DEFAULT_TOOL = 'editText';
+    const DEFAULT_TOOL = 'addText';
 
     // One-shot tools that auto-reset after use
     const ONE_SHOT_TOOLS = ['addText', 'ocrSelect', 'erase'];
@@ -40,7 +40,7 @@ const PDFoxApp = (function() {
      * Set current tool
      * @param {string} tool - Tool name
      */
-    function setTool(tool) {
+    function setTool(tool, force = false) {
         const previousTool = core.get('currentTool');
         const toolButton = document.getElementById(tool + 'Tool');
 
@@ -49,8 +49,8 @@ const PDFoxApp = (function() {
             return;
         }
 
-        // If clicking the same tool, don't do anything (it's already active)
-        if (previousTool === tool) {
+        // If clicking the same tool, don't do anything (unless forced for initial setup)
+        if (previousTool === tool && !force) {
             return;
         }
 
@@ -277,7 +277,10 @@ const PDFoxApp = (function() {
             // Load PDF with pdf-lib
             const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
             const pages = pdfDoc.getPages();
-            const SCALE_FACTOR = 1.5;
+
+            // Use the actual viewer scale - this is critical for correct positioning
+            // All overlay/annotation coordinates are stored in screen pixels at the current scale
+            const SCALE_FACTOR = core.get('scale');
 
             const textEdits = core.get('textEdits');
             const textOverlays = core.get('textOverlays');
@@ -813,17 +816,17 @@ const PDFoxApp = (function() {
         const page = await pdfDoc.getPage(currentPage);
         const viewport = page.getViewport({ scale: 1.0 });
 
-        // Calculate scale to fit width
-        const pdfViewer = document.querySelector('.pdf-viewer');
-        if (!pdfViewer) return;
+        // Calculate scale to fit width using canvas container
+        const canvasContainer = document.querySelector('.canvas-container');
+        if (!canvasContainer) return;
 
-        const viewerRect = pdfViewer.getBoundingClientRect();
-        const availableWidth = viewerRect.width - 40; // 20px padding on each side
+        const containerRect = canvasContainer.getBoundingClientRect();
+        const availableWidth = containerRect.width - 120; // Account for padding and scrollbar
         let optimalScale = availableWidth / viewport.width;
 
-        // Cap at 300% max, 25% min
+        // Cap at 300% max, 50% min for readability
         optimalScale = Math.min(optimalScale, 3.0);
-        optimalScale = Math.max(optimalScale, 0.25);
+        optimalScale = Math.max(optimalScale, 0.5);
 
         // Round to nearest 5%
         optimalScale = Math.round(optimalScale * 20) / 20;
@@ -1422,7 +1425,7 @@ const PDFoxApp = (function() {
                     core.set('pdfBytes', pdfBytes);
 
                     await renderer.loadPDF(new Uint8Array(pdfBytes));
-                    setTool('editText');
+                    setTool('addText', true); // Force to ensure UI is updated
                     updateZoomDisplay();
 
                     const appliedZoom = Math.round(core.get('scale') * 100);
@@ -1544,8 +1547,8 @@ const PDFoxApp = (function() {
                 // Load PDF (renderer will calculate optimal zoom automatically)
                 await renderer.loadPDF(new Uint8Array(pdfBytes));
 
-                // Set default tool
-                setTool('editText');
+                // Set default tool (force to ensure UI is updated)
+                setTool('addText', true);
 
                 // Initialize zoom display and notify user
                 updateZoomDisplay();

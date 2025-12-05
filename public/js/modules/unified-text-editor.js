@@ -100,15 +100,21 @@ const PDFoxUnifiedTextEditor = (function() {
      * Create modal HTML
      * @param {Object} config - Mode configuration
      * @param {Object} data - Initial data
+     * @param {string} mode - Current mode
      * @returns {string} HTML string
      */
-    function createModalHTML(config, data) {
+    function createModalHTML(config, data, mode) {
         const text = data.text || '';
         const fontSize = data.fontSize || 14;
         const textColor = data.textColor || data.color || '#000000';
         const bgColor = data.bgColor ? rgbaToHex(data.bgColor) : '#ffffff';
         const fontFamily = data.fontFamily || 'Arial, sans-serif';
-        const isTransparent = data.isTransparent || (data.bgColor && data.bgColor.includes('rgba') && data.bgColor.includes(', 0)'));
+        // Default to transparent for 'add' mode, otherwise check existing data
+        const isTransparent = data.isTransparent !== undefined
+            ? data.isTransparent
+            : (mode === 'add' || mode === 'ocr')
+                ? true
+                : (data.bgColor && data.bgColor.includes('rgba') && data.bgColor.includes(', 0)'));
 
         const fontOptions = fonts.map(f =>
             `<option value="${f.value}" ${fontFamily === f.value ? 'selected' : ''}>${f.label}</option>`
@@ -224,7 +230,7 @@ const PDFoxUnifiedTextEditor = (function() {
         // Create modal element
         modal = document.createElement('div');
         modal.id = 'unifiedTextEditorModal';
-        modal.innerHTML = createModalHTML(config, data);
+        modal.innerHTML = createModalHTML(config, data, mode);
         document.body.appendChild(modal);
 
         // Setup event listeners

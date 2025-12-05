@@ -258,7 +258,8 @@ const PDFoxOverlays = (function() {
             initialX: overlay.x,
             initialY: overlay.y,
             initialWidth: overlay.width,
-            initialHeight: overlay.height
+            initialHeight: overlay.height,
+            initialFontSize: overlay.fontSize || 16
         };
 
         document.addEventListener('mousemove', onResize);
@@ -282,6 +283,10 @@ const PDFoxOverlays = (function() {
 
         const element = document.getElementById(resizeState.overlayId);
         if (!element) return;
+
+        // Store previous dimensions to calculate scale ratio
+        const prevWidth = overlay.width;
+        const prevHeight = overlay.height;
 
         switch (resizeState.position) {
             case 'se':
@@ -320,10 +325,33 @@ const PDFoxOverlays = (function() {
                 break;
         }
 
+        // Calculate proportional font size based on the scale change
+        // Use the average of width and height ratios for balanced scaling
+        const widthRatio = overlay.width / resizeState.initialWidth;
+        const heightRatio = overlay.height / resizeState.initialHeight;
+
+        // For corner handles, use average; for edge handles, use the relevant ratio
+        let scaleRatio;
+        if (['se', 'sw', 'ne', 'nw'].includes(resizeState.position)) {
+            // Corner resize - use average of both dimensions
+            scaleRatio = (widthRatio + heightRatio) / 2;
+        } else if (['e', 'w'].includes(resizeState.position)) {
+            // Horizontal resize - scale based on width
+            scaleRatio = widthRatio;
+        } else {
+            // Vertical resize - scale based on height
+            scaleRatio = heightRatio;
+        }
+
+        // Calculate new font size with min/max constraints
+        const newFontSize = Math.max(8, Math.min(72, Math.round(resizeState.initialFontSize * scaleRatio)));
+        overlay.fontSize = newFontSize;
+
         element.style.left = overlay.x + 'px';
         element.style.top = overlay.y + 'px';
         element.style.width = overlay.width + 'px';
         element.style.minHeight = overlay.height + 'px';
+        element.style.fontSize = newFontSize + 'px';
     }
 
     /**

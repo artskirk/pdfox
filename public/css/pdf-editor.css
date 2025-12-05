@@ -1073,9 +1073,13 @@ body {
     overflow: hidden;
     line-height: 1.0;
     pointer-events: none;
+    z-index: 10;
 }
 
-#textLayer.editable { pointer-events: auto; }
+#textLayer.editable {
+    pointer-events: auto;
+    z-index: 100;
+}
 
 #textLayer:not(.editable) > span:not(.edited) { opacity: 0; }
 
@@ -1092,6 +1096,12 @@ body {
     text-indent: 0;
     letter-spacing: 0;
     word-spacing: 0;
+}
+
+/* When text layer is editable, show subtle highlight so users know text is clickable */
+#textLayer.editable > span {
+    background: rgba(255, 255, 0, 0.15);
+    border-radius: 2px;
 }
 
 #textLayer.editable > span:hover {
@@ -1140,9 +1150,9 @@ body {
 .text-overlay {
     position: absolute;
     padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.9);
+    background-color: transparent;
     border: 2px solid transparent;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
     cursor: move;
     user-select: none;
     white-space: pre-wrap;
@@ -1153,7 +1163,6 @@ body {
 
 .text-overlay:hover {
     border-color: rgba(229, 9, 20, 0.5);
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
 }
 
 .text-overlay.selected {

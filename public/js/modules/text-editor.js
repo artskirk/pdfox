@@ -148,11 +148,18 @@ const PDFoxTextEditor = (function() {
      */
     function setupTextLayerEvents() {
         const textLayer = document.getElementById('textLayer');
-        if (!textLayer) return;
+        if (!textLayer) {
+            console.error('[PDFox TextEditor] textLayer not found!');
+            return;
+        }
+
+        console.log('[PDFox TextEditor] Setting up text layer events');
 
         textLayer.addEventListener('click', (e) => {
+            console.log('[PDFox TextEditor] Click on textLayer, target:', e.target.tagName, 'editable:', textLayer.classList.contains('editable'));
             const span = e.target.closest('span');
             if (span && span.dataset.index !== undefined) {
+                console.log('[PDFox TextEditor] Span clicked, index:', span.dataset.index, 'text:', span.textContent.substring(0, 20));
                 handleTextSpanClick(span);
             }
         });

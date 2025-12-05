@@ -91,37 +91,60 @@ const PDFoxRenderer = (function() {
 
         /**
          * Calculate optimal zoom scale to fit document in viewport
-         * Uses "fit to width" with some padding, capped at 100%
-         * @param {number} pageWidth - PDF page width at scale 1.0
+         * Uses "Fit to Width" as primary strategy (industry standard like Adobe Acrobat)
+         * Allows zoom above 100% for small documents to ensure readability
+         * @param {number} pageWidth - PDF page width at scale 1.0 (in PDF points, 72 DPI)
          * @param {number} pageHeight - PDF page height at scale 1.0
          * @returns {number} Optimal scale
          */
         calculateOptimalZoom(pageWidth, pageHeight) {
-            // Get available viewport dimensions
-            const pdfViewer = document.querySelector('.pdf-viewer');
-            const editorPanel = document.querySelector('.editor-panel');
+            // Get the canvas container which has the actual available space
+            const canvasContainer = document.querySelector('.canvas-container');
 
-            if (!pdfViewer) return 1.0;
+            if (!canvasContainer) return 1.0;
 
-            // Calculate available space (account for padding and sidebar)
-            const viewerRect = pdfViewer.getBoundingClientRect();
-            const availableWidth = viewerRect.width - 40; // 20px padding on each side
-            const availableHeight = window.innerHeight - 150; // Account for toolbar and margins
+            // Get container dimensions - this gives us the actual available space
+            const containerRect = canvasContainer.getBoundingClientRect();
 
-            // Calculate scale to fit width
+            // Account for padding (50px on each side as per CSS) and scrollbar (~20px)
+            const availableWidth = containerRect.width - 120;
+            const availableHeight = containerRect.height - 120;
+
+            // PDF standard dimensions at 72 DPI (points):
+            // A4: 595 x 842 points
+            // Letter: 612 x 792 points
+
+            // Calculate scale to fit width (primary strategy - like Adobe "Fit Width")
             const scaleForWidth = availableWidth / pageWidth;
 
-            // Calculate scale to fit height
-            const scaleForHeight = availableHeight / pageHeight;
+            // Calculate scale to fit page entirely in view
+            const scaleForPage = Math.min(scaleForWidth, availableHeight / pageHeight);
 
-            // Use the smaller of the two to ensure it fits both dimensions
-            let optimalScale = Math.min(scaleForWidth, scaleForHeight);
+            // Determine page aspect ratio
+            const pageAspectRatio = pageWidth / pageHeight;
 
-            // Cap at 100% - we don't want to zoom in by default, only zoom out for large docs
-            optimalScale = Math.min(optimalScale, 1.0);
+            let optimalScale;
 
-            // Set a minimum scale of 25%
-            optimalScale = Math.max(optimalScale, 0.25);
+            // For portrait/standard documents (typical A4, Letter), use "Fit to Width"
+            // This is the most common and user-friendly default (matches Adobe Acrobat default)
+            if (pageAspectRatio <= 1.2) {
+                // Portrait document - fit to width for optimal readability
+                optimalScale = scaleForWidth;
+            } else if (pageAspectRatio <= 1.8) {
+                // Slightly landscape (e.g., slides) - balance between width and full view
+                // Prefer showing full page if it doesn't make text too small
+                optimalScale = scaleForPage >= 0.75 ? scaleForPage : scaleForWidth;
+            } else {
+                // Very wide document (panoramic) - fit to view
+                optimalScale = scaleForPage;
+            }
+
+            // Allow zoom above 100% for small documents to ensure readability
+            // Cap at 150% to avoid excessive zoom on very small pages
+            optimalScale = Math.min(optimalScale, 1.5);
+
+            // Set minimum scale of 50% for readability
+            optimalScale = Math.max(optimalScale, 0.5);
 
             // Round to nearest 5% for cleaner display
             optimalScale = Math.round(optimalScale * 20) / 20;
@@ -195,9 +218,13 @@ const PDFoxRenderer = (function() {
             const hasTextContent = textContent.items.some(item => item.str && item.str.trim().length > 0);
             core.set('isImageBasedPDF', !hasTextContent);
 
+            // Debug logging
+            console.log(`[PDFox] Page ${pageNum}: Found ${textContent.items.length} text items, hasTextContent: ${hasTextContent}`);
+
             // Emit event for UI updates
             if (!hasTextContent) {
                 core.emit('pdf:imageBasedDetected', { pageNum });
+                console.log('[PDFox] PDF detected as image-based (no text content)');
             }
 
             const textEdits = core.get('textEdits');
