@@ -79,7 +79,7 @@ const PDFoxUnifiedTextEditor = (function() {
                 primaryAction: saveEditOverlay
             },
             ocr: {
-                title: 'OCR Results',
+                title: 'Smart Text Extraction',
                 icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
                     <rect x="3" y="3" width="18" height="18" rx="2"/>
                     <path d="M7 8h10M7 12h10M7 16h6" stroke-linecap="round"/>
@@ -139,7 +139,7 @@ const PDFoxUnifiedTextEditor = (function() {
                         </div>
                         ${config.showOcrInfo ? `
                             <div class="ocr-info">
-                                <span class="ocr-confidence" id="uteOcrConfidence">${data.confidence ? data.confidence.toFixed(1) + '% confidence' : ''}</span>
+                                <span class="ocr-confidence" id="uteOcrConfidence">${data.confidence ? 'AI Accuracy: ' + data.confidence.toFixed(1) + '%' : ''}</span>
                             </div>
                         ` : ''}
                         <button class="unified-editor-close" id="uteCloseBtn" title="Close (Esc)">

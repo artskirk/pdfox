@@ -123,7 +123,7 @@ const PDFoxApp = (function() {
                 draw: 'Draw',
                 rectangle: 'Rectangle',
                 circle: 'Circle',
-                ocrSelect: 'OCR Select',
+                ocrSelect: 'AI Text',
                 fill: 'Fill'
             };
             ui.showNotification(`Tool: ${toolNames[tool] || tool}`, 'info');
@@ -241,6 +241,16 @@ const PDFoxApp = (function() {
                     removedAreas[action.fillIndex].height = action.previousState.height;
                     annotations.redraw();
                     ui.showNotification('Fill area restored', 'success');
+                }
+                break;
+
+            case 'fillColorChange':
+                // Restore fill area color
+                const fillAreas = annotations.getRemovedAreas();
+                if (fillAreas[action.fillIndex] && action.previousColor) {
+                    fillAreas[action.fillIndex].color = action.previousColor;
+                    annotations.redraw();
+                    ui.showNotification('Fill color restored', 'success');
                 }
                 break;
 
@@ -662,6 +672,138 @@ const PDFoxApp = (function() {
                 });
             }
 
+            // Apply stamps
+            if (typeof PDFoxStamps !== 'undefined') {
+                const allStamps = PDFoxStamps.getStamps();
+                for (const stamp of allStamps) {
+                    const page = pages[stamp.page - 1];
+                    const { height } = page.getSize();
+
+                    const actualX = stamp.x / SCALE_FACTOR;
+                    const actualY = stamp.y / SCALE_FACTOR;
+                    const actualSize = stamp.size / SCALE_FACTOR;
+                    const rgb = hexToRgb(stamp.color);
+
+                    // PDF coordinates: origin is bottom-left
+                    const pdfX = actualX;
+                    const pdfY = height - actualY - actualSize;
+
+                    if (stamp.type === 'check') {
+                        // Draw checkmark: path "M20 6L9 17l-5-5" scaled to stamp size
+                        const scale = actualSize / 24;
+                        const strokeWidth = 3 * scale;
+
+                        // First line: from (20,6) to (9,17)
+                        page.drawLine({
+                            start: { x: pdfX + 20 * scale, y: pdfY + actualSize - 6 * scale },
+                            end: { x: pdfX + 9 * scale, y: pdfY + actualSize - 17 * scale },
+                            thickness: strokeWidth,
+                            color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
+                            lineCap: PDFLib.LineCapStyle.Round
+                        });
+                        // Second line: from (9,17) to (4,12)
+                        page.drawLine({
+                            start: { x: pdfX + 9 * scale, y: pdfY + actualSize - 17 * scale },
+                            end: { x: pdfX + 4 * scale, y: pdfY + actualSize - 12 * scale },
+                            thickness: strokeWidth,
+                            color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
+                            lineCap: PDFLib.LineCapStyle.Round
+                        });
+                    } else if (stamp.type === 'x') {
+                        // Draw X mark: two diagonal lines
+                        const scale = actualSize / 24;
+                        const strokeWidth = 3 * scale;
+
+                        // Line from (18,6) to (6,18)
+                        page.drawLine({
+                            start: { x: pdfX + 18 * scale, y: pdfY + actualSize - 6 * scale },
+                            end: { x: pdfX + 6 * scale, y: pdfY + actualSize - 18 * scale },
+                            thickness: strokeWidth,
+                            color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
+                            lineCap: PDFLib.LineCapStyle.Round
+                        });
+                        // Line from (6,6) to (18,18)
+                        page.drawLine({
+                            start: { x: pdfX + 6 * scale, y: pdfY + actualSize - 6 * scale },
+                            end: { x: pdfX + 18 * scale, y: pdfY + actualSize - 18 * scale },
+                            thickness: strokeWidth,
+                            color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
+                            lineCap: PDFLib.LineCapStyle.Round
+                        });
+                    } else if (stamp.type === 'circle') {
+                        // Draw circle outline
+                        const scale = actualSize / 24;
+                        const centerX = pdfX + 12 * scale;
+                        const centerY = pdfY + 12 * scale;
+                        const radius = 9 * scale;
+
+                        page.drawCircle({
+                            x: centerX,
+                            y: centerY,
+                            size: radius,
+                            borderColor: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255),
+                            borderWidth: 2.5 * scale
+                        });
+                    } else if (stamp.type === 'dot') {
+                        // Draw filled circle
+                        const scale = actualSize / 24;
+                        const centerX = pdfX + 12 * scale;
+                        const centerY = pdfY + 12 * scale;
+                        const radius = 8 * scale;
+
+                        page.drawCircle({
+                            x: centerX,
+                            y: centerY,
+                            size: radius,
+                            color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255)
+                        });
+                    } else if (stamp.type === 'date' || stamp.type === 'na') {
+                        // Draw text stamps
+                        const text = stamp.text || (stamp.type === 'na' ? 'N/A' : '');
+                        const fontSize = actualSize;
+
+                        // Center the text vertically
+                        const textY = pdfY + actualSize * 0.25;
+
+                        page.drawText(text, {
+                            x: pdfX,
+                            y: textY,
+                            size: fontSize,
+                            color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255)
+                        });
+                    }
+                }
+            }
+
+            // Apply patches
+            if (typeof PDFoxPatch !== 'undefined') {
+                const allPatches = PDFoxPatch.getPatches();
+                for (const patch of allPatches) {
+                    const page = pages[patch.page - 1];
+                    const { height } = page.getSize();
+
+                    const actualX = patch.x / SCALE_FACTOR;
+                    const actualY = patch.y / SCALE_FACTOR;
+                    const actualWidth = patch.width / SCALE_FACTOR;
+                    const actualHeight = patch.height / SCALE_FACTOR;
+
+                    const pdfX = actualX;
+                    const pdfY = height - actualY - actualHeight;
+
+                    // Embed patch image
+                    const imageBytes = await fetch(patch.imageData).then(res => res.arrayBuffer());
+                    const patchImage = await pdfDoc.embedPng(imageBytes);
+
+                    page.drawImage(patchImage, {
+                        x: pdfX,
+                        y: pdfY,
+                        width: actualWidth,
+                        height: actualHeight,
+                        opacity: patch.opacity !== undefined ? patch.opacity : 1
+                    });
+                }
+            }
+
             // Save and download
             const pdfBytesModified = await pdfDoc.save();
             const blob = new Blob([pdfBytesModified], { type: 'application/pdf' });
@@ -1013,8 +1155,13 @@ const PDFoxApp = (function() {
             // Update storage (supports large files via IndexedDB)
             await updateStoredPDF(newPdfBytes);
 
-            // Reload the PDF
+            // Reload the PDF (this resets to page 1)
             await renderer.loadPDF(newPdfBytes);
+
+            // Navigate back to the page that was rotated
+            if (currentPage > 1) {
+                await renderer.goToPage(currentPage);
+            }
 
             ui.hideLoading();
             ui.showNotification(`Page rotated ${degrees > 0 ? 'right' : 'left'}`, 'success');
@@ -1690,12 +1837,49 @@ const PDFoxApp = (function() {
                     const color = e.target.value;
                     fillColorSwatch.style.background = color;
                     if (typeof PDFoxAnnotations !== 'undefined') {
+                        // Always update the default fill color for new fills
                         PDFoxAnnotations.setFillColor(color);
+
+                        // If a fill area is selected, update its color too
+                        const selectedFillIndex = PDFoxAnnotations.getSelectedFillIndex();
+                        if (selectedFillIndex !== null && selectedFillIndex >= 0) {
+                            PDFoxAnnotations.updateSelectedFillColor(color);
+                        }
                     }
                 });
 
                 fillColorPicker.addEventListener('change', (e) => {
-                    ui.showNotification(`Fill color: ${e.target.value}`, 'info');
+                    // Only show notification if no fill is selected (for new fill color)
+                    if (typeof PDFoxAnnotations !== 'undefined') {
+                        const selectedFillIndex = PDFoxAnnotations.getSelectedFillIndex();
+                        if (selectedFillIndex === null || selectedFillIndex < 0) {
+                            ui.showNotification(`Fill color: ${e.target.value}`, 'info');
+                        }
+                    }
+                });
+
+                // Update color picker when a fill area is selected
+                core.on('fill:selected', ({ color }) => {
+                    if (color) {
+                        fillColorPicker.value = color;
+                        fillColorSwatch.style.background = color;
+                    }
+                });
+
+                // Handle fill layer edit - open color picker
+                core.on('layer:edit', (layer) => {
+                    if (layer.type === 'fill') {
+                        // Select the fill area first
+                        if (typeof PDFoxAnnotations !== 'undefined') {
+                            PDFoxAnnotations.selectFillArea(layer.fillIndex);
+                        }
+                        // Switch to move tool
+                        if (typeof PDFoxApp !== 'undefined') {
+                            PDFoxApp.setTool('moveText');
+                        }
+                        // Open the color picker
+                        fillColorPicker.click();
+                    }
                 });
             }
 

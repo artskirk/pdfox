@@ -292,10 +292,11 @@ const PDFoxLayers = (function() {
             ? `<button class="layer-action-btn duplicate" title="Duplicate" data-action="duplicate">${icons.duplicate}</button>`
             : '';
 
-        // Hide edit button for annotations, fill areas, stamps, and patches (they can't be edited, only deleted)
-        const isAnnotation = layer.type.startsWith('annotation-') || layer.type === 'fill' || layer.type.startsWith('stamp-') || layer.type === 'patch';
-        const editBtn = !isAnnotation
-            ? `<button class="layer-action-btn edit" title="Edit" data-action="edit">${icons.editSmall}</button>`
+        // Hide edit button for annotations, stamps, and patches (they can't be edited, only deleted)
+        // Fill areas CAN be edited (color change)
+        const isNonEditable = layer.type.startsWith('annotation-') || layer.type.startsWith('stamp-') || layer.type === 'patch';
+        const editBtn = !isNonEditable
+            ? `<button class="layer-action-btn edit" title="${layer.type === 'fill' ? 'Change Color' : 'Edit'}" data-action="edit">${icons.editSmall}</button>`
             : '';
 
         item.innerHTML = `

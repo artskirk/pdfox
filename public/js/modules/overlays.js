@@ -1,6 +1,6 @@
 /**
  * PDFOX Overlays Module
- * Handles text overlays (OCR text, added text blocks)
+ * Handles text overlays (AI-extracted text, added text blocks)
  * Single Responsibility: Text overlay management
  */
 

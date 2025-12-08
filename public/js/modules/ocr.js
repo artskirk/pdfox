@@ -1,7 +1,7 @@
 /**
- * PDFOX OCR Module
- * Handles text extraction from PDF regions using Tesseract.js
- * Single Responsibility: OCR processing and results display
+ * PDFOX AI Text Recognition Module
+ * Handles smart text extraction from PDF regions using Tesseract.js
+ * Single Responsibility: AI text recognition and results display
  */
 
 const PDFoxOCR = (function() {
@@ -21,17 +21,17 @@ const PDFoxOCR = (function() {
      */
     async function initWorker() {
         if (!ocrWorker) {
-            ui.showLoading('Initializing OCR engine...');
+            ui.showLoading('Starting AI Text Recognition...');
             try {
                 ocrWorker = await Tesseract.createWorker('eng', 1, {
                     logger: m => {
                         if (m.status === 'recognizing text') {
                             const progress = Math.round(m.progress * 100);
-                            ui.showLoading(`Extracting text... ${progress}%`);
+                            ui.showLoading(`AI analyzing text... ${progress}%`);
                         }
                     }
                 });
-                console.log('OCR worker initialized');
+                console.log('AI text recognition initialized');
             } catch (error) {
                 console.error('Failed to initialize OCR:', error);
                 ui.hideLoading();
@@ -47,11 +47,11 @@ const PDFoxOCR = (function() {
      */
     async function extractFromSelection(selection) {
         if (!selection || selection.width < 20 || selection.height < 20) {
-            ui.showNotification('Selection too small for OCR', 'warning');
+            ui.showNotification('Selection too small - please select a larger area', 'warning');
             return;
         }
 
-        ui.showLoading('Preparing OCR...');
+        ui.showLoading('AI is reading your document...');
 
         try {
             const pdfDoc = core.get('pdfDoc');
@@ -158,7 +158,7 @@ const PDFoxOCR = (function() {
                             <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
                             <path d="M7 8h10M7 12h10M7 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
-                        OCR Results
+                        Extracted Text
                     </h3>
                     <span id="ocrConfidence" style="font-size: 12px; color: var(--color-text-muted);"></span>
                 </div>
@@ -337,10 +337,10 @@ const PDFoxOCR = (function() {
             ocrButton.style.display = 'none';
         }
 
-        // Update Edit button tooltip to indicate OCR selection
+        // Update Edit button tooltip to indicate AI text extraction
         const editButton = document.getElementById('editTextTool');
         if (editButton) {
-            editButton.setAttribute('data-tooltip', 'Draw area to extract text with OCR');
+            editButton.setAttribute('data-tooltip', 'Draw area to extract text with AI');
         }
     }
 
@@ -397,7 +397,7 @@ const PDFoxOCR = (function() {
             // Automatically switch to OCR selection mode for image-based PDFs
             setTimeout(() => {
                 activateOCRSelectionMode();
-                ui.showNotification('Image-based PDF detected. Draw an area to extract text with OCR.', 'info');
+                // Notification disabled - too intrusive for users
             }, 100);
         });
 
@@ -409,7 +409,7 @@ const PDFoxOCR = (function() {
                 if (core.get('isImageBasedPDF')) {
                     e.stopPropagation();
                     activateOCRSelectionMode();
-                    ui.showNotification('Draw an area to extract text with OCR', 'info');
+                    // Notification disabled - too intrusive for users
                 }
             });
         }

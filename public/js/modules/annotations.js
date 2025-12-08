@@ -550,7 +550,7 @@ const PDFoxAnnotations = (function() {
 
             // Draw dimensions label if selection is large enough
             if (Math.abs(ocrSelection.width) > 60 && Math.abs(ocrSelection.height) > 40) {
-                const labelText = isFill ? 'Fill Area' : 'OCR Region';
+                const labelText = isFill ? 'Fill Area' : 'AI Text Region';
                 const labelX = ocrSelection.x + ocrSelection.width / 2;
                 const labelY = ocrSelection.y + ocrSelection.height / 2;
 
@@ -639,6 +639,13 @@ const PDFoxAnnotations = (function() {
                 fillStartState = { ...removedAreas[fillHitIndex] };
                 annotationCanvas.style.cursor = 'grabbing';
                 redrawAnnotations();
+
+                // Emit fill selection event with the fill's color
+                core.emit('fill:selected', {
+                    index: fillHitIndex,
+                    color: removedAreas[fillHitIndex].color || '#FFFFFF'
+                });
+
                 e.preventDefault();
                 return;
             }
@@ -681,6 +688,9 @@ const PDFoxAnnotations = (function() {
         }
 
         if (currentTool === 'editText') return;
+
+        // Let patch module handle its own events
+        if (currentTool === 'patch') return;
 
         // Handle OCR selection and Fill mode
         if (currentTool === 'ocrSelect' || currentTool === 'fill') {
@@ -745,6 +755,9 @@ const PDFoxAnnotations = (function() {
      */
     function drawAnnotation(e) {
         const currentTool = core.get('currentTool');
+
+        // Let patch module handle its own events
+        if (currentTool === 'patch') return;
 
         // Handle fill area resizing
         if (isResizingFill && selectedFillIndex !== null && fillStartState) {
@@ -944,6 +957,9 @@ const PDFoxAnnotations = (function() {
      */
     function endAnnotation(e) {
         const currentTool = core.get('currentTool');
+
+        // Let patch module handle its own events
+        if (currentTool === 'patch') return;
 
         // Handle end of fill area resizing
         if (isResizingFill && selectedFillIndex !== null) {
@@ -1382,6 +1398,12 @@ const PDFoxAnnotations = (function() {
                 selectedFillIndex = fillIndex;
                 deselectAnnotation(); // Deselect any annotation
                 redrawAnnotations();
+
+                // Emit fill selection event with the fill's color
+                core.emit('fill:selected', {
+                    index: fillIndex,
+                    color: removedAreas[fillIndex].color || '#FFFFFF'
+                });
             }
         },
 
@@ -1391,6 +1413,40 @@ const PDFoxAnnotations = (function() {
          */
         getSelectedFillIndex() {
             return selectedFillIndex;
+        },
+
+        /**
+         * Update selected fill area's color
+         * @param {string} color - Hex color string
+         */
+        updateSelectedFillColor(color) {
+            if (selectedFillIndex === null || selectedFillIndex < 0) return;
+
+            const area = removedAreas[selectedFillIndex];
+            if (!area) return;
+
+            const previousColor = area.color;
+            area.color = color;
+
+            // Add to history for undo
+            core.addToHistory({
+                type: 'fillColorChange',
+                fillIndex: selectedFillIndex,
+                previousColor: previousColor
+            });
+
+            redrawAnnotations();
+            core.emit('area:removed', area);
+            ui.showNotification('Fill color updated', 'success');
+        },
+
+        /**
+         * Get selected fill area
+         * @returns {Object|null}
+         */
+        getSelectedFillArea() {
+            if (selectedFillIndex === null || selectedFillIndex < 0) return null;
+            return removedAreas[selectedFillIndex] || null;
         }
     };
 })();
