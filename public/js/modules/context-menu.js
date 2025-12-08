@@ -12,6 +12,7 @@ const PDFoxContextMenu = (function() {
 
     let menuElement = null;
     let currentContext = null;
+    let clickPosition = { x: 0, y: 0 }; // Store right-click position for placement
 
     // SVG Icons
     const icons = {
@@ -129,17 +130,17 @@ const PDFoxContextMenu = (function() {
             <button class="context-menu-item" onclick="PDFoxContextMenu.action('addText')">
                 <span class="context-menu-item-icon">${icons.addText}</span>
                 <span class="context-menu-item-label">Add Text</span>
-                <span class="context-menu-item-shortcut">T</span>
+                <span class="context-menu-item-shortcut">2</span>
             </button>
             <button class="context-menu-item" onclick="PDFoxContextMenu.action('signature')">
                 <span class="context-menu-item-icon">${icons.signature}</span>
                 <span class="context-menu-item-label">Add Signature</span>
-                <span class="context-menu-item-shortcut">S</span>
+                <span class="context-menu-item-shortcut">G</span>
             </button>
             <button class="context-menu-item" onclick="PDFoxContextMenu.action('draw')">
                 <span class="context-menu-item-icon">${icons.draw}</span>
                 <span class="context-menu-item-label">Draw</span>
-                <span class="context-menu-item-shortcut">D</span>
+                <span class="context-menu-item-shortcut">3</span>
             </button>
             <button class="context-menu-item" onclick="PDFoxContextMenu.action('fill')">
                 <span class="context-menu-item-icon">${icons.fill}</span>
@@ -322,6 +323,9 @@ const PDFoxContextMenu = (function() {
     function show(x, y, context = 'canvas', data = {}) {
         if (!menuElement) createMenu();
 
+        // Store the click position for element placement
+        clickPosition = { x, y };
+
         currentContext = { type: context, data };
         menuElement.innerHTML = buildMenuItems(context, data);
 
@@ -390,7 +394,10 @@ const PDFoxContextMenu = (function() {
                 if (typeof PDFoxApp !== 'undefined') PDFoxApp.setTool('addText');
                 break;
             case 'signature':
-                if (typeof PDFoxSignatures !== 'undefined') PDFoxSignatures.openModal();
+                if (typeof PDFoxSignatures !== 'undefined') {
+                    // Pass the click position for placement
+                    PDFoxSignatures.openModal(clickPosition);
+                }
                 break;
             case 'draw':
                 if (typeof PDFoxApp !== 'undefined') PDFoxApp.setTool('draw');
@@ -492,6 +499,93 @@ const PDFoxContextMenu = (function() {
     }
 
     /**
+     * Check if context menu is currently visible
+     */
+    function isVisible() {
+        return menuElement && menuElement.classList.contains('visible');
+    }
+
+    /**
+     * Handle keyboard shortcuts when context menu is open
+     * @param {KeyboardEvent} e - Keyboard event
+     */
+    function handleKeyboardShortcut(e) {
+        if (!isVisible()) return;
+
+        const key = e.key.toLowerCase();
+        let handled = false;
+
+        // Handle shortcuts based on current context
+        // Using number keys and unique letters to avoid conflicts with global shortcuts
+        switch (key) {
+            case '2':
+                action('addText');
+                handled = true;
+                break;
+            case 'g':
+                // G for siGnature (S is not used to avoid conflicts)
+                action('signature');
+                handled = true;
+                break;
+            case '3':
+                action('draw');
+                handled = true;
+                break;
+            case '6':
+                action('fill');
+                handled = true;
+                break;
+            case '+':
+            case '=':
+                action('zoomIn');
+                handled = true;
+                break;
+            case '-':
+                action('zoomOut');
+                handled = true;
+                break;
+            case '0':
+                action('zoomFit');
+                handled = true;
+                break;
+            case 'r':
+                action('rotatePage');
+                handled = true;
+                break;
+            case 'l':
+                action('layers');
+                handled = true;
+                break;
+            case '?':
+                action('help');
+                handled = true;
+                break;
+            case 'delete':
+            case 'backspace':
+                action('delete');
+                handled = true;
+                break;
+            case 'z':
+                if (e.ctrlKey || e.metaKey) {
+                    action('undo');
+                    handled = true;
+                }
+                break;
+            case 'y':
+                if (e.ctrlKey || e.metaKey) {
+                    action('redo');
+                    handled = true;
+                }
+                break;
+        }
+
+        if (handled) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
+    /**
      * Initialize context menu
      */
     function init() {
@@ -504,8 +598,8 @@ const PDFoxContextMenu = (function() {
                 return;
             }
 
-            // Check if we're in the PDF editor
-            const isInEditor = e.target.closest('#pdfEditor, .toolbar, .canvas-container, .layers-panel');
+            // Check if we're in the PDF editor area (broader coverage)
+            const isInEditor = e.target.closest('#pdfEditor, .toolbar, .canvas-container, .layers-panel, .layer-item, .layers-header, .layers-list, .sidebar, .sidebar-content');
             if (!isInEditor) {
                 return; // Allow default menu outside editor
             }
@@ -526,12 +620,16 @@ const PDFoxContextMenu = (function() {
         // Close menu on scroll
         document.addEventListener('scroll', hide, true);
 
-        // Close menu on escape
+        // Handle keyboard shortcuts and escape (use capture phase to intercept before other handlers)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 hide();
+                return;
             }
-        });
+
+            // Handle shortcuts when menu is visible
+            handleKeyboardShortcut(e);
+        }, true); // Use capture phase for priority
 
         // Close menu on window resize
         window.addEventListener('resize', hide);

@@ -106,15 +106,16 @@ const PDFoxToolbar = (function() {
         }
 
         // Update overflow group visibility and badge
+        // Always show overflow menu button for quick access to FINALIZE tools
+        overflowGroup.classList.add('has-overflow');
+        updateOverflowDropdown();
+
         if (hiddenGroups.length > 0) {
-            overflowGroup.classList.add('has-overflow');
             overflowBadge.textContent = hiddenGroups.length;
             overflowBadge.style.display = 'flex';
-            updateOverflowDropdown();
         } else {
-            overflowGroup.classList.remove('has-overflow');
+            // No hidden groups, but still show menu for FINALIZE access
             overflowBadge.style.display = 'none';
-            closeOverflow();
         }
     }
 
@@ -129,8 +130,15 @@ const PDFoxToolbar = (function() {
 
         // Clone hidden groups into dropdown (already in left-to-right order)
         hiddenGroups.forEach(group => {
+            // Skip groups that are intentionally hidden (like SELECT/AI Text)
+            if (group.style.display === 'none') {
+                return;
+            }
+
             const clone = group.cloneNode(true);
             clone.classList.remove('hidden-in-toolbar');
+            // Remove any inline display:none that might have been copied
+            clone.style.removeProperty('display');
 
             // For zoom controls, replace complex dropdown with simple display
             const zoomControls = clone.querySelector('.zoom-controls');
@@ -153,6 +161,57 @@ const PDFoxToolbar = (function() {
 
             overflowDropdown.appendChild(clone);
         });
+
+        // Always add FINALIZE tools section at the end for easy access
+        // This ensures Sign, Fill, Patch are always accessible from Menu
+        addPermanentFinalizeSection();
+    }
+
+    /**
+     * Add permanent FINALIZE section to overflow menu
+     * This ensures Sign, Fill, Patch tools are always accessible from Menu
+     */
+    function addPermanentFinalizeSection() {
+        // Check if FINALIZE is already in hidden groups
+        const hasFinalizeInHidden = hiddenGroups.some(g => g.dataset.group === 'finalize');
+        if (hasFinalizeInHidden) return; // Already included
+
+        // Create FINALIZE section
+        const finalizeSection = document.createElement('div');
+        finalizeSection.className = 'tool-group overflow-permanent-section';
+        finalizeSection.innerHTML = `
+            <span class="tool-group-label">Finalize</span>
+            <div class="tool-buttons">
+                <button class="tool-btn" onclick="PDFoxSignatures.openModal(); PDFoxToolbar.closeOverflow();" data-tooltip="Add signature">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 17c3.5-3.5 7-7 11-4s3 6-1 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M17 22l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>Sign</small>
+                </button>
+                <button class="tool-btn" onclick="PDFoxApp.setTool('fill'); PDFoxToolbar.closeOverflow();" data-tooltip="Fill area with selected color (6)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3.5 19.5L9 8l8.5 4.5-5.5 11.5z" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.1" stroke-linejoin="round"/>
+                        <ellipse cx="12.5" cy="6.5" rx="4.5" ry="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <path d="M16 8c1 1.5 2.5 4 2.5 6 0 1.5-1 2.5-2 2.5s-2-1-2-2.5c0-2 1.5-4.5 2.5-6z" fill="currentColor" opacity="0.6"/>
+                    </svg>
+                    <small>Fill</small>
+                </button>
+                <button class="tool-btn" onclick="PDFoxApp.setTool('patch'); PDFoxToolbar.closeOverflow();" data-tooltip="Patch tool - copy area to cover content (P)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.1"/>
+                        <line x1="8" y1="8" x2="8" y2="16" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="16" y1="8" x2="16" y2="16" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                        <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                        <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <small>Patch</small>
+                </button>
+            </div>
+        `;
+
+        overflowDropdown.appendChild(finalizeSection);
     }
 
     /**
@@ -170,8 +229,6 @@ const PDFoxToolbar = (function() {
      * Open overflow dropdown
      */
     function openOverflow() {
-        if (hiddenGroups.length === 0) return;
-
         isOverflowOpen = true;
         overflowDropdown.classList.add('open');
         overflowBtn.classList.add('active');

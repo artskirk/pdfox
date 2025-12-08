@@ -176,7 +176,7 @@ body {
 
 .toolbar-visible {
     display: flex;
-    gap: 8px;
+    gap: 0;
     flex-wrap: nowrap;
     align-items: stretch;
     flex: 1;
@@ -189,7 +189,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 8px 10px;
     border-right: 1px solid var(--color-border);
     position: relative;
     flex-shrink: 0;
@@ -216,6 +216,7 @@ body {
     display: flex;
     gap: 5px;
     overflow: visible;
+    justify-content: center;
 }
 
 /* Overflow Menu Group - hidden by default, shown when overflow exists */
@@ -223,19 +224,28 @@ body {
     display: none;
     order: -1;
     border-right: 1px solid var(--color-border);
+    padding: 8px 10px;
 }
 
 .toolbar-overflow-group.has-overflow {
     display: flex;
 }
 
-/* Overflow button inherits .tool-btn styles, just add badge positioning */
+/* Menu Button */
 .toolbar-overflow-group .tool-btn {
     position: relative;
+    background: rgba(229, 9, 20, 0.1);
+    border: 1px solid rgba(229, 9, 20, 0.25);
+}
+
+.toolbar-overflow-group .tool-btn:hover {
+    background: rgba(229, 9, 20, 0.2);
+    border-color: rgba(229, 9, 20, 0.4);
 }
 
 .toolbar-overflow-group .tool-btn.active {
     background: var(--color-primary);
+    border-color: var(--color-primary);
     color: white;
 }
 
@@ -243,10 +253,11 @@ body {
     color: rgba(255, 255, 255, 0.9);
 }
 
+/* Menu Badge */
 .overflow-badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: -2px;
+    right: -2px;
     background: var(--color-primary);
     color: white;
     font-size: 9px;
@@ -258,58 +269,65 @@ body {
     align-items: center;
     justify-content: center;
     padding: 0 4px;
+    box-shadow: 0 0 0 2px var(--color-bg-secondary);
 }
 
-/* Overflow Dropdown */
+/* ==========================================================================
+   Overflow Menu Dropdown - Clean Modern Design
+   ========================================================================== */
 .toolbar-overflow-dropdown {
     position: absolute;
-    top: 100%;
-    left: 24px;
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    padding: 12px;
+    top: calc(100% + 8px);
+    left: 16px;
     z-index: 10000;
     display: none;
     flex-direction: column;
-    gap: 8px;
+    width: 280px;
     max-height: 70vh;
+    padding: 8px;
+    padding-bottom: 16px;
+
+    /* Clean dark background */
+    background: #1a1a1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+
+    /* Scrolling */
     overflow-y: auto;
-    min-width: 280px;
+    overflow-x: hidden;
+
+    /* Scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.toolbar-overflow-dropdown::-webkit-scrollbar {
+    width: 5px;
+}
+
+.toolbar-overflow-dropdown::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.toolbar-overflow-dropdown::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.toolbar-overflow-dropdown::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .toolbar-overflow-dropdown.open {
     display: flex;
+    animation: menuFadeIn 0.15s ease-out;
 }
 
-.toolbar-overflow-dropdown .tool-group {
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-    padding: 8px 4px 12px;
-    display: flex !important;
-}
-
-.toolbar-overflow-dropdown .tool-group:last-child {
-    border-bottom: none;
-    padding-bottom: 4px;
-}
-
-.toolbar-overflow-dropdown .tool-buttons {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-}
-
-
-/* Dropdown animation */
-.toolbar-overflow-dropdown {
-    animation: dropdownSlide 0.2s ease-out;
-}
-
-@keyframes dropdownSlide {
+@keyframes menuFadeIn {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-4px);
     }
     to {
         opacity: 1;
@@ -317,22 +335,186 @@ body {
     }
 }
 
-/* Dropdown header for each group */
-.toolbar-overflow-dropdown .tool-group-label {
-    text-align: left;
-    color: var(--color-primary);
-    font-size: 11px;
-    margin-bottom: 8px;
+/* Tool Groups in Dropdown */
+.toolbar-overflow-dropdown .tool-group {
+    border: none;
+    padding: 0;
+    margin: 0 4px 4px 4px;
+    display: flex !important;
+    flex-direction: column;
+    background: transparent;
 }
 
-/* Smaller buttons in dropdown for better fit */
+/* Hide groups that are intentionally hidden (like SELECT/AI Text) */
+.toolbar-overflow-dropdown .tool-group[style*="display: none"],
+.toolbar-overflow-dropdown .tool-group[style*="display:none"] {
+    display: none !important;
+}
+
+.toolbar-overflow-dropdown .tool-group:last-child {
+    margin-bottom: 8px; /* Extra padding at bottom for visibility */
+}
+
+/* Group Label / Section Header */
+.toolbar-overflow-dropdown .tool-group-label {
+    padding: 8px 10px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-primary);
+    margin-bottom: 0;
+    border-bottom: none;
+    background: transparent;
+}
+
+.toolbar-overflow-dropdown .tool-group-label::before {
+    display: none;
+}
+
+/* Tool Buttons Container */
+.toolbar-overflow-dropdown .tool-buttons {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 10px 10px 10px;
+}
+
+/* Tool Buttons in Dropdown */
 .toolbar-overflow-dropdown .tool-btn {
-    min-width: 55px;
-    padding: 8px 10px;
+    flex: 0 0 calc(33.333% - 4px);
+    min-width: unset;
+    padding: 10px 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    box-shadow: none;
+}
+
+.toolbar-overflow-dropdown .tool-btn::before {
+    display: none;
+}
+
+.toolbar-overflow-dropdown .tool-btn:hover {
+    background: rgba(229, 9, 20, 0.15);
+    border-color: rgba(229, 9, 20, 0.3);
+    transform: none;
+    box-shadow: none;
+}
+
+.toolbar-overflow-dropdown .tool-btn:active {
+    background: rgba(229, 9, 20, 0.25);
+    transform: scale(0.97);
+}
+
+.toolbar-overflow-dropdown .tool-btn svg {
+    width: 18px;
+    height: 18px;
+    color: rgba(255, 255, 255, 0.85);
+    transition: color 0.15s ease;
+}
+
+.toolbar-overflow-dropdown .tool-btn:hover svg {
+    color: var(--color-primary);
+    transform: none;
 }
 
 .toolbar-overflow-dropdown .tool-btn small {
     font-size: 9px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 4px;
+    transition: color 0.15s ease;
+}
+
+.toolbar-overflow-dropdown .tool-btn:hover small {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Active state for tools */
+.toolbar-overflow-dropdown .tool-btn.active {
+    background: rgba(229, 9, 20, 0.2);
+    border-color: var(--color-primary);
+}
+
+/* Section Divider */
+.toolbar-overflow-dropdown .menu-section-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 4px 8px 8px;
+}
+
+/* Permanent FINALIZE Section */
+.toolbar-overflow-dropdown .overflow-permanent-section {
+    margin-top: 8px;
+    margin-bottom: 4px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(229, 9, 20, 0.2);
+}
+
+.toolbar-overflow-dropdown .overflow-permanent-section .tool-group-label {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.toolbar-overflow-dropdown .overflow-permanent-section .tool-btn {
+    background: rgba(229, 9, 20, 0.08);
+}
+
+.toolbar-overflow-dropdown .overflow-permanent-section .tool-btn:hover {
+    background: rgba(229, 9, 20, 0.2);
+}
+
+/* Ensure last group has extra spacing for scroll visibility */
+.toolbar-overflow-dropdown > .tool-group:last-child,
+.toolbar-overflow-dropdown > .overflow-permanent-section:last-child {
+    margin-bottom: 8px;
+}
+
+/* Fill tool wrapper adjustments */
+.toolbar-overflow-dropdown .fill-tool-wrapper {
+    display: contents;
+}
+
+.toolbar-overflow-dropdown .fill-tool-wrapper .tool-btn {
+    flex: 0 0 calc(33.333% - 3px);
+}
+
+.toolbar-overflow-dropdown .fill-color-picker {
+    display: none;
+}
+
+/* Stamps section - horizontal scroll */
+.toolbar-overflow-dropdown .tool-group[data-group="stamps"] .tool-buttons {
+    display: flex !important;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+}
+
+.toolbar-overflow-dropdown .tool-group[data-group="stamps"] .tool-buttons::-webkit-scrollbar {
+    display: none;
+}
+
+.toolbar-overflow-dropdown .tool-group[data-group="stamps"] .tool-btn {
+    flex: 0 0 auto;
+    min-width: 56px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .toolbar-overflow-dropdown {
+        width: calc(100vw - 32px);
+        left: 8px;
+        right: 8px;
+    }
+
+    .toolbar-overflow-dropdown .tool-btn {
+        flex: 0 0 calc(25% - 3px);
+    }
 }
 
 .tool-btn {

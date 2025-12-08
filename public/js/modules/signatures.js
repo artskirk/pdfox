@@ -16,6 +16,7 @@ const PDFoxSignatures = (function() {
     let currentSignatureImage = null;
     let selectedSignatureFont = 'Dancing Script';
     let selectedSignature = null;
+    let pendingPlacementPosition = null; // Position from context menu right-click
 
     /**
      * Initialize signature pad
@@ -259,7 +260,11 @@ const PDFoxSignatures = (function() {
 
         element.addEventListener('mousedown', (e) => {
             const currentTool = core.get('currentTool');
-            if (currentTool !== 'editText' && currentTool !== 'moveText') return;
+            // Allow dragging for common editing tools or when signature is clicked directly
+            const allowedTools = ['editText', 'moveText', 'pan', 'select', 'signature', null, undefined];
+            // Also allow if user is clicking directly on a signature element (context menu placement case)
+            const isSignatureClick = e.target.closest('.signature-overlay');
+            if (!allowedTools.includes(currentTool) && !isSignatureClick) return;
             if (e.target.classList.contains('signature-resize-handle')) return;
 
             isDragging = true;
@@ -375,8 +380,12 @@ const PDFoxSignatures = (function() {
 
         /**
          * Open signature modal
+         * @param {Object} position - Optional position for placement {x, y}
          */
-        openModal() {
+        openModal(position = null) {
+            // Store the position for when signature is applied
+            pendingPlacementPosition = position;
+
             const modal = document.getElementById('signatureModal');
             if (modal) {
                 modal.style.display = 'flex';
@@ -556,13 +565,43 @@ const PDFoxSignatures = (function() {
         addToPage(signatureDataURL) {
             const img = new Image();
             img.onload = () => {
+                const signatureWidth = 200;
+                const signatureHeight = (img.height / img.width) * signatureWidth;
+
+                // Calculate position - use pending position or default
+                let posX = 100;
+                let posY = 100;
+
+                if (pendingPlacementPosition) {
+                    // Convert screen coordinates to canvas coordinates
+                    const canvasContainer = document.querySelector('.canvas-container');
+                    const overlayLayer = document.getElementById('overlayLayer');
+
+                    if (canvasContainer && overlayLayer) {
+                        const containerRect = canvasContainer.getBoundingClientRect();
+                        const scrollLeft = canvasContainer.scrollLeft;
+                        const scrollTop = canvasContainer.scrollTop;
+
+                        // Calculate position relative to the overlay layer
+                        posX = pendingPlacementPosition.x - containerRect.left + scrollLeft - (signatureWidth / 2);
+                        posY = pendingPlacementPosition.y - containerRect.top + scrollTop - (signatureHeight / 2);
+
+                        // Ensure signature stays within reasonable bounds
+                        posX = Math.max(10, posX);
+                        posY = Math.max(10, posY);
+                    }
+
+                    // Clear the pending position
+                    pendingPlacementPosition = null;
+                }
+
                 const signature = {
                     id: generateId('signature'),
                     image: signatureDataURL,
-                    x: 100,
-                    y: 100,
-                    width: 200,
-                    height: (img.height / img.width) * 200,
+                    x: posX,
+                    y: posY,
+                    width: signatureWidth,
+                    height: signatureHeight,
                     page: core.get('currentPage')
                 };
 
