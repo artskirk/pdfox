@@ -18,7 +18,8 @@ const PDFoxApp = (function() {
     const DEFAULT_TOOL = 'addText';
 
     // One-shot tools that auto-reset after use
-    const ONE_SHOT_TOOLS = ['addText', 'ocrSelect', 'erase'];
+    // Note: 'fill' is not included because it switches to move mode after drawing
+    const ONE_SHOT_TOOLS = ['addText', 'ocrSelect'];
 
     // Persistent tools that stay active until manually changed
     const PERSISTENT_TOOLS = ['editText', 'moveText', 'draw', 'rectangle', 'circle'];
@@ -32,7 +33,7 @@ const PDFoxApp = (function() {
         rectangle: 'crosshair',
         circle: 'crosshair',
         ocrSelect: 'crosshair',
-        erase: 'crosshair',
+        fill: 'crosshair',
         default: 'default'
     };
 
@@ -74,7 +75,8 @@ const PDFoxApp = (function() {
         // Set tool-specific cursor
         const cursor = TOOL_CURSORS[tool] || TOOL_CURSORS.default;
 
-        if (tool === 'editText' || tool === 'moveText') {
+        if (tool === 'editText') {
+            // Edit text - disable annotation canvas
             if (annCanvas) {
                 annCanvas.style.cursor = 'default';
                 annCanvas.style.pointerEvents = 'none';
@@ -84,9 +86,22 @@ const PDFoxApp = (function() {
                 textLayer.style.cursor = cursor;
             }
             if (pdfViewer) pdfViewer.style.cursor = cursor;
+        } else if (tool === 'moveText') {
+            // Move tool - enable both text layer and annotation canvas for moving
+            if (annCanvas) {
+                annCanvas.style.cursor = 'default';
+                annCanvas.style.pointerEvents = 'auto'; // Enable for annotation selection/movement
+            }
+            if (textLayer) {
+                textLayer.classList.add('editable');
+                textLayer.style.cursor = cursor;
+            }
+            if (pdfViewer) pdfViewer.style.cursor = cursor;
         } else {
             if (annCanvas) {
-                annCanvas.style.cursor = cursor;
+                // Don't set inline cursor for tools with CSS class-based cursors
+                // The annotations module handles cursor classes for: draw, rectangle, circle, erase, ocrSelect
+                annCanvas.style.cursor = '';
                 annCanvas.style.pointerEvents = 'auto';
             }
             if (textLayer) {
@@ -108,7 +123,7 @@ const PDFoxApp = (function() {
                 rectangle: 'Rectangle',
                 circle: 'Circle',
                 ocrSelect: 'OCR Select',
-                erase: 'Redact'
+                fill: 'Fill'
             };
             ui.showNotification(`Tool: ${toolNames[tool] || tool}`, 'info');
         }
@@ -190,6 +205,43 @@ const PDFoxApp = (function() {
                 annotations.restoreRemovedArea(action.data);
                 ui.showNotification('Removed area restored', 'success');
                 break;
+
+            case 'textOverlay':
+                core.remove('textOverlays', o => o.id === action.data.id);
+                ui.showNotification('Text overlay removed', 'success');
+                break;
+
+            case 'annotationMove':
+                // Restore annotation to previous position
+                const allAnnotations = core.get('annotations');
+                const ann = allAnnotations[action.annotationIndex];
+                if (ann && action.previousPosition) {
+                    if (ann.type === 'draw' && action.previousPosition.points) {
+                        ann.points = action.previousPosition.points;
+                    } else {
+                        ann.startX = action.previousPosition.startX;
+                        ann.startY = action.previousPosition.startY;
+                        ann.endX = action.previousPosition.endX;
+                        ann.endY = action.previousPosition.endY;
+                    }
+                    annotations.redraw();
+                    ui.showNotification('Annotation position restored', 'success');
+                }
+                break;
+
+            case 'fillMove':
+            case 'fillResize':
+                // Restore fill area to previous state
+                const removedAreas = annotations.getRemovedAreas();
+                if (removedAreas[action.fillIndex] && action.previousState) {
+                    removedAreas[action.fillIndex].x = action.previousState.x;
+                    removedAreas[action.fillIndex].y = action.previousState.y;
+                    removedAreas[action.fillIndex].width = action.previousState.width;
+                    removedAreas[action.fillIndex].height = action.previousState.height;
+                    annotations.redraw();
+                    ui.showNotification('Fill area restored', 'success');
+                }
+                break;
         }
     }
 
@@ -253,6 +305,12 @@ const PDFoxApp = (function() {
                 annotations.addRemovedArea(action.data);
                 core.addToHistory(action);
                 ui.showNotification('Area redacted again', 'success');
+                break;
+
+            case 'textOverlay':
+                core.push('textOverlays', action.data);
+                core.addToHistory(action);
+                ui.showNotification('Text overlay restored', 'success');
                 break;
 
             default:
@@ -410,17 +468,20 @@ const PDFoxApp = (function() {
                 }
             }
 
-            // Apply removed areas
+            // Apply fill areas
             for (const area of removedAreas) {
                 const page = pages[area.page - 1];
                 const { height } = page.getSize();
+
+                // Use the stored fill color or default to white
+                const areaColor = area.color ? hexToRgb(area.color) : { r: 255, g: 255, b: 255 };
 
                 page.drawRectangle({
                     x: area.x / SCALE_FACTOR,
                     y: height - (area.y / SCALE_FACTOR) - (area.height / SCALE_FACTOR),
                     width: area.width / SCALE_FACTOR,
                     height: area.height / SCALE_FACTOR,
-                    color: PDFLib.rgb(1, 1, 1),
+                    color: PDFLib.rgb(areaColor.r / 255, areaColor.g / 255, areaColor.b / 255),
                     borderWidth: 0
                 });
             }
@@ -1262,7 +1323,7 @@ const PDFoxApp = (function() {
                     '3': 'draw',
                     '4': 'rectangle',
                     '5': 'circle',
-                    '6': 'erase'
+                    '6': 'fill'
                 };
                 if (toolShortcuts[e.key]) {
                     // Don't trigger if user is typing in an input
@@ -1500,6 +1561,26 @@ const PDFoxApp = (function() {
             if (brushSize && sizeValue) {
                 brushSize.addEventListener('input', () => {
                     sizeValue.textContent = brushSize.value;
+                });
+            }
+
+            // Wire up fill color picker
+            const fillColorPicker = document.getElementById('fillColorPicker');
+            const fillColorSwatch = document.getElementById('fillColorSwatch');
+            if (fillColorPicker && fillColorSwatch) {
+                // Set initial swatch color
+                fillColorSwatch.style.background = fillColorPicker.value;
+
+                fillColorPicker.addEventListener('input', (e) => {
+                    const color = e.target.value;
+                    fillColorSwatch.style.background = color;
+                    if (typeof PDFoxAnnotations !== 'undefined') {
+                        PDFoxAnnotations.setFillColor(color);
+                    }
+                });
+
+                fillColorPicker.addEventListener('change', (e) => {
+                    ui.showNotification(`Fill color: ${e.target.value}`, 'info');
                 });
             }
 

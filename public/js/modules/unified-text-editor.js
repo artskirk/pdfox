@@ -369,6 +369,13 @@ const PDFoxUnifiedTextEditor = (function() {
         };
 
         core.push('textOverlays', overlay);
+
+        // Add to history for undo support
+        core.addToHistory({
+            type: 'textOverlay',
+            data: overlay
+        });
+
         core.emit('overlay:created', overlay);
         core.emit('overlay:select', overlay.id);
 
@@ -493,8 +500,10 @@ const PDFoxUnifiedTextEditor = (function() {
         };
 
         core.push('textOverlays', overlay);
+
+        // Add to history for undo support
         core.addToHistory({
-            type: 'addOverlay',
+            type: 'textOverlay',
             data: overlay
         });
 

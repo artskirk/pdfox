@@ -403,6 +403,70 @@ body {
     color: rgba(255, 255, 255, 0.9);
 }
 
+/* Fill Tool with Color Picker */
+.fill-tool-wrapper {
+    display: inline-flex;
+    align-items: stretch;
+    position: relative;
+}
+
+.fill-tool-wrapper .tool-btn {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    min-width: auto;
+    padding-right: 10px;
+}
+
+.fill-color-picker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-tertiary);
+    border: 2px solid transparent;
+    border-left: 1px solid var(--color-border);
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    padding: 0 8px;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+}
+
+.fill-color-picker:hover {
+    background: var(--color-bg-hover);
+}
+
+.fill-color-picker input[type="color"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    padding: 0;
+    border: 0;
+    pointer-events: none;
+}
+
+.fill-color-swatch {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background: #FFFFFF;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.fill-color-picker:hover .fill-color-swatch {
+    border-color: var(--color-primary);
+    transform: scale(1.1);
+}
+
+.fill-tool-wrapper .tool-btn.active + .fill-color-picker {
+    background: var(--color-primary);
+    border-left-color: rgba(255, 255, 255, 0.2);
+}
+
 .tool-btn:hover {
     background: var(--color-bg-hover);
     transform: translateY(-1px);
@@ -1028,12 +1092,13 @@ body {
     left: 0;
     cursor: default;
     pointer-events: none;
+    z-index: 100; /* Below overlay layer (z-index: 150) */
 }
 
 /* Tool-specific cursors for annotation canvas */
-/* Draw tool - Circle brush cursor (like Photoshop) */
+/* Draw tool - Pencil/pen cursor */
 #annotationCanvas.cursor-draw {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='none' stroke='%23E50914' stroke-width='2'/%3E%3Ccircle cx='12' cy='12' r='1' fill='%23E50914'/%3E%3C/svg%3E") 12 12, crosshair !important;
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 000-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z' fill='%23E50914'/%3E%3C/svg%3E") 0 24, crosshair !important;
 }
 
 /* Rectangle tool cursor - crosshair */
@@ -1046,8 +1111,8 @@ body {
     cursor: crosshair !important;
 }
 
-/* Erase/Redact tool cursor */
-#annotationCanvas.cursor-erase {
+/* Fill tool cursor */
+#annotationCanvas.cursor-fill {
     cursor: crosshair !important;
 }
 
@@ -1102,6 +1167,7 @@ body {
 #textLayer.editable > span {
     background: rgba(255, 255, 0, 0.15);
     border-radius: 2px;
+    cursor: grab;
 }
 
 #textLayer.editable > span:hover {
@@ -1122,10 +1188,12 @@ body {
     pointer-events: auto !important;
 }
 
+#textLayer > span.dragging,
 #textLayer > span.edited.dragging {
     opacity: 0.7;
     box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.6);
     z-index: 1000 !important;
+    cursor: grabbing !important;
 }
 
 /* ==========================================================================
@@ -1139,7 +1207,7 @@ body {
     bottom: 0;
     overflow: visible;
     pointer-events: none;
-    z-index: 50;
+    z-index: 150; /* Above annotation canvas (which has no z-index, so defaults to auto) */
 }
 
 #overlayLayer > * { pointer-events: auto; }
@@ -1191,7 +1259,11 @@ body {
 }
 
 .text-overlay.selected .delete-btn { display: flex; }
-.text-overlay.dragging { opacity: 0.7; cursor: grabbing; }
+.text-overlay.dragging {
+    opacity: 0.7;
+    cursor: grabbing;
+    z-index: 1000 !important;
+}
 
 /* Resize handles */
 .resize-handle {
@@ -1348,6 +1420,26 @@ body {
     color: #9C27B0;
 }
 
+.layer-item-icon.annotation-draw {
+    background: rgba(229, 9, 20, 0.2);
+    color: var(--color-primary);
+}
+
+.layer-item-icon.annotation-rectangle {
+    background: rgba(255, 152, 0, 0.2);
+    color: #FF9800;
+}
+
+.layer-item-icon.annotation-circle {
+    background: rgba(0, 188, 212, 0.2);
+    color: #00BCD4;
+}
+
+.layer-item-icon.fill {
+    background: rgba(156, 39, 176, 0.2);
+    color: #9C27B0;
+}
+
 .layer-item-icon svg {
     width: 16px;
     height: 16px;
@@ -1403,6 +1495,7 @@ body {
 }
 
 .layer-action-btn:hover { background: var(--color-primary); }
+.layer-action-btn.duplicate:hover { background: var(--color-success, #28a745); }
 .layer-action-btn.delete:hover { background: var(--color-danger); }
 
 .layers-empty {

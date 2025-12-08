@@ -15,6 +15,13 @@ const PDFoxTextEditor = (function() {
     let currentEditingTextItem = null;
     let addTextPosition = { x: 0, y: 0 };
 
+    // Drag state for text repositioning
+    let isDraggingText = false;
+    let draggedTextElement = null;
+    let dragOffset = { x: 0, y: 0 };
+    let hasMoved = false;
+    let clickTimeout = null;
+
     /**
      * Create font size control HTML
      * @param {string} prefix - ID prefix
@@ -144,6 +151,203 @@ const PDFoxTextEditor = (function() {
     }
 
     /**
+     * Enable drag for text span
+     * @param {HTMLElement} textSpan - Text span element
+     */
+    function enableTextDrag(textSpan) {
+        textSpan.addEventListener('mousedown', function(e) {
+            const currentTool = core.get('currentTool');
+            // Allow dragging in both editText and moveText modes
+            if (currentTool !== 'moveText' && currentTool !== 'editText') return;
+
+            // Don't start drag on double-click
+            if (e.detail > 1) return;
+
+            hasMoved = false;
+            const startX = e.clientX;
+            const startY = e.clientY;
+
+            // Small delay to distinguish click from drag
+            clickTimeout = setTimeout(() => {
+                isDraggingText = true;
+                draggedTextElement = textSpan;
+
+                const textLayer = document.getElementById('textLayer');
+                const rect = textSpan.getBoundingClientRect();
+
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+
+                textSpan.classList.add('dragging');
+
+                const index = parseInt(textSpan.dataset.index);
+                const page = parseInt(textSpan.dataset.page);
+                const textEdits = core.get('textEdits');
+
+                // Check if this text was already edited
+                const existingEditIndex = textEdits.findIndex(edit =>
+                    edit.page === page && edit.index === index
+                );
+
+                // If not edited yet, create a text edit entry for repositioning
+                if (existingEditIndex < 0) {
+                    const currentX = parseFloat(textSpan.style.left);
+                    const currentY = parseFloat(textSpan.style.top);
+
+                    // Create white overlay to cover original text
+                    const overlay = document.createElement('div');
+                    overlay.className = 'text-edit-overlay';
+                    overlay.style.position = 'absolute';
+                    overlay.style.left = textSpan.style.left;
+                    overlay.style.top = textSpan.style.top;
+                    overlay.style.width = textSpan.offsetWidth + 'px';
+                    overlay.style.height = textSpan.style.fontSize;
+                    overlay.style.backgroundColor = 'white';
+                    overlay.style.zIndex = '1';
+                    overlay.dataset.editIndex = index;
+                    overlay.dataset.editPage = page;
+
+                    textSpan.parentElement.insertBefore(overlay, textSpan);
+
+                    // Mark as edited visually
+                    textSpan.classList.add('edited');
+                    textSpan.style.zIndex = '2';
+                    textSpan.style.display = 'inline-block';
+
+                    // Create edit entry (text not changed, just repositioned)
+                    const editData = {
+                        page: page,
+                        index: index,
+                        originalText: textSpan.textContent,
+                        newText: textSpan.textContent,
+                        x: currentX,
+                        y: currentY,
+                        originalX: currentX,
+                        originalY: currentY,
+                        fontSize: parseFloat(textSpan.style.fontSize) || 14,
+                        width: textSpan.offsetWidth
+                    };
+
+                    core.push('textEdits', editData);
+
+                    // Add to history
+                    core.addToHistory({
+                        type: 'textEditCreate',
+                        edit: editData
+                    });
+                }
+
+                e.preventDefault();
+            }, 150);
+
+            // Track if mouse moves before timeout
+            const checkMove = (moveEvent) => {
+                const dx = Math.abs(moveEvent.clientX - startX);
+                const dy = Math.abs(moveEvent.clientY - startY);
+                if (dx > 5 || dy > 5) {
+                    hasMoved = true;
+                }
+            };
+
+            document.addEventListener('mousemove', checkMove);
+
+            // Clean up on mouseup
+            const cleanupCheck = () => {
+                document.removeEventListener('mousemove', checkMove);
+                document.removeEventListener('mouseup', cleanupCheck);
+                if (!hasMoved && clickTimeout) {
+                    clearTimeout(clickTimeout);
+                }
+            };
+            document.addEventListener('mouseup', cleanupCheck);
+        });
+
+        // Prevent click event from firing when we dragged
+        textSpan.addEventListener('click', function(e) {
+            if (hasMoved) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+        }, true);
+    }
+
+    /**
+     * Setup global drag event handlers
+     */
+    function setupDragHandlers() {
+        // Handle text drag movement
+        document.addEventListener('mousemove', function(e) {
+            if (!isDraggingText || !draggedTextElement) return;
+
+            e.preventDefault();
+            hasMoved = true;
+
+            const textLayer = document.getElementById('textLayer');
+            if (!textLayer) return;
+
+            const layerRect = textLayer.getBoundingClientRect();
+            const newLeft = e.clientX - layerRect.left - dragOffset.x;
+            const newTop = e.clientY - layerRect.top - dragOffset.y;
+
+            // Update text position only (keep overlay at original position to cover original text)
+            draggedTextElement.style.left = newLeft + 'px';
+            draggedTextElement.style.top = newTop + 'px';
+        });
+
+        // Handle text drag end
+        document.addEventListener('mouseup', function(e) {
+            if (!isDraggingText || !draggedTextElement) return;
+
+            draggedTextElement.classList.remove('dragging');
+
+            // Update the textEdits array with new position
+            const index = parseInt(draggedTextElement.dataset.index);
+            const page = parseInt(draggedTextElement.dataset.page);
+            const textEdits = core.get('textEdits');
+
+            const editIndex = textEdits.findIndex(edit =>
+                edit.page === page && edit.index === index
+            );
+
+            if (editIndex >= 0) {
+                // Save previous position for undo
+                const previousX = textEdits[editIndex].x;
+                const previousY = textEdits[editIndex].y;
+
+                const newX = parseFloat(draggedTextElement.style.left);
+                const newY = parseFloat(draggedTextElement.style.top);
+
+                // Only track if position actually changed
+                if (previousX !== newX || previousY !== newY) {
+                    textEdits[editIndex].x = newX;
+                    textEdits[editIndex].y = newY;
+
+                    // Track move in action history
+                    core.addToHistory({
+                        type: 'textMove',
+                        editIndex: editIndex,
+                        previousX: previousX,
+                        previousY: previousY,
+                        newX: newX,
+                        newY: newY
+                    });
+
+                    console.log('Text repositioned:', {
+                        text: textEdits[editIndex].newText,
+                        newX: newX,
+                        newY: newY
+                    });
+
+                    ui.showNotification('Text repositioned!', 'success');
+                }
+            }
+
+            isDraggingText = false;
+            draggedTextElement = null;
+        });
+    }
+
+    /**
      * Setup text layer event delegation
      */
     function setupTextLayerEvents() {
@@ -155,6 +359,9 @@ const PDFoxTextEditor = (function() {
 
         console.log('[PDFox TextEditor] Setting up text layer events');
 
+        // Setup global drag handlers
+        setupDragHandlers();
+
         textLayer.addEventListener('click', (e) => {
             console.log('[PDFox TextEditor] Click on textLayer, target:', e.target.tagName, 'editable:', textLayer.classList.contains('editable'));
             const span = e.target.closest('span');
@@ -162,6 +369,14 @@ const PDFoxTextEditor = (function() {
                 console.log('[PDFox TextEditor] Span clicked, index:', span.dataset.index, 'text:', span.textContent.substring(0, 20));
                 handleTextSpanClick(span);
             }
+        });
+
+        // Subscribe to textLayer:rendered to enable drag on new spans
+        core.on('textLayer:rendered', ({ pageNum }) => {
+            const spans = textLayer.querySelectorAll('span[data-index]');
+            spans.forEach(span => {
+                enableTextDrag(span);
+            });
         });
     }
 

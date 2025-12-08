@@ -15,6 +15,7 @@ const PDFoxOverlays = (function() {
     let selectedOverlay = null;
     let dragState = null;
     let resizeState = null;
+    let clipboardOverlay = null; // Store copied overlay data
 
     /**
      * Create overlay element
@@ -87,10 +88,13 @@ const PDFoxOverlays = (function() {
             editOverlay(overlay.id);
         });
         div.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
-            if (e.target === div || e.target.closest('.text-overlay') === div) {
-                startDrag(e, overlay.id);
+            // Don't start drag if clicking on resize handle or delete button
+            if (e.target.classList.contains('resize-handle') ||
+                e.target.classList.contains('delete-btn')) {
+                return;
             }
+            e.stopPropagation();
+            startDrag(e, overlay.id);
         });
 
         return div;
@@ -170,6 +174,120 @@ const PDFoxOverlays = (function() {
             if (PDFoxUnifiedTextEditor.isOpen()) return;
             PDFoxUnifiedTextEditor.showEditOverlay(overlayId);
         }
+    }
+
+    /**
+     * Copy selected overlay to clipboard
+     * @param {string} overlayId - Overlay ID to copy
+     */
+    function copyOverlay(overlayId) {
+        const textOverlays = core.get('textOverlays');
+        const overlay = textOverlays.find(o => o.id === overlayId);
+        if (overlay) {
+            // Store a copy of the overlay data (without id)
+            clipboardOverlay = {
+                text: overlay.text,
+                width: overlay.width,
+                height: overlay.height,
+                fontSize: overlay.fontSize,
+                color: overlay.color,
+                bgColor: overlay.bgColor,
+                textOpacity: overlay.textOpacity,
+                fontFamily: overlay.fontFamily,
+                alignment: overlay.alignment
+            };
+            ui.showNotification('Text overlay copied', 'success');
+        }
+    }
+
+    /**
+     * Paste overlay from clipboard
+     */
+    function pasteOverlay() {
+        if (!clipboardOverlay) {
+            ui.showNotification('Nothing to paste', 'info');
+            return;
+        }
+
+        const currentPage = core.get('currentPage');
+
+        // Create new overlay with offset position
+        const newOverlay = {
+            id: generateId('overlay'),
+            text: clipboardOverlay.text,
+            x: 50, // Default position with offset
+            y: 50,
+            width: clipboardOverlay.width,
+            height: clipboardOverlay.height,
+            fontSize: clipboardOverlay.fontSize,
+            color: clipboardOverlay.color,
+            bgColor: clipboardOverlay.bgColor,
+            textOpacity: clipboardOverlay.textOpacity,
+            fontFamily: clipboardOverlay.fontFamily,
+            alignment: clipboardOverlay.alignment,
+            page: currentPage
+        };
+
+        core.push('textOverlays', newOverlay);
+
+        // Add to history for undo support
+        core.addToHistory({
+            type: 'textOverlay',
+            data: newOverlay
+        });
+
+        // Select the new overlay
+        setTimeout(() => {
+            selectOverlay(newOverlay.id);
+        }, 50);
+
+        ui.showNotification('Text overlay pasted', 'success');
+        core.emit('overlay:created', newOverlay);
+    }
+
+    /**
+     * Duplicate an overlay (copy and paste in one action)
+     * @param {string} overlayId - Overlay ID to duplicate
+     */
+    function duplicateOverlay(overlayId) {
+        const textOverlays = core.get('textOverlays');
+        const overlay = textOverlays.find(o => o.id === overlayId);
+        if (!overlay) return;
+
+        const currentPage = core.get('currentPage');
+
+        // Create new overlay with offset position
+        const newOverlay = {
+            id: generateId('overlay'),
+            text: overlay.text,
+            x: overlay.x + 20, // Offset from original
+            y: overlay.y + 20,
+            width: overlay.width,
+            height: overlay.height,
+            fontSize: overlay.fontSize,
+            color: overlay.color,
+            bgColor: overlay.bgColor,
+            textOpacity: overlay.textOpacity,
+            fontFamily: overlay.fontFamily,
+            alignment: overlay.alignment,
+            page: currentPage
+        };
+
+        core.push('textOverlays', newOverlay);
+
+        // Add to history for undo support
+        core.addToHistory({
+            type: 'textOverlay',
+            data: newOverlay
+        });
+
+        // Select the new overlay
+        setTimeout(() => {
+            selectOverlay(newOverlay.id);
+        }, 50);
+
+        ui.showNotification('Text overlay duplicated', 'success');
+        core.emit('overlay:created', newOverlay);
     }
 
     /**
@@ -325,33 +443,25 @@ const PDFoxOverlays = (function() {
                 break;
         }
 
-        // Calculate proportional font size based on the scale change
-        // Use the average of width and height ratios for balanced scaling
-        const widthRatio = overlay.width / resizeState.initialWidth;
-        const heightRatio = overlay.height / resizeState.initialHeight;
-
-        // For corner handles, use average; for edge handles, use the relevant ratio
-        let scaleRatio;
+        // Only scale font size when using corner handles (proportional resize)
+        // Edge handles (n, s, e, w) only change dimensions without affecting font size
         if (['se', 'sw', 'ne', 'nw'].includes(resizeState.position)) {
-            // Corner resize - use average of both dimensions
-            scaleRatio = (widthRatio + heightRatio) / 2;
-        } else if (['e', 'w'].includes(resizeState.position)) {
-            // Horizontal resize - scale based on width
-            scaleRatio = widthRatio;
-        } else {
-            // Vertical resize - scale based on height
-            scaleRatio = heightRatio;
-        }
+            // Corner resize - scale font proportionally using average of both dimensions
+            const widthRatio = overlay.width / resizeState.initialWidth;
+            const heightRatio = overlay.height / resizeState.initialHeight;
+            const scaleRatio = (widthRatio + heightRatio) / 2;
 
-        // Calculate new font size with min/max constraints
-        const newFontSize = Math.max(8, Math.min(72, Math.round(resizeState.initialFontSize * scaleRatio)));
-        overlay.fontSize = newFontSize;
+            // Calculate new font size with min/max constraints
+            const newFontSize = Math.max(8, Math.min(72, Math.round(resizeState.initialFontSize * scaleRatio)));
+            overlay.fontSize = newFontSize;
+            element.style.fontSize = newFontSize + 'px';
+        }
+        // For edge handles (e, w, n, s), font size remains unchanged
 
         element.style.left = overlay.x + 'px';
         element.style.top = overlay.y + 'px';
         element.style.width = overlay.width + 'px';
         element.style.minHeight = overlay.height + 'px';
-        element.style.fontSize = newFontSize + 'px';
     }
 
     /**
@@ -398,25 +508,45 @@ const PDFoxOverlays = (function() {
                 }
             });
 
+            core.on('layer:duplicate', (layer) => {
+                if (layer.type === 'text-overlay') {
+                    duplicateOverlay(layer.id);
+                }
+            });
+
             // Delete key handler
             document.addEventListener('keydown', (e) => {
+                // Don't trigger if typing in an input field
+                const activeTag = document.activeElement.tagName;
+                if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
+                    return;
+                }
+
+                // Don't trigger if a modal is open
+                if (document.querySelector('.custom-modal[style*="flex"]') ||
+                    document.querySelector('.overlay-edit-modal') ||
+                    document.getElementById('unifiedTextEditorModal')) {
+                    return;
+                }
+
+                // Ctrl+C - Copy selected overlay
+                if ((e.ctrlKey || e.metaKey) && e.key === 'c' && selectedOverlay) {
+                    e.preventDefault();
+                    copyOverlay(selectedOverlay);
+                    return;
+                }
+
+                // Ctrl+V - Paste overlay
+                if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardOverlay) {
+                    e.preventDefault();
+                    pasteOverlay();
+                    return;
+                }
+
                 // Check if Delete or Backspace key
                 if (e.key === 'Delete' || e.key === 'Backspace') {
                     // Check if we have a selected overlay
                     if (!selectedOverlay) {
-                        return;
-                    }
-
-                    // Don't trigger if typing in an input field
-                    const activeTag = document.activeElement.tagName;
-                    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
-                        return;
-                    }
-
-                    // Don't trigger if a modal is open
-                    if (document.querySelector('.custom-modal[style*="flex"]') ||
-                        document.querySelector('.overlay-edit-modal') ||
-                        document.getElementById('unifiedTextEditorModal')) {
                         return;
                     }
 
@@ -428,11 +558,7 @@ const PDFoxOverlays = (function() {
 
                 // Escape key to deselect
                 if (e.key === 'Escape' && selectedOverlay) {
-                    if (!document.querySelector('.custom-modal[style*="flex"]') &&
-                        !document.querySelector('.overlay-edit-modal') &&
-                        !document.getElementById('unifiedTextEditorModal')) {
-                        deselectAll();
-                    }
+                    deselectAll();
                 }
             });
 
@@ -517,6 +643,23 @@ const PDFoxOverlays = (function() {
         edit: editOverlay,
 
         /**
+         * Copy overlay to clipboard
+         * @param {string} id - Overlay ID
+         */
+        copy: copyOverlay,
+
+        /**
+         * Paste overlay from clipboard
+         */
+        paste: pasteOverlay,
+
+        /**
+         * Duplicate overlay
+         * @param {string} id - Overlay ID
+         */
+        duplicate: duplicateOverlay,
+
+        /**
          * Save overlay edit (legacy - now handled by unified editor)
          * @param {string} overlayId - Overlay ID
          */
@@ -555,6 +698,13 @@ const PDFoxOverlays = (function() {
             };
 
             core.push('textOverlays', overlay);
+
+            // Add to history for undo support
+            core.addToHistory({
+                type: 'textOverlay',
+                data: overlay
+            });
+
             return overlay;
         }
     };

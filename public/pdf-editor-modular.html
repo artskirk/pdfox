@@ -261,13 +261,27 @@
                     </svg>
                     <small>Sign</small>
                 </button>
-                <button class="tool-btn" id="eraseTool" data-tool="erase" onclick="PDFoxApp.setTool('erase')" data-tooltip="Draw area to redact/remove content (6)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
-                        <path d="M3 3l18 18M21 3l-18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <small>Redact</small>
-                </button>
+                <div class="fill-tool-wrapper">
+                    <button class="tool-btn" id="fillTool" data-tool="fill" onclick="PDFoxApp.setTool('fill')" data-tooltip="Fill area with selected color (6)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <!-- Tilted paint bucket -->
+                            <path d="M3.5 19.5L9 8l8.5 4.5-5.5 11.5z" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.1" stroke-linejoin="round"/>
+                            <!-- Bucket opening rim -->
+                            <ellipse cx="12.5" cy="6.5" rx="4.5" ry="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            <!-- Paint pouring -->
+                            <path d="M16 8c1 1.5 2.5 4 2.5 6 0 1.5-1 2.5-2 2.5s-2-1-2-2.5c0-2 1.5-4.5 2.5-6z" fill="currentColor" opacity="0.6"/>
+                            <!-- Bucket body connection -->
+                            <path d="M8 8.5c0-1.1 2-2 4.5-2s4.5.9 4.5 2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            <!-- Handle -->
+                            <path d="M14.5 4c1.5-1 3-1 4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                        </svg>
+                        <small>Fill</small>
+                    </button>
+                    <label class="fill-color-picker" title="Select fill color">
+                        <input type="color" id="fillColorPicker" value="#FFFFFF">
+                        <span class="fill-color-swatch" id="fillColorSwatch"></span>
+                    </label>
+                </div>
             </div>
         </div>
 

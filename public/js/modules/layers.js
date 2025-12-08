@@ -29,10 +29,31 @@ const PDFoxLayers = (function() {
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>`,
+        duplicate: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>`,
         layers: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="12 2 2 7 12 12 22 7 12 2"/>
             <polyline points="2 17 12 22 22 17"/>
             <polyline points="2 12 12 17 22 12"/>
+        </svg>`,
+        draw: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+            <path d="M2 2l7.586 7.586"/>
+            <circle cx="11" cy="11" r="2"/>
+        </svg>`,
+        rectangle: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        </svg>`,
+        circle: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+        </svg>`,
+        fill: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3.5 19.5L9 8l8.5 4.5-5.5 11.5z" fill="currentColor" fill-opacity="0.1" stroke-linejoin="round"/>
+            <ellipse cx="12.5" cy="6.5" rx="4.5" ry="2" fill="none"/>
+            <path d="M16 8c1 1.5 2.5 4 2.5 6 0 1.5-1 2.5-2 2.5s-2-1-2-2.5c0-2 1.5-4.5 2.5-6z" fill="currentColor" stroke="none" opacity="0.6"/>
         </svg>`
     };
 
@@ -45,6 +66,7 @@ const PDFoxLayers = (function() {
         const textEdits = core.get('textEdits');
         const textOverlays = core.get('textOverlays');
         const signatures = core.get('signatures');
+        const annotations = core.get('annotations');
         const layers = [];
 
         // Text edits
@@ -91,6 +113,44 @@ const PDFoxLayers = (function() {
             }
         });
 
+        // Annotations (draw, rectangle, circle)
+        annotations.forEach((ann, index) => {
+            if (ann.page === currentPage) {
+                const typeNames = {
+                    'draw': 'Drawing',
+                    'rectangle': 'Rectangle',
+                    'circle': 'Circle'
+                };
+                layers.push({
+                    type: `annotation-${ann.type}`,
+                    id: ann.id || `ann-${index}`,
+                    title: typeNames[ann.type] || 'Annotation',
+                    preview: `${ann.color || '#E50914'} annotation`,
+                    page: ann.page,
+                    annotationIndex: index,
+                    annotationData: ann
+                });
+            }
+        });
+
+        // Fill areas
+        if (typeof PDFoxAnnotations !== 'undefined') {
+            const removedAreas = PDFoxAnnotations.getRemovedAreas();
+            removedAreas.forEach((area, index) => {
+                if (area.page === currentPage) {
+                    layers.push({
+                        type: 'fill',
+                        id: `fill-${index}`,
+                        title: 'Filled Area',
+                        preview: `${Math.round(area.width)}x${Math.round(area.height)} px`,
+                        page: area.page,
+                        fillIndex: index,
+                        fillData: area
+                    });
+                }
+            });
+        }
+
         return layers;
     }
 
@@ -115,6 +175,18 @@ const PDFoxLayers = (function() {
         } else if (layer.type === 'signature') {
             iconClass = 'signature';
             iconSvg = icons.signature;
+        } else if (layer.type === 'annotation-draw') {
+            iconClass = 'annotation-draw';
+            iconSvg = icons.draw;
+        } else if (layer.type === 'annotation-rectangle') {
+            iconClass = 'annotation-rectangle';
+            iconSvg = icons.rectangle;
+        } else if (layer.type === 'annotation-circle') {
+            iconClass = 'annotation-circle';
+            iconSvg = icons.circle;
+        } else if (layer.type === 'fill') {
+            iconClass = 'fill';
+            iconSvg = icons.fill;
         }
 
         const previewText = layer.preview.length > 25
@@ -126,6 +198,17 @@ const PDFoxLayers = (function() {
             dataset: { layerId: layer.id, layerType: layer.type }
         });
 
+        // Build actions HTML - add duplicate button only for text-overlay
+        const duplicateBtn = layer.type === 'text-overlay'
+            ? `<button class="layer-action-btn duplicate" title="Duplicate" data-action="duplicate">${icons.duplicate}</button>`
+            : '';
+
+        // Hide edit button for annotations and fill areas (they can't be edited, only deleted)
+        const isAnnotation = layer.type.startsWith('annotation-') || layer.type === 'fill';
+        const editBtn = !isAnnotation
+            ? `<button class="layer-action-btn edit" title="Edit" data-action="edit">${icons.editSmall}</button>`
+            : '';
+
         item.innerHTML = `
             <div class="layer-item-icon ${iconClass}">${iconSvg}</div>
             <div class="layer-item-content">
@@ -133,7 +216,8 @@ const PDFoxLayers = (function() {
                 <div class="layer-item-preview">"${PDFoxUtils.escapeHtml(previewText)}"</div>
             </div>
             <div class="layer-item-actions">
-                <button class="layer-action-btn edit" title="Edit" data-action="edit">${icons.editSmall}</button>
+                ${duplicateBtn}
+                ${editBtn}
                 <button class="layer-action-btn delete" title="Delete" data-action="delete">${icons.delete}</button>
             </div>
         `;
@@ -145,12 +229,26 @@ const PDFoxLayers = (function() {
             }
         });
 
-        item.querySelector('[data-action="edit"]').addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            editLayer(layer);
-        });
+        // Duplicate button handler (only for text-overlay)
+        const duplicateBtnEl = item.querySelector('[data-action="duplicate"]');
+        if (duplicateBtnEl) {
+            duplicateBtnEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                duplicateLayer(layer);
+            });
+        }
+
+        const editBtnEl = item.querySelector('[data-action="edit"]');
+        if (editBtnEl) {
+            editBtnEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                editLayer(layer);
+            });
+        }
 
         item.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -195,6 +293,11 @@ const PDFoxLayers = (function() {
                 highlightElement(element);
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+        } else if (layer.type.startsWith('annotation-')) {
+            // Select annotation on canvas
+            if (typeof PDFoxAnnotations !== 'undefined') {
+                PDFoxAnnotations.selectAnnotation(layer.annotationIndex);
+            }
         }
 
         core.emit('layer:selected', layer);
@@ -226,6 +329,14 @@ const PDFoxLayers = (function() {
     }
 
     /**
+     * Duplicate layer
+     * @param {Object} layer - Layer data
+     */
+    function duplicateLayer(layer) {
+        core.emit('layer:duplicate', layer);
+    }
+
+    /**
      * Delete layer
      * @param {Object} layer - Layer data
      */
@@ -233,10 +344,14 @@ const PDFoxLayers = (function() {
         const messages = {
             'text-edit': 'Delete this text edit?',
             'text-overlay': 'Delete this text overlay?',
-            'signature': 'Delete this signature?'
+            'signature': 'Delete this signature?',
+            'annotation-draw': 'Delete this drawing?',
+            'annotation-rectangle': 'Delete this rectangle?',
+            'annotation-circle': 'Delete this circle?',
+            'fill': 'Delete this filled area?'
         };
 
-        ui.showConfirm(messages[layer.type], (confirmed) => {
+        ui.showConfirm(messages[layer.type] || 'Delete this item?', (confirmed) => {
             if (confirmed) {
                 core.emit('layer:delete', layer);
                 core.set('selectedLayerId', null);
@@ -254,7 +369,27 @@ const PDFoxLayers = (function() {
             core.on('textEdits:changed', () => this.render());
             core.on('textOverlays:changed', () => this.render());
             core.on('signatures:changed', () => this.render());
+            core.on('annotations:changed', () => this.render());
             core.on('page:rendered', () => this.render());
+
+            // Handle annotation deletion from layers panel
+            core.on('layer:delete', (layer) => {
+                if (layer.type.startsWith('annotation-')) {
+                    core.removeAt('annotations', layer.annotationIndex);
+                    if (typeof PDFoxAnnotations !== 'undefined') {
+                        PDFoxAnnotations.redraw();
+                    }
+                    ui.showNotification('Annotation deleted', 'success');
+                } else if (layer.type === 'fill') {
+                    if (typeof PDFoxAnnotations !== 'undefined') {
+                        PDFoxAnnotations.removeRedactedArea(layer.fillIndex);
+                    }
+                    ui.showNotification('Filled area removed', 'success');
+                }
+            });
+
+            // Subscribe to fill area changes
+            core.on('area:removed', () => this.render());
         },
 
         /**
@@ -270,7 +405,8 @@ const PDFoxLayers = (function() {
             const textEdits = core.get('textEdits');
             const textOverlays = core.get('textOverlays');
             const signatures = core.get('signatures');
-            const totalLayers = textEdits.length + textOverlays.length + signatures.length;
+            const annotations = core.get('annotations');
+            const totalLayers = textEdits.length + textOverlays.length + signatures.length + annotations.length;
 
             layerCount.textContent = totalLayers;
 
