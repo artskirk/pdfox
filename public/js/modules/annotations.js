@@ -602,6 +602,9 @@ const PDFoxAnnotations = (function() {
      * @param {MouseEvent} e - Mouse event
      */
     function startAnnotation(e) {
+        // Ignore right-clicks - let context menu handle them
+        if (e.button === 2) return;
+
         const currentTool = core.get('currentTool');
 
         const rect = annotationCanvas.getBoundingClientRect();

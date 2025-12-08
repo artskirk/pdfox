@@ -44,6 +44,9 @@ const PDFoxPatch = (function() {
      * @param {MouseEvent} e
      */
     function startSelection(e) {
+        // Ignore right-clicks - let context menu handle them
+        if (e.button === 2) return;
+
         if (core.get('currentTool') !== 'patch') return;
 
         const canvas = document.getElementById('annotationCanvas');

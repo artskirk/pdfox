@@ -20,7 +20,7 @@
     <!-- Application Styles -->
     <link rel="stylesheet" href="/css/pdf-editor.css">
 </head>
-<body>
+<body oncontextmenu="if(event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); return false; }">
     <header class="header">
         <div style="display: flex; align-items: center; gap: 15px;">
             <h1>

@@ -88,6 +88,9 @@ const PDFoxOverlays = (function() {
             editOverlay(overlay.id);
         });
         div.addEventListener('mousedown', (e) => {
+            // Ignore right-clicks - let context menu handle them
+            if (e.button === 2) return;
+
             // Don't start drag if clicking on resize handle or delete button
             if (e.target.classList.contains('resize-handle') ||
                 e.target.classList.contains('delete-btn')) {

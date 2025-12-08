@@ -156,6 +156,9 @@ const PDFoxTextEditor = (function() {
      */
     function enableTextDrag(textSpan) {
         textSpan.addEventListener('mousedown', function(e) {
+            // Ignore right-clicks - let context menu handle them
+            if (e.button === 2) return;
+
             const currentTool = core.get('currentTool');
             // Allow dragging in both editText and moveText modes
             if (currentTool !== 'moveText' && currentTool !== 'editText') return;

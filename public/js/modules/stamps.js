@@ -467,6 +467,9 @@ const PDFoxStamps = (function() {
 
         // Add event handlers
         element.addEventListener('mousedown', (e) => {
+            // Ignore right-clicks - let context menu handle them
+            if (e.button === 2) return;
+
             if (e.target.classList.contains('stamp-resize-handle')) {
                 e.stopPropagation();
                 startResize(e, stamp.id, e.target.dataset.handle);

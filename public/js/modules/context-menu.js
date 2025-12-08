@@ -591,24 +591,41 @@ const PDFoxContextMenu = (function() {
     function init() {
         createMenu();
 
-        // Global right-click handler
-        document.addEventListener('contextmenu', (e) => {
+        // Global right-click handler (use capture phase to intercept before browser default)
+        const handleContextMenu = (e) => {
             // Allow default context menu on input/textarea elements
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                return;
+                return true;
             }
 
             // Check if we're in the PDF editor area (broader coverage)
-            const isInEditor = e.target.closest('#pdfEditor, .toolbar, .canvas-container, .layers-panel, .layer-item, .layers-header, .layers-list, .sidebar, .sidebar-content');
+            const isInEditor = e.target.closest('#pdfEditor, .toolbar, .canvas-container, .layers-panel, .layer-item, .layers-header, .layers-list, .sidebar, .sidebar-content, .page-controls, .annotation-style-panel, header, .main-content');
             if (!isInEditor) {
-                return; // Allow default menu outside editor
+                return true; // Allow default menu outside editor
             }
 
+            // Prevent browser default context menu
             e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
 
             const context = getContextFromTarget(e.target);
             show(e.clientX, e.clientY, context.type, context.data);
-        });
+
+            return false;
+        };
+
+        // Attach to document with capture phase
+        document.addEventListener('contextmenu', handleContextMenu, true);
+
+        // Also attach to window to catch any bubbled events
+        window.addEventListener('contextmenu', (e) => {
+            const isInEditor = e.target.closest('#pdfEditor, .toolbar, .canvas-container, .layers-panel, .sidebar, .page-controls, .annotation-style-panel, header, .main-content');
+            if (isInEditor && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                return false;
+            }
+        }, true);
 
         // Close menu on click outside
         document.addEventListener('click', (e) => {
