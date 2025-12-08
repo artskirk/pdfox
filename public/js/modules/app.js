@@ -34,6 +34,7 @@ const PDFoxApp = (function() {
         circle: 'crosshair',
         ocrSelect: 'crosshair',
         fill: 'crosshair',
+        patch: 'crosshair',
         default: 'default'
     };
 
@@ -240,6 +241,78 @@ const PDFoxApp = (function() {
                     removedAreas[action.fillIndex].height = action.previousState.height;
                     annotations.redraw();
                     ui.showNotification('Fill area restored', 'success');
+                }
+                break;
+
+            case 'stamp':
+                // Remove stamp (undo placement)
+                if (typeof PDFoxStamps !== 'undefined') {
+                    PDFoxStamps.removeStampWithoutHistory(action.data.id);
+                    ui.showNotification('Stamp removed', 'success');
+                }
+                break;
+
+            case 'stampMove':
+                // Restore stamp position
+                if (typeof PDFoxStamps !== 'undefined' && action.previousPosition) {
+                    PDFoxStamps.updateStampPosition(action.stampId, action.previousPosition);
+                    ui.showNotification('Stamp position restored', 'success');
+                }
+                break;
+
+            case 'stampResize':
+                // Restore stamp size
+                if (typeof PDFoxStamps !== 'undefined' && action.previousSize) {
+                    PDFoxStamps.updateStampSize(action.stampId, action.previousSize);
+                    ui.showNotification('Stamp size restored', 'success');
+                }
+                break;
+
+            case 'stampDelete':
+                // Restore deleted stamp
+                if (typeof PDFoxStamps !== 'undefined') {
+                    PDFoxStamps.restoreStamp(action.data);
+                    ui.showNotification('Stamp restored', 'success');
+                }
+                break;
+
+            case 'patch':
+                // Remove patch (undo placement)
+                if (typeof PDFoxPatch !== 'undefined') {
+                    PDFoxPatch.removeWithoutHistory(action.data.id);
+                    ui.showNotification('Patch removed', 'success');
+                }
+                break;
+
+            case 'patchMove':
+                // Restore patch position
+                if (typeof PDFoxPatch !== 'undefined' && action.previousPosition) {
+                    PDFoxPatch.updatePosition(action.patchId, action.previousPosition);
+                    ui.showNotification('Patch position restored', 'success');
+                }
+                break;
+
+            case 'patchResize':
+                // Restore patch size
+                if (typeof PDFoxPatch !== 'undefined' && action.previousSize) {
+                    PDFoxPatch.updateSize(action.patchId, action.previousSize);
+                    ui.showNotification('Patch size restored', 'success');
+                }
+                break;
+
+            case 'patchDelete':
+                // Restore deleted patch
+                if (typeof PDFoxPatch !== 'undefined') {
+                    PDFoxPatch.restore(action.data);
+                    ui.showNotification('Patch restored', 'success');
+                }
+                break;
+
+            case 'patchOpacity':
+                // Restore patch opacity
+                if (typeof PDFoxPatch !== 'undefined' && action.previousOpacity !== undefined) {
+                    PDFoxPatch.setOpacity(action.patchId, action.previousOpacity);
+                    ui.showNotification('Patch opacity restored', 'success');
                 }
                 break;
         }
@@ -1333,6 +1406,38 @@ const PDFoxApp = (function() {
                         setTool(toolShortcuts[e.key]);
                     }
                 }
+
+                // Letter keys for quick stamps (V, X, O, D, T, N)
+                const stampShortcuts = {
+                    'v': 'check',   // V for checkmark (like "verified")
+                    'x': 'x',       // X for X mark
+                    'o': 'circle',  // O for circle
+                    'd': 'dot',     // D for dot
+                    't': 'date',    // T for today's date
+                    'n': 'na'       // N for N/A
+                };
+                const lowerKey = e.key.toLowerCase();
+                if (stampShortcuts[lowerKey]) {
+                    // Don't trigger if user is typing in an input
+                    if (document.activeElement.tagName !== 'INPUT' &&
+                        document.activeElement.tagName !== 'TEXTAREA' &&
+                        !document.activeElement.isContentEditable) {
+                        e.preventDefault();
+                        if (typeof PDFoxStamps !== 'undefined') {
+                            PDFoxStamps.setStamp(stampShortcuts[lowerKey]);
+                        }
+                    }
+                }
+
+                // P for Patch tool
+                if (lowerKey === 'p') {
+                    if (document.activeElement.tagName !== 'INPUT' &&
+                        document.activeElement.tagName !== 'TEXTAREA' &&
+                        !document.activeElement.isContentEditable) {
+                        e.preventDefault();
+                        setTool('patch');
+                    }
+                }
             }
         });
     }
@@ -1540,6 +1645,16 @@ const PDFoxApp = (function() {
             layers.init();
             signatures.init();
             overlays.init();
+
+            // Initialize stamps module
+            if (typeof PDFoxStamps !== 'undefined') {
+                PDFoxStamps.init();
+            }
+
+            // Initialize patch module
+            if (typeof PDFoxPatch !== 'undefined') {
+                PDFoxPatch.init();
+            }
 
             // Note: addText:click is now handled directly in annotations module
 

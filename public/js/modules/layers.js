@@ -54,6 +54,34 @@ const PDFoxLayers = (function() {
             <path d="M3.5 19.5L9 8l8.5 4.5-5.5 11.5z" fill="currentColor" fill-opacity="0.1" stroke-linejoin="round"/>
             <ellipse cx="12.5" cy="6.5" rx="4.5" ry="2" fill="none"/>
             <path d="M16 8c1 1.5 2.5 4 2.5 6 0 1.5-1 2.5-2 2.5s-2-1-2-2.5c0-2 1.5-4.5 2.5-6z" fill="currentColor" stroke="none" opacity="0.6"/>
+        </svg>`,
+        stampCheck: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M20 6L9 17l-5-5" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`,
+        stampX: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>`,
+        stampCircle: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="#3b82f6" stroke-width="2"/>
+        </svg>`,
+        stampDot: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="5" fill="#3b82f6"/>
+        </svg>`,
+        stampDate: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <path d="M3 10h18"/>
+            <path d="M8 2v4M16 2v4"/>
+        </svg>`,
+        stampNa: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <text x="12" y="15" text-anchor="middle" font-size="10" font-weight="bold" fill="currentColor">N/A</text>
+        </svg>`,
+        patch: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="8" width="20" height="8" rx="2" fill="currentColor" fill-opacity="0.1"/>
+            <line x1="8" y1="8" x2="8" y2="16"/>
+            <line x1="16" y1="8" x2="16" y2="16"/>
+            <circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/>
         </svg>`
     };
 
@@ -151,6 +179,46 @@ const PDFoxLayers = (function() {
             });
         }
 
+        // Stamps
+        if (typeof PDFoxStamps !== 'undefined') {
+            const stamps = PDFoxStamps.getStampsForCurrentPage();
+            const stampNames = {
+                check: 'Checkmark',
+                x: 'X Mark',
+                circle: 'Circle',
+                dot: 'Dot',
+                date: 'Date',
+                na: 'N/A'
+            };
+            stamps.forEach((stamp, index) => {
+                layers.push({
+                    type: `stamp-${stamp.type}`,
+                    id: stamp.id,
+                    title: stampNames[stamp.type] || 'Stamp',
+                    preview: stamp.text || stampNames[stamp.type],
+                    page: stamp.page,
+                    stampIndex: index,
+                    stampData: stamp
+                });
+            });
+        }
+
+        // Patches
+        if (typeof PDFoxPatch !== 'undefined') {
+            const patches = PDFoxPatch.getPatchesForCurrentPage();
+            patches.forEach((patch, index) => {
+                layers.push({
+                    type: 'patch',
+                    id: patch.id,
+                    title: 'Patch',
+                    preview: `${Math.round(patch.width)}×${Math.round(patch.height)}`,
+                    page: patch.page,
+                    patchIndex: index,
+                    patchData: patch
+                });
+            });
+        }
+
         return layers;
     }
 
@@ -187,6 +255,27 @@ const PDFoxLayers = (function() {
         } else if (layer.type === 'fill') {
             iconClass = 'fill';
             iconSvg = icons.fill;
+        } else if (layer.type === 'stamp-check') {
+            iconClass = 'stamp-check';
+            iconSvg = icons.stampCheck;
+        } else if (layer.type === 'stamp-x') {
+            iconClass = 'stamp-x';
+            iconSvg = icons.stampX;
+        } else if (layer.type === 'stamp-circle') {
+            iconClass = 'stamp-circle';
+            iconSvg = icons.stampCircle;
+        } else if (layer.type === 'stamp-dot') {
+            iconClass = 'stamp-dot';
+            iconSvg = icons.stampDot;
+        } else if (layer.type === 'stamp-date') {
+            iconClass = 'stamp-date';
+            iconSvg = icons.stampDate;
+        } else if (layer.type === 'stamp-na') {
+            iconClass = 'stamp-na';
+            iconSvg = icons.stampNa;
+        } else if (layer.type === 'patch') {
+            iconClass = 'patch';
+            iconSvg = icons.patch;
         }
 
         const previewText = layer.preview.length > 25
@@ -203,8 +292,8 @@ const PDFoxLayers = (function() {
             ? `<button class="layer-action-btn duplicate" title="Duplicate" data-action="duplicate">${icons.duplicate}</button>`
             : '';
 
-        // Hide edit button for annotations and fill areas (they can't be edited, only deleted)
-        const isAnnotation = layer.type.startsWith('annotation-') || layer.type === 'fill';
+        // Hide edit button for annotations, fill areas, stamps, and patches (they can't be edited, only deleted)
+        const isAnnotation = layer.type.startsWith('annotation-') || layer.type === 'fill' || layer.type.startsWith('stamp-') || layer.type === 'patch';
         const editBtn = !isAnnotation
             ? `<button class="layer-action-btn edit" title="Edit" data-action="edit">${icons.editSmall}</button>`
             : '';
@@ -294,9 +383,36 @@ const PDFoxLayers = (function() {
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         } else if (layer.type.startsWith('annotation-')) {
-            // Select annotation on canvas
+            // Select annotation on canvas and switch to move tool
             if (typeof PDFoxAnnotations !== 'undefined') {
                 PDFoxAnnotations.selectAnnotation(layer.annotationIndex);
+            }
+            if (typeof PDFoxApp !== 'undefined') {
+                PDFoxApp.setTool('moveText');
+            }
+        } else if (layer.type === 'fill') {
+            // Select fill area and switch to move tool
+            if (typeof PDFoxAnnotations !== 'undefined') {
+                PDFoxAnnotations.selectFillArea(layer.fillIndex);
+            }
+            if (typeof PDFoxApp !== 'undefined') {
+                PDFoxApp.setTool('moveText');
+            }
+        } else if (layer.type.startsWith('stamp-')) {
+            // Select stamp and switch to move tool
+            if (typeof PDFoxStamps !== 'undefined') {
+                PDFoxStamps.selectStamp(layer.id);
+            }
+            if (typeof PDFoxApp !== 'undefined') {
+                PDFoxApp.setTool('moveText');
+            }
+        } else if (layer.type === 'patch') {
+            // Select patch and switch to move tool
+            if (typeof PDFoxPatch !== 'undefined') {
+                PDFoxPatch.selectPatch(layer.id);
+            }
+            if (typeof PDFoxApp !== 'undefined') {
+                PDFoxApp.setTool('moveText');
             }
         }
 
@@ -348,7 +464,14 @@ const PDFoxLayers = (function() {
             'annotation-draw': 'Delete this drawing?',
             'annotation-rectangle': 'Delete this rectangle?',
             'annotation-circle': 'Delete this circle?',
-            'fill': 'Delete this filled area?'
+            'fill': 'Delete this filled area?',
+            'stamp-check': 'Delete this checkmark?',
+            'stamp-x': 'Delete this X mark?',
+            'stamp-circle': 'Delete this circle stamp?',
+            'stamp-dot': 'Delete this dot stamp?',
+            'stamp-date': 'Delete this date stamp?',
+            'stamp-na': 'Delete this N/A stamp?',
+            'patch': 'Delete this patch?'
         };
 
         ui.showConfirm(messages[layer.type] || 'Delete this item?', (confirmed) => {
@@ -385,11 +508,25 @@ const PDFoxLayers = (function() {
                         PDFoxAnnotations.removeRedactedArea(layer.fillIndex);
                     }
                     ui.showNotification('Filled area removed', 'success');
+                } else if (layer.type.startsWith('stamp-')) {
+                    if (typeof PDFoxStamps !== 'undefined') {
+                        PDFoxStamps.deleteStamp(layer.id);
+                    }
+                } else if (layer.type === 'patch') {
+                    if (typeof PDFoxPatch !== 'undefined') {
+                        PDFoxPatch.deletePatch(layer.id);
+                    }
                 }
             });
 
             // Subscribe to fill area changes
             core.on('area:removed', () => this.render());
+
+            // Subscribe to stamp changes
+            core.on('stamps:changed', () => this.render());
+
+            // Subscribe to patch changes
+            core.on('patches:changed', () => this.render());
         },
 
         /**

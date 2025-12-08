@@ -249,8 +249,55 @@
             </div>
         </div>
 
-        <!-- GROUP 4: Sign & Redact - Finalization tools -->
-        <div class="tool-group" data-group="finalize" data-priority="5">
+        <!-- GROUP 4: Quick Stamps - Fast form filling -->
+        <div class="tool-group" data-group="stamps" data-priority="5">
+            <span class="tool-group-label">Stamps</span>
+            <div class="tool-buttons">
+                <button class="tool-btn" id="stampCheck" data-stamp="check" onclick="PDFoxStamps.setStamp('check')" data-tooltip="Checkmark stamp (V)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <small>Check</small>
+                </button>
+                <button class="tool-btn" id="stampX" data-stamp="x" onclick="PDFoxStamps.setStamp('x')" data-tooltip="X mark stamp (X)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                    <small>X Mark</small>
+                </button>
+                <button class="tool-btn" id="stampCircle" data-stamp="circle" onclick="PDFoxStamps.setStamp('circle')" data-tooltip="Circle stamp (O)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <small>Circle</small>
+                </button>
+                <button class="tool-btn" id="stampDot" data-stamp="dot" onclick="PDFoxStamps.setStamp('dot')" data-tooltip="Filled dot stamp (D)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="6" fill="currentColor" fill-opacity="0.8"/>
+                        <circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <small>Dot</small>
+                </button>
+                <button class="tool-btn" id="stampDate" data-stamp="date" onclick="PDFoxStamps.setStamp('date')" data-tooltip="Date stamp - today's date (T)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M3 10h18" stroke="currentColor" stroke-width="2"/>
+                        <path d="M8 2v4M16 2v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>Date</small>
+                </button>
+                <button class="tool-btn" id="stampNA" data-stamp="na" onclick="PDFoxStamps.setStamp('na')" data-tooltip="N/A stamp (N)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.1"/>
+                        <text x="12" y="15" text-anchor="middle" font-size="8" font-weight="600" fill="currentColor">N/A</text>
+                    </svg>
+                    <small>N/A</small>
+                </button>
+            </div>
+        </div>
+
+        <!-- GROUP 5: Sign & Fill - Finalization tools -->
+        <div class="tool-group" data-group="finalize" data-priority="6">
             <span class="tool-group-label">Finalize</span>
             <div class="tool-buttons">
                 <button class="tool-btn" id="signatureTool" onclick="PDFoxSignatures.openModal()" data-tooltip="Add your signature to the document">
@@ -282,6 +329,18 @@
                         <span class="fill-color-swatch" id="fillColorSwatch"></span>
                     </label>
                 </div>
+                <button class="tool-btn" id="patchTool" data-tool="patch" onclick="PDFoxApp.setTool('patch')" data-tooltip="Patch tool - copy area to cover content (P)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <!-- Bandage/patch icon -->
+                        <rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.1"/>
+                        <line x1="8" y1="8" x2="8" y2="16" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="16" y1="8" x2="16" y2="16" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                        <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                        <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <small>Patch</small>
+                </button>
             </div>
         </div>
 
@@ -638,14 +697,13 @@
                         </svg>
                         Clear
                     </button>
-                    <span style="color: #666; font-size: 14px;">Sign above with your mouse or touchscreen</span>
+                    <span class="signature-hint">Sign above with your mouse or touchscreen</span>
                 </div>
-                <div class="signature-background-option" style="margin-top: 15px; padding: 10px; background: #f8f8f8; border-radius: 8px;">
-                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 14px; color: #333;">
-                        <input type="checkbox" id="signatureTransparentBg" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
-                        <span>Transparent Background</span>
-                    </label>
-                </div>
+                <label class="signature-checkbox-option">
+                    <input type="checkbox" id="signatureTransparentBg" checked>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">Transparent Background</span>
+                </label>
             </div>
 
             <!-- Type Tab -->
@@ -765,6 +823,8 @@
     <script src="/js/modules/annotation-styles.js"></script>
     <script src="/js/modules/annotations.js"></script>
     <script src="/js/modules/signatures.js"></script>
+    <script src="/js/modules/stamps.js"></script>
+    <script src="/js/modules/patch.js"></script>
     <script src="/js/modules/overlays.js"></script>
     <script src="/js/modules/ocr.js"></script>
     <script src="/js/modules/app.js"></script>

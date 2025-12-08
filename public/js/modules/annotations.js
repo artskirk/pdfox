@@ -1149,12 +1149,12 @@ const PDFoxAnnotations = (function() {
                 if (value === 'editText') {
                     annotationCanvas.style.cursor = '';
                     annotationCanvas.style.pointerEvents = 'none';
-                    annotationCanvas.classList.remove('cursor-draw', 'cursor-rectangle', 'cursor-circle', 'cursor-fill', 'cursor-ocr', 'cursor-addText');
+                    annotationCanvas.classList.remove('cursor-draw', 'cursor-rectangle', 'cursor-circle', 'cursor-fill', 'cursor-ocr', 'cursor-addText', 'cursor-patch');
                 } else if (value === 'moveText') {
                     // Move tool - enable annotation canvas for selecting/moving annotations
                     annotationCanvas.style.pointerEvents = 'auto';
                     annotationCanvas.style.cursor = 'default';
-                    annotationCanvas.classList.remove('cursor-draw', 'cursor-rectangle', 'cursor-circle', 'cursor-fill', 'cursor-ocr', 'cursor-addText');
+                    annotationCanvas.classList.remove('cursor-draw', 'cursor-rectangle', 'cursor-circle', 'cursor-fill', 'cursor-ocr', 'cursor-addText', 'cursor-patch');
                 } else if (value === 'addText') {
                     // Add text tool - show text cursor but handle clicks on annotation canvas
                     annotationCanvas.style.pointerEvents = 'auto';
@@ -1168,7 +1168,7 @@ const PDFoxAnnotations = (function() {
                     annotationCanvas.style.cursor = '';
 
                     // Remove all cursor classes first
-                    annotationCanvas.classList.remove('cursor-draw', 'cursor-rectangle', 'cursor-circle', 'cursor-fill', 'cursor-ocr', 'cursor-addText');
+                    annotationCanvas.classList.remove('cursor-draw', 'cursor-rectangle', 'cursor-circle', 'cursor-fill', 'cursor-ocr', 'cursor-addText', 'cursor-patch');
 
                     // Add the appropriate cursor class
                     switch (value) {
@@ -1186,6 +1186,9 @@ const PDFoxAnnotations = (function() {
                             break;
                         case 'ocrSelect':
                             annotationCanvas.classList.add('cursor-ocr');
+                            break;
+                        case 'patch':
+                            annotationCanvas.classList.add('cursor-patch');
                             break;
                         default:
                             // Fallback to crosshair for unknown tools
@@ -1368,6 +1371,26 @@ const PDFoxAnnotations = (function() {
          */
         getFillColor() {
             return fillColor;
+        },
+
+        /**
+         * Select a fill area by index
+         * @param {number} fillIndex - Index of fill area to select
+         */
+        selectFillArea(fillIndex) {
+            if (fillIndex >= 0 && fillIndex < removedAreas.length) {
+                selectedFillIndex = fillIndex;
+                deselectAnnotation(); // Deselect any annotation
+                redrawAnnotations();
+            }
+        },
+
+        /**
+         * Get selected fill area index
+         * @returns {number|null}
+         */
+        getSelectedFillIndex() {
+            return selectedFillIndex;
         }
     };
 })();
