@@ -455,6 +455,19 @@ const PDFoxApp = (function() {
             const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
             const pages = pdfDoc.getPages();
 
+            // Set PDF metadata to indicate document was prepared with PDFOX
+            const currentDate = new Date();
+            pdfDoc.setProducer('PDFOX - www.pdfox.cloud');
+            pdfDoc.setCreator('PDFOX PDF Editor - www.pdfox.cloud');
+            pdfDoc.setModificationDate(currentDate);
+
+            // Add custom metadata keywords
+            const existingKeywords = pdfDoc.getKeywords() || '';
+            const pdfoxKeyword = 'Prepared with PDFOX (www.pdfox.cloud)';
+            if (!existingKeywords.includes('pdfox.cloud')) {
+                pdfDoc.setKeywords(existingKeywords ? `${existingKeywords}, ${pdfoxKeyword}` : pdfoxKeyword);
+            }
+
             // Register fontkit to enable custom font embedding with Unicode support
             if (typeof fontkit !== 'undefined') {
                 pdfDoc.registerFontkit(fontkit);
