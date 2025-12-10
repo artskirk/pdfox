@@ -18,23 +18,56 @@ const PDFoxOverlays = (function() {
     let clipboardOverlay = null; // Store copied overlay data
 
     /**
-     * Create overlay element
-     * @param {Object} overlay - Overlay data
-     * @returns {HTMLElement}
+     * Convert text with links in format "text (url)" to HTML with clickable links
+     * @param {string} text - Plain text that may contain links
+     * @returns {string} HTML with clickable links
      */
+    function convertLinksToHtml(text) {
+        if (!text) return '';
+
+        // Pattern to match: text (url) or just (url)
+        // Matches: "link text (https://example.com)" or "(https://example.com)"
+        const linkPattern = /(?:([^(]+?)\s*)?\((https?:\/\/[^)]+)\)/g;
+
+        // Escape HTML in text first, then replace links
+        let html = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+
+        // Replace link patterns with anchor tags
+        html = html.replace(linkPattern, (match, linkText, url) => {
+            const displayText = linkText ? linkText.trim() : url;
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="overlay-link">${displayText}</a>`;
+        });
+
+        return html;
+    }
+
     function createOverlayElement(overlay) {
         const div = document.createElement('div');
         div.className = 'text-overlay';
         div.id = overlay.id;
-        div.textContent = overlay.text;
 
-        // Position and style
+        // Create a content wrapper for the text/html
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'overlay-content';
+
+        // Convert text with links to HTML
+        contentWrapper.innerHTML = convertLinksToHtml(overlay.text);
+        div.appendChild(contentWrapper);
+
+        // Get current scale to adjust position and size
+        const scale = core.get('scale') || 1.0;
+
+        // Position and style - multiply by scale for display
         div.style.cssText = `
-            left: ${overlay.x}px;
-            top: ${overlay.y}px;
-            width: ${overlay.width}px;
-            min-height: ${overlay.height}px;
-            font-size: ${overlay.fontSize}px;
+            left: ${overlay.x * scale}px;
+            top: ${overlay.y * scale}px;
+            width: ${overlay.width * scale}px;
+            min-height: ${overlay.height * scale}px;
+            font-size: ${overlay.fontSize * scale}px;
             background-color: ${overlay.bgColor};
             text-align: ${overlay.alignment || 'left'};
             font-family: ${overlay.fontFamily || 'Arial, sans-serif'};
@@ -80,10 +113,20 @@ const PDFoxOverlays = (function() {
 
         // Event handlers
         div.addEventListener('click', (e) => {
+            // Check if clicking on a link
+            const link = e.target.closest('a');
+            if (link) {
+                e.stopPropagation();
+                e.preventDefault();
+                window.open(link.href, '_blank', 'noopener,noreferrer');
+                return;
+            }
             e.stopPropagation();
             selectOverlay(overlay.id);
         });
         div.addEventListener('dblclick', (e) => {
+            // Don't open editor if double-clicking a link
+            if (e.target.closest('a')) return;
             e.stopPropagation();
             editOverlay(overlay.id);
         });
@@ -91,9 +134,10 @@ const PDFoxOverlays = (function() {
             // Ignore right-clicks - let context menu handle them
             if (e.button === 2) return;
 
-            // Don't start drag if clicking on resize handle or delete button
+            // Don't start drag if clicking on resize handle, delete button, or link
             if (e.target.classList.contains('resize-handle') ||
-                e.target.classList.contains('delete-btn')) {
+                e.target.classList.contains('delete-btn') ||
+                e.target.closest('a')) {
                 return;
             }
             e.stopPropagation();
@@ -179,6 +223,9 @@ const PDFoxOverlays = (function() {
         }
     }
 
+    // Track mouse position for paste functionality
+    let lastMousePosition = { x: 100, y: 100 };
+
     /**
      * Copy selected overlay to clipboard
      * @param {string} overlayId - Overlay ID to copy
@@ -187,9 +234,11 @@ const PDFoxOverlays = (function() {
         const textOverlays = core.get('textOverlays');
         const overlay = textOverlays.find(o => o.id === overlayId);
         if (overlay) {
-            // Store a copy of the overlay data (without id)
+            // Store a copy of the overlay data including position
             clipboardOverlay = {
                 text: overlay.text,
+                x: overlay.x,
+                y: overlay.y,
                 width: overlay.width,
                 height: overlay.height,
                 fontSize: overlay.fontSize,
@@ -205,21 +254,40 @@ const PDFoxOverlays = (function() {
 
     /**
      * Paste overlay from clipboard
+     * @param {Object} mousePos - Optional mouse position {x, y} for paste location
      */
-    function pasteOverlay() {
+    function pasteOverlay(mousePos) {
         if (!clipboardOverlay) {
             ui.showNotification('Nothing to paste', 'info');
             return;
         }
 
         const currentPage = core.get('currentPage');
+        const scale = core.get('scale') || 1.0;
 
-        // Create new overlay with offset position
+        // Determine paste position
+        let pasteX, pasteY;
+
+        if (mousePos && mousePos.x !== undefined && mousePos.y !== undefined) {
+            // Use provided mouse position (normalized)
+            pasteX = mousePos.x / scale;
+            pasteY = mousePos.y / scale;
+        } else if (lastMousePosition.x && lastMousePosition.y) {
+            // Use tracked mouse position (normalized)
+            pasteX = lastMousePosition.x / scale;
+            pasteY = lastMousePosition.y / scale;
+        } else {
+            // Fallback: offset from original position
+            pasteX = clipboardOverlay.x + 20;
+            pasteY = clipboardOverlay.y + 20;
+        }
+
+        // Create new overlay at paste position
         const newOverlay = {
             id: generateId('overlay'),
             text: clipboardOverlay.text,
-            x: 50, // Default position with offset
-            y: 50,
+            x: pasteX,
+            y: pasteY,
             width: clipboardOverlay.width,
             height: clipboardOverlay.height,
             fontSize: clipboardOverlay.fontSize,
@@ -246,6 +314,15 @@ const PDFoxOverlays = (function() {
 
         ui.showNotification('Text overlay pasted', 'success');
         core.emit('overlay:created', newOverlay);
+    }
+
+    /**
+     * Update last mouse position (called from mouse move events)
+     * @param {number} x - Mouse X position
+     * @param {number} y - Mouse Y position
+     */
+    function updateMousePosition(x, y) {
+        lastMousePosition = { x, y };
     }
 
     /**
@@ -328,19 +405,22 @@ const PDFoxOverlays = (function() {
     function onDrag(e) {
         if (!dragState) return;
 
+        const scale = core.get('scale') || 1.0;
         const dx = e.clientX - dragState.startX;
         const dy = e.clientY - dragState.startY;
 
         const textOverlays = core.get('textOverlays');
         const overlay = textOverlays.find(o => o.id === dragState.overlayId);
         if (overlay) {
-            overlay.x = dragState.initialX + dx;
-            overlay.y = dragState.initialY + dy;
+            // Store normalized position (divide by scale)
+            overlay.x = dragState.initialX + dx / scale;
+            overlay.y = dragState.initialY + dy / scale;
 
             const element = document.getElementById(dragState.overlayId);
             if (element) {
-                element.style.left = overlay.x + 'px';
-                element.style.top = overlay.y + 'px';
+                // Display at scaled position
+                element.style.left = (overlay.x * scale) + 'px';
+                element.style.top = (overlay.y * scale) + 'px';
             }
         }
     }
@@ -395,8 +475,10 @@ const PDFoxOverlays = (function() {
     function onResize(e) {
         if (!resizeState) return;
 
-        const dx = e.clientX - resizeState.startX;
-        const dy = e.clientY - resizeState.startY;
+        const scale = core.get('scale') || 1.0;
+        // Convert screen delta to normalized delta
+        const dx = (e.clientX - resizeState.startX) / scale;
+        const dy = (e.clientY - resizeState.startY) / scale;
 
         const textOverlays = core.get('textOverlays');
         const overlay = textOverlays.find(o => o.id === resizeState.overlayId);
@@ -409,6 +491,7 @@ const PDFoxOverlays = (function() {
         const prevWidth = overlay.width;
         const prevHeight = overlay.height;
 
+        // All values are stored normalized (at scale 1.0)
         switch (resizeState.position) {
             case 'se':
                 overlay.width = Math.max(50, resizeState.initialWidth + dx);
@@ -457,14 +540,15 @@ const PDFoxOverlays = (function() {
             // Calculate new font size with min/max constraints
             const newFontSize = Math.max(8, Math.min(72, Math.round(resizeState.initialFontSize * scaleRatio)));
             overlay.fontSize = newFontSize;
-            element.style.fontSize = newFontSize + 'px';
+            element.style.fontSize = (newFontSize * scale) + 'px';
         }
         // For edge handles (e, w, n, s), font size remains unchanged
 
-        element.style.left = overlay.x + 'px';
-        element.style.top = overlay.y + 'px';
-        element.style.width = overlay.width + 'px';
-        element.style.minHeight = overlay.height + 'px';
+        // Display at scaled position/size
+        element.style.left = (overlay.x * scale) + 'px';
+        element.style.top = (overlay.y * scale) + 'px';
+        element.style.width = (overlay.width * scale) + 'px';
+        element.style.minHeight = (overlay.height * scale) + 'px';
     }
 
     /**
@@ -484,6 +568,7 @@ const PDFoxOverlays = (function() {
             // Subscribe to events
             core.on('textOverlays:changed', () => renderOverlays());
             core.on('page:rendered', () => renderOverlays());
+            core.on('scale:changed', () => renderOverlays());  // Re-render on zoom change
 
             core.on('overlay:select', (id) => selectOverlay(id));
             core.on('overlay:created', () => renderOverlays());
@@ -594,11 +679,23 @@ const PDFoxOverlays = (function() {
 
             if (overlayLayer) {
                 overlayLayer.addEventListener('click', handleClickAway);
+
+                // Track mouse position for paste functionality
+                overlayLayer.addEventListener('mousemove', (e) => {
+                    const rect = overlayLayer.getBoundingClientRect();
+                    updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
+                });
             }
 
             // Also listen on canvas container for clicks outside overlays
             if (canvasContainer) {
                 canvasContainer.addEventListener('click', handleClickAway);
+
+                // Track mouse position for paste functionality
+                canvasContainer.addEventListener('mousemove', (e) => {
+                    const rect = canvasContainer.getBoundingClientRect();
+                    updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
+                });
             }
 
             // Listen for overlay:deselect event

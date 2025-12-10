@@ -96,10 +96,17 @@ const PDFoxToolbar = (function() {
 
         // Hide groups from LEFT side first (index 0, 1, 2, ...)
         // This keeps rightmost tools visible longest
+        // EXCEPT: Never hide primary-tools group
         for (let i = 0; i < toolGroups.length; i++) {
             if (totalWidth <= availableWidth) break;
 
             const group = toolGroups[i];
+
+            // Never hide primary tools
+            if (group.classList.contains('primary-tools')) {
+                continue;
+            }
+
             totalWidth -= groupWidths[i];
             group.classList.add('hidden-in-toolbar');
             hiddenGroups.push(group);

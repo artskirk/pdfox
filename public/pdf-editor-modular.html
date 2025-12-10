@@ -9,6 +9,7 @@
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@5.0.3/dist/signature_pad.umd.min.js"></script>
 
@@ -93,17 +94,10 @@
         <div class="toolbar-visible" id="toolbarVisible">
         <!-- Zoom controls moved to bottom page-controls bar -->
 
-        <!-- GROUP 1: Text Tools - Primary editing workflow -->
-        <div class="tool-group" data-group="text" data-priority="2">
-            <span class="tool-group-label">Text</span>
+        <!-- GROUP 0: Primary Tools - Always visible, highest priority -->
+        <div class="tool-group primary-tools" data-group="primary" data-priority="1">
+            <span class="tool-group-label">Primary</span>
             <div class="tool-buttons">
-                <button class="tool-btn active" id="editTextTool" data-tool="editText" onclick="PDFoxApp.setTool('editText')" data-tooltip="Click on text to edit it (1)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <small>Edit</small>
-                </button>
                 <button class="tool-btn" id="addTextTool" data-tool="addText" onclick="PDFoxApp.setTool('addText')" data-tooltip="Click anywhere to add new text (2)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
@@ -111,6 +105,27 @@
                     </svg>
                     <small>Add</small>
                 </button>
+                <button class="tool-btn active" id="editTextTool" data-tool="editText" onclick="PDFoxApp.setTool('editText')" data-tooltip="Click on text to edit it (1)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <small>Edit</small>
+                </button>
+                <button class="tool-btn" id="duplicateLayerBtn" onclick="PDFoxApp.duplicateCurrentLayer()" data-tooltip="Duplicate selected layer (Ctrl+D)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <small>Duplicate</small>
+                </button>
+            </div>
+        </div>
+
+        <!-- GROUP 1: Text Tools - Secondary text operations -->
+        <div class="tool-group" data-group="text" data-priority="2">
+            <span class="tool-group-label">Text</span>
+            <div class="tool-buttons">
                 <button class="tool-btn" id="moveTextTool" data-tool="moveText" onclick="PDFoxApp.setTool('moveText')" data-tooltip="Drag to move or resize added text">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>

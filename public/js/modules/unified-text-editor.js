@@ -153,7 +153,16 @@ const PDFoxUnifiedTextEditor = (function() {
                     <div class="unified-editor-body">
                         <!-- Text Area -->
                         <div class="unified-editor-field">
-                            <label>Text</label>
+                            <div class="unified-editor-field-header">
+                                <label>Text</label>
+                                <button type="button" class="insert-link-btn" id="uteInsertLinkBtn" title="Insert Link (Ctrl+K)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                    </svg>
+                                    <span>Insert Link</span>
+                                </button>
+                            </div>
                             <textarea id="uteTextArea" placeholder="Enter your text here...">${escapeHtml(text)}</textarea>
                             ${config.showOcrInfo ? `<div class="word-count" id="uteWordCount">${data.wordCount || 0} words</div>` : ''}
                         </div>
@@ -206,6 +215,38 @@ const PDFoxUnifiedTextEditor = (function() {
                         <div class="unified-editor-actions">
                             <button class="unified-editor-btn secondary" id="uteCancelBtn">Cancel</button>
                             <button class="unified-editor-btn primary" id="utePrimaryBtn">${config.primaryBtn}</button>
+                        </div>
+                    </div>
+
+                    <!-- Link Insertion Dialog -->
+                    <div class="link-insert-dialog" id="uteLinkDialog" style="display: none;">
+                        <div class="link-dialog-content">
+                            <div class="link-dialog-header">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                </svg>
+                                <span>Insert Link</span>
+                                <button type="button" class="link-dialog-close" id="uteLinkDialogClose">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 6L6 18M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="link-dialog-body">
+                                <div class="link-dialog-field">
+                                    <label for="uteLinkText">Link Text</label>
+                                    <input type="text" id="uteLinkText" placeholder="Display text for the link">
+                                </div>
+                                <div class="link-dialog-field">
+                                    <label for="uteLinkUrl">URL</label>
+                                    <input type="url" id="uteLinkUrl" placeholder="https://example.com">
+                                </div>
+                            </div>
+                            <div class="link-dialog-footer">
+                                <button type="button" class="unified-editor-btn secondary" id="uteLinkCancelBtn">Cancel</button>
+                                <button type="button" class="unified-editor-btn primary" id="uteLinkInsertBtn">Insert Link</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -311,7 +352,140 @@ const PDFoxUnifiedTextEditor = (function() {
                 e.preventDefault();
                 config.primaryAction();
             }
+            // Ctrl+K to open link dialog
+            if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                openLinkDialog();
+            }
         });
+
+        // Insert Link button
+        document.getElementById('uteInsertLinkBtn')?.addEventListener('click', openLinkDialog);
+
+        // Link dialog close buttons
+        document.getElementById('uteLinkDialogClose')?.addEventListener('click', closeLinkDialog);
+        document.getElementById('uteLinkCancelBtn')?.addEventListener('click', closeLinkDialog);
+
+        // Link dialog insert button
+        document.getElementById('uteLinkInsertBtn')?.addEventListener('click', insertLink);
+
+        // Link URL input - Enter to insert
+        document.getElementById('uteLinkUrl')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                insertLink();
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeLinkDialog();
+            }
+        });
+
+        // Link Text input - Enter to move to URL field
+        document.getElementById('uteLinkText')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('uteLinkUrl')?.focus();
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeLinkDialog();
+            }
+        });
+    }
+
+    /**
+     * Open the link insertion dialog
+     */
+    function openLinkDialog() {
+        const textarea = document.getElementById('uteTextArea');
+        const dialog = document.getElementById('uteLinkDialog');
+        const linkTextInput = document.getElementById('uteLinkText');
+        const linkUrlInput = document.getElementById('uteLinkUrl');
+
+        if (!textarea || !dialog) return;
+
+        // Get selected text from textarea
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+
+        // Pre-fill link text with selected text
+        linkTextInput.value = selectedText;
+        linkUrlInput.value = '';
+
+        // Show dialog
+        dialog.style.display = 'flex';
+
+        // Focus appropriate field
+        if (selectedText) {
+            linkUrlInput.focus();
+        } else {
+            linkTextInput.focus();
+        }
+    }
+
+    /**
+     * Close the link insertion dialog
+     */
+    function closeLinkDialog() {
+        const dialog = document.getElementById('uteLinkDialog');
+        const editor = document.getElementById('uteTextArea');
+
+        if (dialog) {
+            dialog.style.display = 'none';
+        }
+
+        // Restore focus to editor
+        if (editor) {
+            editor.focus();
+        }
+    }
+
+    /**
+     * Insert link into the textarea in format: text (url)
+     */
+    function insertLink() {
+        const textarea = document.getElementById('uteTextArea');
+        const linkTextInput = document.getElementById('uteLinkText');
+        const linkUrlInput = document.getElementById('uteLinkUrl');
+
+        if (!textarea || !linkUrlInput) return;
+
+        const linkText = linkTextInput.value.trim();
+        let linkUrl = linkUrlInput.value.trim();
+
+        if (!linkUrl) {
+            ui.showNotification('Please enter a URL', 'warning');
+            linkUrlInput.focus();
+            return;
+        }
+
+        // Add protocol if missing
+        if (linkUrl && !linkUrl.match(/^[a-zA-Z]+:\/\//)) {
+            linkUrl = 'https://' + linkUrl;
+        }
+
+        // Create link text in format: "text (url)" or just "url" if no text
+        const linkString = linkText ? `${linkText} (${linkUrl})` : linkUrl;
+
+        // Insert at cursor position or replace selection
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+
+        textarea.value = text.substring(0, start) + linkString + text.substring(end);
+
+        // Move cursor after inserted text
+        const newPos = start + linkString.length;
+        textarea.selectionStart = newPos;
+        textarea.selectionEnd = newPos;
+        textarea.focus();
+
+        // Close dialog
+        closeLinkDialog();
+
+        ui.showNotification('Link inserted', 'success');
     }
 
     /**
@@ -330,8 +504,11 @@ const PDFoxUnifiedTextEditor = (function() {
             bgColor = hexToRgba(bgColorHex, 0.9);
         }
 
+        const textarea = document.getElementById('uteTextArea');
+        const text = textarea?.value || '';
+
         return {
-            text: document.getElementById('uteTextArea')?.value || '',
+            text: text,  // Plain text with links in format: text (url)
             fontSize: parseInt(document.getElementById('uteFontSize')?.value) || 14,
             textColor: document.getElementById('uteTextColor')?.value || '#000000',
             bgColor: bgColor,
@@ -339,6 +516,20 @@ const PDFoxUnifiedTextEditor = (function() {
             isTransparent: isTransparent,
             fontFamily: document.getElementById('uteFontFamily')?.value || 'Arial, sans-serif'
         };
+    }
+
+    /**
+     * Get display text length (with links collapsed to just link text)
+     * @param {string} text - Text with links in format: text (url)
+     * @returns {number} Length of display text
+     */
+    function getDisplayTextLength(text) {
+        if (!text) return 0;
+        // Replace "text (url)" with just "text", or "(url)" with "url"
+        const displayText = text.replace(/(?:([^(]+?)\s*)?\((https?:\/\/[^)]+)\)/g, (match, linkText, url) => {
+            return linkText ? linkText.trim() : url;
+        });
+        return displayText.length;
     }
 
     /**
@@ -352,12 +543,19 @@ const PDFoxUnifiedTextEditor = (function() {
             return;
         }
 
+        // Calculate width based on display text (links collapsed)
+        const displayLength = getDisplayTextLength(values.text);
+
+        // Get current scale to normalize coordinates
+        const scale = core.get('scale') || 1.0;
+
+        // Store all coordinates normalized (at scale 1.0)
         const overlay = {
             id: generateId('overlay'),
-            text: values.text.trim(),
-            x: currentData.x || 100,
-            y: currentData.y || 100,
-            width: Math.max(100, values.text.length * values.fontSize * 0.6),
+            text: values.text.trim(),  // Plain text with links in format: text (url)
+            x: (currentData.x || 100) / scale,
+            y: (currentData.y || 100) / scale,
+            width: Math.max(100, displayLength * values.fontSize * 0.6),
             height: values.fontSize + 10,
             fontSize: values.fontSize,
             color: values.textColor,
@@ -459,7 +657,7 @@ const PDFoxUnifiedTextEditor = (function() {
         const overlay = textOverlays[index];
         const updated = {
             ...overlay,
-            text: values.text,
+            text: values.text,  // Plain text with links in format: text (url)
             fontSize: values.fontSize,
             color: values.textColor,
             bgColor: values.bgColor,
@@ -484,13 +682,17 @@ const PDFoxUnifiedTextEditor = (function() {
             return;
         }
 
+        // Get current scale to normalize coordinates
+        const scale = core.get('scale') || 1.0;
+
+        // Store all coordinates normalized (at scale 1.0)
         const overlay = {
             id: 'ocr-' + Date.now(),
-            text: values.text,
-            x: currentData.rect?.x || 100,
-            y: currentData.rect?.y || 100,
-            width: currentData.rect?.width || 200,
-            height: currentData.rect?.height || 50,
+            text: values.text,  // Plain text with links in format: text (url)
+            x: (currentData.rect?.x || 100) / scale,
+            y: (currentData.rect?.y || 100) / scale,
+            width: (currentData.rect?.width || 200) / scale,
+            height: (currentData.rect?.height || 50) / scale,
             page: currentData.page || core.get('currentPage'),
             fontSize: values.fontSize,
             fontFamily: values.fontFamily,

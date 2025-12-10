@@ -402,6 +402,42 @@ const PDFoxApp = (function() {
     }
 
     /**
+     * Duplicate the currently selected layer (text overlay or stamp)
+     */
+    function duplicateCurrentLayer() {
+        // Check for selected text overlay
+        const selectedOverlayId = core.get('selectedOverlay');
+        if (selectedOverlayId) {
+            // Duplicate text overlay
+            if (typeof PDFoxOverlays !== 'undefined' && PDFoxOverlays.duplicate) {
+                PDFoxOverlays.duplicate(selectedOverlayId);
+                return;
+            }
+        }
+
+        // Check for selected stamp
+        if (typeof PDFoxStamps !== 'undefined') {
+            const selectedStampId = PDFoxStamps.getSelectedStampId?.();
+            if (selectedStampId) {
+                PDFoxStamps.duplicateStamp?.(selectedStampId);
+                return;
+            }
+        }
+
+        // Check for selected signature
+        const selectedSignatureId = core.get('selectedSignature');
+        if (selectedSignatureId) {
+            if (typeof PDFoxSignatures !== 'undefined' && PDFoxSignatures.duplicate) {
+                PDFoxSignatures.duplicate(selectedSignatureId);
+                return;
+            }
+        }
+
+        // No layer selected
+        ui.showNotification('No layer selected. Select a text, stamp, or signature to duplicate.', 'info');
+    }
+
+    /**
      * Save PDF with all modifications
      */
     async function savePDF() {
@@ -419,6 +455,11 @@ const PDFoxApp = (function() {
             const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
             const pages = pdfDoc.getPages();
 
+            // Register fontkit to enable custom font embedding with Unicode support
+            if (typeof fontkit !== 'undefined') {
+                pdfDoc.registerFontkit(fontkit);
+            }
+
             // Use the actual viewer scale - this is critical for correct positioning
             // All overlay/annotation coordinates are stored in screen pixels at the current scale
             const SCALE_FACTOR = core.get('scale');
@@ -428,6 +469,79 @@ const PDFoxApp = (function() {
             const allAnnotations = core.get('annotations');
             const allSignatures = core.get('signatures');
             const removedAreas = annotations.getRemovedAreas();
+
+            // Cache for embedded fonts to avoid re-embedding the same font
+            const fontCache = {};
+            let unicodeFontBytes = null;
+
+            /**
+             * Get or embed a Unicode-compatible font
+             * @param {string} fontFamily - The font family name
+             * @returns {Promise<PDFFont>} The embedded font
+             */
+            async function getUnicodeFont(fontFamily) {
+                const fontLower = (fontFamily || '').toLowerCase();
+                let fontKey = 'sans'; // Default
+
+                // Determine which font style to use
+                if (fontLower.includes('courier') || fontLower.includes('monospace')) {
+                    fontKey = 'mono';
+                } else if (fontLower.includes('times') || fontLower.includes('georgia') || fontLower.includes('serif')) {
+                    fontKey = 'serif';
+                }
+
+                // Return cached font if available
+                if (fontCache[fontKey]) {
+                    return fontCache[fontKey];
+                }
+
+                // Try to load and embed a Unicode font
+                // Using raw GitHub URLs for Noto fonts (TTF format for best pdf-lib compatibility)
+                const fontUrls = {
+                    'sans': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSans/hinted/ttf/NotoSans-Regular.ttf',
+                    'serif': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSerif/hinted/ttf/NotoSerif-Regular.ttf',
+                    'mono': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSansMono/hinted/ttf/NotoSansMono-Regular.ttf'
+                };
+
+                try {
+                    // Check if fontkit is available
+                    if (typeof fontkit === 'undefined') {
+                        throw new Error('fontkit not available');
+                    }
+
+                    const response = await fetch(fontUrls[fontKey]);
+                    if (!response.ok) {
+                        throw new Error('Font fetch failed');
+                    }
+
+                    const fontBytes = await response.arrayBuffer();
+                    const font = await pdfDoc.embedFont(fontBytes, { subset: true });
+                    fontCache[fontKey] = font;
+                    console.log(`Successfully embedded Unicode font: ${fontKey}`);
+                    return font;
+                } catch (fontError) {
+                    console.warn('Failed to load Unicode font:', fontError.message);
+
+                    // Fallback to standard fonts
+                    const standardFontMap = {
+                        'sans': PDFLib.StandardFonts.Helvetica,
+                        'serif': PDFLib.StandardFonts.TimesRoman,
+                        'mono': PDFLib.StandardFonts.Courier
+                    };
+
+                    try {
+                        const fallbackFont = await pdfDoc.embedFont(standardFontMap[fontKey]);
+                        fontCache[fontKey] = fallbackFont;
+                        return fallbackFont;
+                    } catch (embedError) {
+                        console.error('Failed to embed standard font:', embedError);
+                        // Last resort - return Helvetica
+                        const helvetica = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                        fontCache[fontKey] = helvetica;
+                        return helvetica;
+                    }
+                }
+            }
 
             // Apply text edits
             for (const edit of textEdits) {
@@ -461,12 +575,14 @@ const PDFoxApp = (function() {
                     color: PDFLib.rgb(1, 1, 1)
                 });
 
-                // Draw new text
+                // Draw new text with Unicode-compatible font
                 const rgb = hexToRgb(edit.customColor || '#000000');
+                const font = await getUnicodeFont(edit.customFontFamily || 'Arial');
                 page.drawText(edit.newText, {
                     x: actualX,
                     y: baselineFromBottom,
                     size: actualFontSize,
+                    font: font,
                     color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255)
                 });
             }
@@ -570,37 +686,23 @@ const PDFoxApp = (function() {
             }
 
             // Apply text overlays
+            // Note: Text overlay coordinates are stored normalized (at scale 1.0)
             for (const overlay of textOverlays) {
                 const page = pages[overlay.page - 1];
                 const { height } = page.getSize();
 
-                const actualX = overlay.x / SCALE_FACTOR;
-                const actualY = overlay.y / SCALE_FACTOR;
-                const actualWidth = overlay.width / SCALE_FACTOR;
-                const actualHeight = overlay.height / SCALE_FACTOR;
-                const actualFontSize = overlay.fontSize / SCALE_FACTOR;
+                // Overlay coordinates are already normalized (scale 1.0), use directly
+                const actualX = overlay.x;
+                const actualY = overlay.y;
+                const actualWidth = overlay.width;
+                const actualHeight = overlay.height;
+                const actualFontSize = overlay.fontSize;
 
                 const pdfX = actualX;
                 const pdfY = height - actualY - actualHeight;
 
-                // Font mapping
-                const fontMap = {
-                    'courier': PDFLib.StandardFonts.Courier,
-                    'monospace': PDFLib.StandardFonts.Courier,
-                    'times': PDFLib.StandardFonts.TimesRoman,
-                    'georgia': PDFLib.StandardFonts.TimesRoman
-                };
-
-                let pdfFont = PDFLib.StandardFonts.Helvetica;
-                const fontLower = (overlay.fontFamily || '').toLowerCase();
-                for (const [key, value] of Object.entries(fontMap)) {
-                    if (fontLower.includes(key)) {
-                        pdfFont = value;
-                        break;
-                    }
-                }
-
-                const font = await pdfDoc.embedFont(pdfFont);
+                // Get Unicode-compatible font
+                const font = await getUnicodeFont(overlay.fontFamily);
 
                 // Draw background
                 const bgMatch = overlay.bgColor.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/);
@@ -623,23 +725,92 @@ const PDFoxApp = (function() {
                     }
                 }
 
-                // Draw text
+                // Draw text with clickable links
                 const textColor = hexToRgb(overlay.color);
                 const textOpacity = overlay.textOpacity !== undefined ? overlay.textOpacity : 1;
 
-                const paddingX = 8 / SCALE_FACTOR;
-                const paddingY = 4 / SCALE_FACTOR;
-                const textHeightAboveBaseline = actualFontSize * 0.75;
-                const startY = pdfY + actualHeight - paddingY - textHeightAboveBaseline;
+                // Padding values (at scale 1.0)
+                const paddingX = 8;
+                const paddingY = 4;
+                // Calculate text baseline position to match canvas rendering
+                // Canvas text position from page top: overlay.y + paddingY + ascent (where text baseline sits)
+                // PDF position from page bottom: pageHeight - (overlay.y + paddingY + ascent)
+                // Which equals: pdfY + actualHeight - paddingY - ascent
+                // Adjusted with offset correction for better alignment
+                const ascent = actualFontSize * 0.85;
+                const offsetCorrection = 3; // Fine-tune alignment
+                const startY = pdfY + actualHeight - paddingY - ascent - offsetCorrection;
 
-                page.drawText(overlay.text, {
-                    x: pdfX + paddingX,
-                    y: startY,
-                    size: actualFontSize,
-                    font: font,
-                    color: PDFLib.rgb(textColor.r / 255, textColor.g / 255, textColor.b / 255),
-                    opacity: textOpacity
-                });
+                // Parse text to extract links and create clickable hyperlinks
+                const linkPattern = /(?:([^(]+?)\s*)?\((https?:\/\/[^)]+)\)/g;
+                let currentX = pdfX + paddingX;
+                let lastIndex = 0;
+                let match;
+                const text = overlay.text;
+
+                while ((match = linkPattern.exec(text)) !== null) {
+                    // Draw text before the link
+                    const textBefore = text.substring(lastIndex, match.index);
+                    if (textBefore) {
+                        page.drawText(textBefore, {
+                            x: currentX,
+                            y: startY,
+                            size: actualFontSize,
+                            font: font,
+                            color: PDFLib.rgb(textColor.r / 255, textColor.g / 255, textColor.b / 255),
+                            opacity: textOpacity
+                        });
+                        currentX += font.widthOfTextAtSize(textBefore, actualFontSize);
+                    }
+
+                    // Get link text and URL
+                    const linkText = match[1] ? match[1].trim() : match[2];
+                    const linkUrl = match[2];
+
+                    // Draw link text in blue
+                    const linkStartX = currentX;
+                    page.drawText(linkText, {
+                        x: currentX,
+                        y: startY,
+                        size: actualFontSize,
+                        font: font,
+                        color: PDFLib.rgb(0, 0, 0.93), // Classic blue #0000EE
+                        opacity: textOpacity
+                    });
+
+                    const linkWidth = font.widthOfTextAtSize(linkText, actualFontSize);
+
+                    // Add link annotation
+                    page.node.addAnnot(
+                        pdfDoc.context.obj({
+                            Type: 'Annot',
+                            Subtype: 'Link',
+                            Rect: [linkStartX, startY - 2, linkStartX + linkWidth, startY + actualFontSize],
+                            Border: [0, 0, 0],
+                            A: {
+                                Type: 'Action',
+                                S: 'URI',
+                                URI: PDFLib.PDFString.of(linkUrl)
+                            }
+                        })
+                    );
+
+                    currentX += linkWidth;
+                    lastIndex = match.index + match[0].length;
+                }
+
+                // Draw remaining text after last link
+                const remainingText = text.substring(lastIndex);
+                if (remainingText) {
+                    page.drawText(remainingText, {
+                        x: currentX,
+                        y: startY,
+                        size: actualFontSize,
+                        font: font,
+                        color: PDFLib.rgb(textColor.r / 255, textColor.g / 255, textColor.b / 255),
+                        opacity: textOpacity
+                    });
+                }
             }
 
             // Apply signatures
@@ -684,9 +855,14 @@ const PDFoxApp = (function() {
                     const actualSize = stamp.size / SCALE_FACTOR;
                     const rgb = hexToRgb(stamp.color);
 
+                    // Stamp coordinates are center-based (x,y is center of stamp)
+                    // Convert to top-left for PDF positioning
+                    const stampLeft = actualX - actualSize / 2;
+                    const stampTop = actualY - actualSize / 2;
+
                     // PDF coordinates: origin is bottom-left
-                    const pdfX = actualX;
-                    const pdfY = height - actualY - actualSize;
+                    const pdfX = stampLeft;
+                    const pdfY = height - stampTop - actualSize;
 
                     if (stamp.type === 'check') {
                         // Draw checkmark: path "M20 6L9 17l-5-5" scaled to stamp size
@@ -758,9 +934,10 @@ const PDFoxApp = (function() {
                             color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255)
                         });
                     } else if (stamp.type === 'date' || stamp.type === 'na') {
-                        // Draw text stamps
+                        // Draw text stamps with Unicode-compatible font
                         const text = stamp.text || (stamp.type === 'na' ? 'N/A' : '');
                         const fontSize = actualSize;
+                        const stampFont = await getUnicodeFont('Arial');
 
                         // Center the text vertically
                         const textY = pdfY + actualSize * 0.25;
@@ -769,6 +946,7 @@ const PDFoxApp = (function() {
                             x: pdfX,
                             y: textY,
                             size: fontSize,
+                            font: stampFont,
                             color: PDFLib.rgb(rgb.r / 255, rgb.g / 255, rgb.b / 255)
                         });
                     }
@@ -1517,6 +1695,12 @@ const PDFoxApp = (function() {
                 redo();
             }
 
+            // Ctrl+D - Duplicate current layer
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                duplicateCurrentLayer();
+            }
+
             // +/= - Zoom in
             if ((e.key === '+' || e.key === '=') && !e.ctrlKey) {
                 zoomIn();
@@ -1946,6 +2130,7 @@ const PDFoxApp = (function() {
         resetToDefaultTool,
         undo,
         redo,
+        duplicateCurrentLayer,
         savePDF,
         goBack,
         zoomIn,

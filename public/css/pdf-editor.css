@@ -202,6 +202,15 @@ body {
     display: none !important;
 }
 
+/* Primary tools should never be hidden */
+.tool-group.primary-tools {
+    flex-shrink: 0 !important;
+}
+
+.tool-group.primary-tools.hidden-in-toolbar {
+    display: flex !important;
+}
+
 .tool-group-label {
     font-size: 10px;
     font-weight: 600;
@@ -3115,7 +3124,8 @@ body {
     font-weight: 600;
 }
 
-.unified-editor-field textarea {
+.unified-editor-field textarea,
+.unified-editor-field .ute-rich-editor {
     width: 100%;
     min-height: 120px;
     padding: 12px 14px;
@@ -3128,15 +3138,64 @@ body {
     line-height: 1.5;
     resize: vertical;
     transition: border-color var(--transition-fast);
+    box-sizing: border-box;
+    overflow-y: auto;
+    max-height: 300px;
 }
 
-.unified-editor-field textarea:focus {
+.unified-editor-field textarea:focus,
+.unified-editor-field .ute-rich-editor:focus {
     outline: none;
     border-color: var(--color-primary);
 }
 
-.unified-editor-field textarea::placeholder {
+.unified-editor-field textarea::placeholder,
+.unified-editor-field .ute-rich-editor:empty::before {
     color: var(--color-text-muted);
+}
+
+/* Placeholder for contenteditable */
+.unified-editor-field .ute-rich-editor:empty::before {
+    content: attr(data-placeholder);
+    pointer-events: none;
+}
+
+/* Link styling in rich editor */
+.ute-rich-editor .ute-link,
+.ute-rich-editor a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.ute-rich-editor .ute-link:hover,
+.ute-rich-editor a:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+}
+
+/* Link styling in text overlays on canvas */
+.text-overlay .overlay-content {
+    pointer-events: auto;
+}
+
+.text-overlay .overlay-link,
+.text-overlay a {
+    color: #0000EE;
+    text-decoration: underline;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.text-overlay .overlay-link:hover,
+.text-overlay a:hover {
+    color: #551A8B;
+    text-decoration: underline;
+}
+
+.text-overlay .overlay-link:visited,
+.text-overlay a:visited {
+    color: #551A8B;
 }
 
 .word-count {
@@ -3318,6 +3377,157 @@ body {
 
 .unified-editor-btn svg {
     flex-shrink: 0;
+}
+
+/* Insert Link Button & Dialog */
+.unified-editor-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.unified-editor-field-header label {
+    margin-bottom: 0;
+}
+
+.insert-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.insert-link-btn:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.insert-link-btn svg {
+    flex-shrink: 0;
+}
+
+/* Link Insert Dialog */
+.link-insert-dialog {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    z-index: 10;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.link-dialog-content {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    width: 90%;
+    max-width: 400px;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.link-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.link-dialog-header svg {
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.link-dialog-header span {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.link-dialog-close {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.link-dialog-close:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-hover);
+}
+
+.link-dialog-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.link-dialog-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.link-dialog-field label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.link-dialog-field input {
+    padding: 10px 12px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    font-size: 14px;
+    transition: border-color var(--transition-fast);
+}
+
+.link-dialog-field input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.link-dialog-field input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.link-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.link-dialog-footer .unified-editor-btn {
+    padding: 10px 16px;
+    font-size: 13px;
 }
 
 /* ==========================================================================

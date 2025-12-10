@@ -24,6 +24,9 @@ const PDFoxStamps = (function() {
     // Clipboard for copy/paste
     let clipboardStamp = null;
 
+    // Track mouse position for paste functionality
+    let lastMousePosition = { x: null, y: null };
+
     // Default stamp settings
     const defaultSettings = {
         check: { color: '#000000', size: 24 },
@@ -681,14 +684,28 @@ const PDFoxStamps = (function() {
         }
 
         const currentPage = core.get('currentPage');
-        const offset = 20; // Small offset from original position
+        const scale = core.get('scale') || 1.0;
 
-        // Create new stamp near the original position
+        // Determine paste position
+        let pasteX, pasteY;
+
+        if (lastMousePosition.x !== null && lastMousePosition.y !== null) {
+            // Use tracked mouse position (stamps use center-based coords)
+            pasteX = lastMousePosition.x / scale;
+            pasteY = lastMousePosition.y / scale;
+        } else {
+            // Fallback: offset from original position
+            const offset = 20;
+            pasteX = clipboardStamp.x + offset;
+            pasteY = clipboardStamp.y + offset;
+        }
+
+        // Create new stamp at paste position
         const stamp = {
             id: generateId(),
             type: clipboardStamp.type,
-            x: clipboardStamp.x + offset,
-            y: clipboardStamp.y + offset,
+            x: pasteX,
+            y: pasteY,
             color: clipboardStamp.color,
             size: clipboardStamp.size,
             page: currentPage,
@@ -709,14 +726,69 @@ const PDFoxStamps = (function() {
             data: stamp
         });
 
-        // Update clipboard position for next paste (cascade effect)
-        clipboardStamp.x = stamp.x;
-        clipboardStamp.y = stamp.y;
+        // Update clipboard position for next paste (cascade effect) if not using mouse
+        if (lastMousePosition.x === null) {
+            clipboardStamp.x = stamp.x;
+            clipboardStamp.y = stamp.y;
+        }
 
         // Select the new stamp
         selectStamp(stamp.id);
 
         ui.showNotification('Stamp pasted', 'success');
+        core.emit('stamps:changed', { stamps });
+    }
+
+    /**
+     * Update last mouse position for paste functionality
+     */
+    function updateMousePosition(x, y) {
+        lastMousePosition = { x, y };
+    }
+
+    /**
+     * Duplicate a stamp (create a copy next to the original)
+     * @param {string} stampId - Stamp ID to duplicate
+     */
+    function duplicateStamp(stampId) {
+        const stamp = stamps.find(s => s.id === stampId);
+        if (!stamp) {
+            ui.showNotification('Stamp not found', 'warning');
+            return;
+        }
+
+        const offset = 20; // Offset from original position
+
+        // Create new stamp with offset position
+        const newStamp = {
+            id: generateId(),
+            type: stamp.type,
+            x: stamp.x + offset,
+            y: stamp.y + offset,
+            color: stamp.color,
+            size: stamp.size,
+            page: stamp.page,
+            timestamp: Date.now()
+        };
+
+        // Copy text for text stamps
+        if (stamp.text) {
+            newStamp.text = stamp.text;
+        }
+
+        stamps.push(newStamp);
+        renderStamp(newStamp);
+
+        // Add to history
+        core.addToHistory({
+            type: 'stamp',
+            data: newStamp
+        });
+
+        // Select the new stamp
+        selectStamp(newStamp.id);
+
+        ui.showNotification('Stamp duplicated', 'success');
         core.emit('stamps:changed', { stamps });
     }
 
@@ -788,6 +860,21 @@ const PDFoxStamps = (function() {
             const canvas = document.getElementById('annotationCanvas');
             if (canvas) {
                 canvas.addEventListener('click', handleCanvasClick);
+
+                // Track mouse position for paste functionality
+                canvas.addEventListener('mousemove', (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
+                });
+            }
+
+            // Also track mouse on overlay layer
+            const overlayLayer = document.getElementById('overlayLayer');
+            if (overlayLayer) {
+                overlayLayer.addEventListener('mousemove', (e) => {
+                    const rect = overlayLayer.getBoundingClientRect();
+                    updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
+                });
             }
 
             // Handle keyboard shortcuts for stamps
@@ -846,6 +933,7 @@ const PDFoxStamps = (function() {
         deleteStamp,
         copyStamp,
         pasteStamp,
+        duplicateStamp,
         getStamps,
         getStampsForCurrentPage,
         renderAllStamps,

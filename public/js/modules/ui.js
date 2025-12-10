@@ -243,15 +243,22 @@ const PDFoxUI = (function() {
                 if (e.target === modal) closeModal(false);
             });
 
-            // Escape key to close
+            // Keyboard handler for Escape (cancel) and Enter (confirm)
             escHandler = (e) => {
                 if (e.key === 'Escape') {
                     e.preventDefault();
                     e.stopPropagation();
                     closeModal(false);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeModal(true);
                 }
             };
             document.addEventListener('keydown', escHandler);
+
+            // Focus the confirm button for better accessibility
+            modal.querySelector('#confirmOkBtn').focus();
         },
 
         /**
