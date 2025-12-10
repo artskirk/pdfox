@@ -982,6 +982,12 @@ const PDFoxApp = (function() {
                 }
             }
 
+            // Apply watermarks for free tier (when not Pro)
+            const isProUser = core.get('isProUser') || false;
+            if (!isProUser) {
+                await applyWatermarks(pdfDoc, pages);
+            }
+
             // Save and download
             const pdfBytesModified = await pdfDoc.save();
             const blob = new Blob([pdfBytesModified], { type: 'application/pdf' });
@@ -1012,6 +1018,107 @@ const PDFoxApp = (function() {
             g: parseInt(result[2], 16),
             b: parseInt(result[3], 16)
         } : { r: 0, g: 0, b: 0 };
+    }
+
+    /**
+     * Apply PDFOX watermarks to all pages (Free tier protection)
+     * Creates diagonal watermark pattern that is difficult to remove
+     * @param {PDFDocument} pdfDoc - The PDF document
+     * @param {PDFPage[]} pages - Array of PDF pages
+     */
+    async function applyWatermarks(pdfDoc, pages) {
+        // Embed Helvetica Bold for watermark text
+        const font = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+        // Watermark settings
+        const watermarkText = 'PDFOX';
+        const watermarkUrl = 'pdfox.cloud';
+        const fontSize = 48;
+        const smallFontSize = 14;
+        const opacity = 0.12; // Semi-transparent - visible but not obstructing
+
+        // PDFOX brand color (red) with transparency
+        const watermarkColor = PDFLib.rgb(229/255, 9/255, 20/255); // #E50914
+
+        for (const page of pages) {
+            const { width, height } = page.getSize();
+
+            // Calculate diagonal angle for text rotation
+            const angle = Math.atan2(height, width); // Angle from bottom-left to top-right
+            const rotationDegrees = -30; // Fixed angle for consistent appearance
+            const rotationRadians = (rotationDegrees * Math.PI) / 180;
+
+            // Calculate text width for spacing
+            const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
+            const smallTextWidth = font.widthOfTextAtSize(watermarkUrl, smallFontSize);
+
+            // Create grid of watermarks covering entire page
+            // This pattern makes it very difficult to remove watermarks
+            const spacingX = textWidth * 2.5;
+            const spacingY = fontSize * 4;
+
+            // Calculate how many watermarks needed
+            const cols = Math.ceil(width / spacingX) + 2;
+            const rows = Math.ceil(height / spacingY) + 2;
+
+            // Apply watermark grid pattern
+            for (let row = -1; row < rows; row++) {
+                for (let col = -1; col < cols; col++) {
+                    // Offset every other row for better coverage
+                    const offsetX = (row % 2) * (spacingX / 2);
+                    const x = col * spacingX + offsetX;
+                    const y = row * spacingY;
+
+                    // Draw main PDFOX watermark
+                    page.drawText(watermarkText, {
+                        x: x,
+                        y: y,
+                        size: fontSize,
+                        font: font,
+                        color: watermarkColor,
+                        opacity: opacity,
+                        rotate: PDFLib.degrees(rotationDegrees)
+                    });
+                }
+            }
+
+            // Add corner branding (more visible)
+            // Bottom-right corner
+            page.drawText(watermarkUrl, {
+                x: width - smallTextWidth - 15,
+                y: 15,
+                size: smallFontSize,
+                font: font,
+                color: watermarkColor,
+                opacity: 0.35
+            });
+
+            // Top-left corner
+            page.drawText(watermarkUrl, {
+                x: 15,
+                y: height - 25,
+                size: smallFontSize,
+                font: font,
+                color: watermarkColor,
+                opacity: 0.35
+            });
+
+            // Add a subtle center watermark (larger, more prominent)
+            const centerX = width / 2 - textWidth / 2;
+            const centerY = height / 2;
+
+            page.drawText(watermarkText, {
+                x: centerX,
+                y: centerY,
+                size: fontSize * 1.5,
+                font: font,
+                color: watermarkColor,
+                opacity: 0.08, // Very subtle for center
+                rotate: PDFLib.degrees(rotationDegrees)
+            });
+        }
+
+        console.log('PDFOX watermarks applied to', pages.length, 'pages');
     }
 
     // Zoom levels (25% to 300%)

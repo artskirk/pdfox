@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pricing - PDFOX Professional PDF Editor</title>
-    <meta name="description" content="Simple, transparent pricing for professional PDF editing. Choose the plan that fits your needs.">
+    <meta name="description" content="Try PDFOX free with all Pro features. Upgrade to Pro for just 8.99 EUR for 24 hours of unlimited access. No subscriptions, no commitments.">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,9 +87,9 @@
 
         /* Hero Section */
         .pricing-hero {
-            padding: 140px 50px 80px;
+            padding: 140px 50px 60px;
             text-align: center;
-            background: linear-gradient(180deg, rgba(229, 9, 20, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
+            background: linear-gradient(180deg, rgba(229, 9, 20, 0.08) 0%, rgba(0, 0, 0, 0) 100%);
         }
 
         .pricing-hero h1 {
@@ -104,67 +104,43 @@
         .pricing-hero p {
             font-size: 20px;
             color: #cccccc;
-            max-width: 600px;
-            margin: 0 auto 40px;
+            max-width: 700px;
+            margin: 0 auto 20px;
+            line-height: 1.6;
         }
 
-        /* Billing Toggle */
-        .billing-toggle {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 60px;
-        }
-
-        .toggle-label {
+        .pricing-hero .subtext {
             font-size: 16px;
-            color: #cccccc;
+            color: #888888;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Value Proposition Banner */
+        .value-banner {
+            background: linear-gradient(90deg, rgba(229, 9, 20, 0.15) 0%, rgba(229, 9, 20, 0.05) 100%);
+            border: 1px solid rgba(229, 9, 20, 0.3);
+            border-radius: 12px;
+            padding: 20px 30px;
+            max-width: 800px;
+            margin: 40px auto 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .value-banner-icon {
+            font-size: 28px;
+        }
+
+        .value-banner-text {
+            font-size: 18px;
             font-weight: 500;
         }
 
-        .toggle-label.active {
-            color: #ffffff;
-            font-weight: 600;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 60px;
-            height: 30px;
-            background: #333;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .toggle-switch.active {
-            background: #E50914;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 24px;
-            height: 24px;
-            background: white;
-            border-radius: 50%;
-            transition: transform 0.3s;
-        }
-
-        .toggle-switch.active .toggle-slider {
-            transform: translateX(30px);
-        }
-
-        .save-badge {
-            background: rgba(229, 9, 20, 0.2);
+        .value-banner-text strong {
             color: #E50914;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid rgba(229, 9, 20, 0.3);
         }
 
         /* Pricing Cards */
@@ -180,25 +156,26 @@
         .pricing-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 40px 30px;
             position: relative;
             transition: all 0.3s;
         }
 
         .pricing-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(229, 9, 20, 0.3);
+            transform: translateY(-8px);
+            border-color: rgba(229, 9, 20, 0.4);
+            box-shadow: 0 20px 40px rgba(229, 9, 20, 0.1);
         }
 
         .pricing-card.featured {
-            background: linear-gradient(135deg, rgba(229, 9, 20, 0.1) 0%, rgba(196, 8, 18, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.12) 0%, rgba(196, 8, 18, 0.05) 100%);
             border: 2px solid #E50914;
             transform: scale(1.05);
         }
 
         .pricing-card.featured:hover {
-            transform: scale(1.05) translateY(-5px);
+            transform: scale(1.05) translateY(-8px);
         }
 
         .popular-badge {
@@ -206,66 +183,98 @@
             top: -15px;
             left: 50%;
             transform: translateX(-50%);
-            background: #E50914;
+            background: linear-gradient(135deg, #E50914 0%, #B8070F 100%);
             color: white;
-            padding: 6px 20px;
+            padding: 8px 24px;
             border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+        }
+
+        .plan-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
         }
 
         .plan-name {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 700;
             margin-bottom: 10px;
         }
 
         .plan-description {
-            font-size: 14px;
-            color: #999999;
-            margin-bottom: 30px;
-            min-height: 40px;
+            font-size: 15px;
+            color: #aaaaaa;
+            margin-bottom: 25px;
+            min-height: 50px;
+            line-height: 1.5;
         }
 
         .plan-price {
-            font-size: 48px;
+            font-size: 52px;
             font-weight: 700;
             margin-bottom: 5px;
+            color: #ffffff;
+        }
+
+        .plan-price.free {
+            color: #4CAF50;
+        }
+
+        .plan-price.pro {
             color: #E50914;
         }
 
-        .plan-price span {
-            font-size: 18px;
-            color: #999999;
+        .plan-price .currency {
+            font-size: 24px;
+            vertical-align: super;
+            margin-right: 2px;
+        }
+
+        .plan-price .period {
+            font-size: 16px;
+            color: #888888;
             font-weight: 400;
         }
 
-        .plan-billing {
+        .plan-note {
             font-size: 14px;
             color: #666666;
             margin-bottom: 30px;
+            min-height: 20px;
+        }
+
+        .plan-note.highlight {
+            color: #E50914;
+            font-weight: 500;
         }
 
         .plan-cta {
             width: 100%;
-            padding: 14px;
-            border-radius: 6px;
+            padding: 16px;
+            border-radius: 8px;
             font-weight: 600;
             font-size: 16px;
             cursor: pointer;
             transition: all 0.3s;
             margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .plan-cta.primary {
-            background: #E50914;
+            background: linear-gradient(135deg, #E50914 0%, #B8070F 100%);
             color: white;
             border: none;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
         }
 
         .plan-cta.primary:hover {
-            background: #B8070F;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
         }
 
         .plan-cta.secondary {
@@ -278,6 +287,26 @@
             background: rgba(229, 9, 20, 0.1);
         }
 
+        .plan-cta.outline {
+            background: transparent;
+            color: #ffffff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .plan-cta.outline:hover {
+            border-color: #E50914;
+            color: #E50914;
+        }
+
+        .features-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888888;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
         .plan-features {
             list-style: none;
         }
@@ -287,61 +316,197 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             align-items: flex-start;
-            gap: 10px;
+            gap: 12px;
             font-size: 14px;
+            color: #cccccc;
         }
 
         .plan-features li:last-child {
             border-bottom: none;
         }
 
+        .plan-features li.limitation {
+            color: #888888;
+        }
+
         .check-icon {
-            color: #E50914;
+            color: #4CAF50;
             font-weight: 700;
             flex-shrink: 0;
+            font-size: 16px;
+        }
+
+        .check-icon.warning {
+            color: #FF9800;
+        }
+
+        .check-icon.disabled {
+            color: #666666;
+        }
+
+        /* How It Works Section */
+        .how-it-works {
+            padding: 80px 50px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .how-it-works h2 {
+            text-align: center;
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+
+        .how-it-works .subtitle {
+            text-align: center;
+            color: #888888;
+            font-size: 18px;
+            margin-bottom: 60px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .steps-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+        }
+
+        .step {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #E50914 0%, #B8070F 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 auto 20px;
+        }
+
+        .step h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .step p {
+            color: #888888;
+            font-size: 15px;
+            line-height: 1.6;
         }
 
         /* Trust Section */
         .trust-section {
             padding: 80px 50px;
-            background: rgba(255, 255, 255, 0.02);
             text-align: center;
         }
 
         .trust-section h2 {
-            font-size: 32px;
-            margin-bottom: 40px;
+            font-size: 36px;
+            margin-bottom: 50px;
         }
 
         .trust-badges {
             display: flex;
             justify-content: center;
-            gap: 40px;
+            gap: 60px;
             flex-wrap: wrap;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
         .trust-badge {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
 
         .trust-badge-icon {
-            width: 48px;
-            height: 48px;
+            width: 64px;
+            height: 64px;
             background: rgba(229, 9, 20, 0.1);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #E50914;
-            font-size: 24px;
+            font-size: 28px;
+            border: 1px solid rgba(229, 9, 20, 0.2);
         }
 
         .trust-badge-text {
+            font-size: 15px;
+            color: #cccccc;
+            font-weight: 500;
+        }
+
+        /* Comparison Section */
+        .comparison-section {
+            padding: 80px 50px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .comparison-section h2 {
+            text-align: center;
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+
+        .comparison-section .subtitle {
+            text-align: center;
+            color: #888888;
+            font-size: 18px;
+            margin-bottom: 50px;
+        }
+
+        .comparison-table {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-row.header {
+            background: rgba(229, 9, 20, 0.1);
+            font-weight: 600;
+        }
+
+        .comparison-cell {
+            padding: 18px 20px;
             font-size: 14px;
-            color: #999999;
+        }
+
+        .comparison-cell:not(:first-child) {
+            text-align: center;
+        }
+
+        .comparison-cell .check {
+            color: #4CAF50;
+            font-size: 18px;
+        }
+
+        .comparison-cell .cross {
+            color: #666666;
+            font-size: 18px;
         }
 
         /* FAQ Section */
@@ -358,15 +523,20 @@
         }
 
         .faq-item {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .faq-item:hover {
+            border-color: rgba(229, 9, 20, 0.3);
         }
 
         .faq-question {
-            padding: 20px;
-            font-size: 18px;
+            padding: 20px 24px;
+            font-size: 17px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
@@ -379,21 +549,58 @@
             background: rgba(255, 255, 255, 0.03);
         }
 
+        .faq-question span {
+            color: #E50914;
+            font-size: 24px;
+            transition: transform 0.3s;
+        }
+
+        .faq-item.active .faq-question span {
+            transform: rotate(45deg);
+        }
+
         .faq-answer {
-            padding: 0 20px;
+            padding: 0 24px;
             max-height: 0;
             overflow: hidden;
             transition: all 0.3s;
         }
 
         .faq-item.active .faq-answer {
-            padding: 20px;
+            padding: 0 24px 24px;
             max-height: 500px;
         }
 
         .faq-answer p {
-            color: #cccccc;
-            line-height: 1.6;
+            color: #aaaaaa;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        /* CTA Section */
+        .final-cta {
+            padding: 100px 50px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(229, 9, 20, 0.08) 0%, rgba(0, 0, 0, 0) 100%);
+        }
+
+        .final-cta h2 {
+            font-size: 44px;
+            margin-bottom: 20px;
+        }
+
+        .final-cta p {
+            font-size: 18px;
+            color: #888888;
+            margin-bottom: 40px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .final-cta .cta-button {
+            padding: 16px 40px;
+            font-size: 18px;
         }
 
         /* Footer */
@@ -444,15 +651,60 @@
         @media (max-width: 992px) {
             .pricing-container {
                 grid-template-columns: 1fr;
-                max-width: 500px;
+                max-width: 450px;
             }
 
             .pricing-card.featured {
                 transform: scale(1);
+                order: -1;
+            }
+
+            .pricing-card.featured:hover {
+                transform: translateY(-8px);
             }
 
             .pricing-hero h1 {
-                font-size: 40px;
+                font-size: 36px;
+            }
+
+            .steps-container {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .comparison-row {
+                grid-template-columns: 1.5fr 1fr 1fr;
+            }
+
+            .value-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .trust-badges {
+                gap: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav {
+                padding: 15px 20px;
+            }
+
+            .nav-links {
+                gap: 15px;
+            }
+
+            .pricing-hero {
+                padding: 120px 20px 40px;
+            }
+
+            .pricing-container {
+                padding: 0 20px 60px;
+            }
+
+            .faq-section {
+                padding: 60px 20px 80px;
             }
         }
     </style>
@@ -465,110 +717,176 @@
             <a href="index.html#features" class="nav-link">Features</a>
             <a href="pricing.html" class="nav-link">Pricing</a>
             <a href="about.html" class="nav-link">About</a>
-            <button class="cta-button" onclick="window.location.href='index.html#upload'">Try Now</button>
+            <button class="cta-button" onclick="window.location.href='index.html#upload'">Try Free</button>
         </div>
     </nav>
 
     <!-- Hero Section -->
     <section class="pricing-hero">
-        <h1>Simple, Transparent Pricing</h1>
-        <p>Choose the plan that fits your needs. All plans include core features. Upgrade anytime.</p>
+        <h1>Start Editing PDFs in Seconds</h1>
+        <p>No sign-up required. Try all features for free, upgrade when you need clean exports without watermarks.</p>
+        <p class="subtext">Join thousands of users who edit PDFs smarter, not harder.</p>
 
-        <!-- Billing Toggle -->
-        <div class="billing-toggle">
-            <span class="toggle-label active" id="monthlyLabel">Monthly</span>
-            <div class="toggle-switch" id="billingToggle" onclick="toggleBilling()">
-                <div class="toggle-slider"></div>
-            </div>
-            <span class="toggle-label" id="annualLabel">Annual</span>
-            <span class="save-badge">Save 20%</span>
+        <div class="value-banner">
+            <span class="value-banner-icon">⚡</span>
+            <span class="value-banner-text">Try everything free today. <strong>No credit card needed.</strong></span>
         </div>
     </section>
 
     <!-- Pricing Cards -->
     <section class="pricing-container">
-        <!-- Starter Plan -->
+        <!-- Free Plan -->
         <div class="pricing-card">
-            <div class="plan-name">Starter</div>
-            <div class="plan-description">Perfect for individuals and occasional use</div>
-            <div class="plan-price">
-                $<span id="starter-price">19</span><span>/month</span>
-            </div>
-            <div class="plan-billing" id="starter-billing">Billed monthly</div>
-            <button class="plan-cta secondary" onclick="window.location.href='index.html#upload'">Start Free Trial</button>
+            <div class="plan-icon">🎁</div>
+            <div class="plan-name">Free</div>
+            <div class="plan-description">Experience the full power of PDFOX. Perfect for trying out all features before you commit.</div>
+            <div class="plan-price free">Free</div>
+            <div class="plan-note">No credit card required</div>
+            <button class="plan-cta secondary" onclick="window.location.href='index.html#upload'">Start Free</button>
+            <div class="features-title">What's included</div>
             <ul class="plan-features">
-                <li><span class="check-icon">✓</span> Edit up to 50 PDFs/month</li>
-                <li><span class="check-icon">✓</span> AI Text Recognition</li>
-                <li><span class="check-icon">✓</span> Digital Signatures</li>
-                <li><span class="check-icon">✓</span> Basic Redaction</li>
-                <li><span class="check-icon">✓</span> Cloud Storage (5GB)</li>
-                <li><span class="check-icon">✓</span> Email Support</li>
+                <li><span class="check-icon">✓</span> All Pro editing features</li>
+                <li><span class="check-icon">✓</span> AI-powered text recognition</li>
+                <li><span class="check-icon">✓</span> Digital signatures</li>
+                <li><span class="check-icon">✓</span> Annotations & stamps</li>
+                <li><span class="check-icon">✓</span> Form filling</li>
+                <li class="limitation"><span class="check-icon warning">!</span> PDFOX watermark on exports</li>
+                <li class="limitation"><span class="check-icon disabled">✗</span> Document sharing unavailable</li>
             </ul>
         </div>
 
-        <!-- Professional Plan (Featured) -->
+        <!-- Pro Plan (Featured) -->
         <div class="pricing-card featured">
-            <div class="popular-badge">Most Popular</div>
-            <div class="plan-name">Professional</div>
-            <div class="plan-description">For professionals and small teams</div>
-            <div class="plan-price">
-                $<span id="pro-price">49</span><span>/month</span>
-            </div>
-            <div class="plan-billing" id="pro-billing">Billed monthly</div>
-            <button class="plan-cta primary" onclick="window.location.href='index.html#upload'">Start Free Trial</button>
+            <div class="popular-badge">Best Value</div>
+            <div class="plan-icon">🚀</div>
+            <div class="plan-name">Pro</div>
+            <div class="plan-description">Unlimited access to everything. Clean exports, no watermarks, full sharing capabilities.</div>
+            <div class="plan-price pro"><span class="currency">€</span>8.99<span class="period"> / 24h</span></div>
+            <div class="plan-note highlight">Unlimited use for a full day</div>
+            <button class="plan-cta primary" onclick="window.location.href='index.html#upload'">Get Pro Access</button>
+            <div class="features-title">Everything in Free, plus</div>
             <ul class="plan-features">
-                <li><span class="check-icon">✓</span> Unlimited PDF editing</li>
-                <li><span class="check-icon">✓</span> Advanced AI Features</li>
-                <li><span class="check-icon">✓</span> Smart Redaction</li>
-                <li><span class="check-icon">✓</span> Team Collaboration</li>
-                <li><span class="check-icon">✓</span> Cloud Storage (100GB)</li>
-                <li><span class="check-icon">✓</span> Priority Support (4-hour response)</li>
-                <li><span class="check-icon">✓</span> Advanced Security</li>
-                <li><span class="check-icon">✓</span> Batch Processing</li>
+                <li><span class="check-icon">✓</span> <strong>No watermarks</strong> on exports</li>
+                <li><span class="check-icon">✓</span> <strong>Unlimited</strong> PDF editing</li>
+                <li><span class="check-icon">✓</span> <strong>Share documents</strong> via secure links</li>
+                <li><span class="check-icon">✓</span> Priority processing speed</li>
+                <li><span class="check-icon">✓</span> High-quality PDF exports</li>
+                <li><span class="check-icon">✓</span> No usage restrictions</li>
+                <li><span class="check-icon">✓</span> 24 hours of full access</li>
             </ul>
         </div>
 
-        <!-- Enterprise Plan -->
+        <!-- Custom Plan -->
         <div class="pricing-card">
-            <div class="plan-name">Enterprise</div>
-            <div class="plan-description">For large teams and organizations</div>
-            <div class="plan-price">
-                Custom
-            </div>
-            <div class="plan-billing">Contact sales for pricing</div>
-            <button class="plan-cta secondary" onclick="window.location.href='contact.html'">Contact Sales</button>
+            <div class="plan-icon">🏢</div>
+            <div class="plan-name">Custom</div>
+            <div class="plan-description">Tailored solutions for teams and businesses with specific requirements.</div>
+            <div class="plan-price">Custom</div>
+            <div class="plan-note">Contact us for pricing</div>
+            <button class="plan-cta outline" onclick="window.location.href='contact.html'">Contact Us</button>
+            <div class="features-title">Designed for your needs</div>
             <ul class="plan-features">
-                <li><span class="check-icon">✓</span> Everything in Professional</li>
-                <li><span class="check-icon">✓</span> SSO Integration</li>
-                <li><span class="check-icon">✓</span> API Access</li>
-                <li><span class="check-icon">✓</span> Custom Workflows</li>
-                <li><span class="check-icon">✓</span> Unlimited Cloud Storage</li>
-                <li><span class="check-icon">✓</span> Dedicated Account Manager</li>
-                <li><span class="check-icon">✓</span> SLA Guarantee</li>
-                <li><span class="check-icon">✓</span> On-Premise Deployment Option</li>
+                <li><span class="check-icon">✓</span> Everything in Pro</li>
+                <li><span class="check-icon">✓</span> Volume pricing options</li>
+                <li><span class="check-icon">✓</span> Extended access periods</li>
+                <li><span class="check-icon">✓</span> Team management features</li>
+                <li><span class="check-icon">✓</span> API access available</li>
+                <li><span class="check-icon">✓</span> Dedicated support</li>
+                <li><span class="check-icon">✓</span> Custom integrations</li>
             </ul>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <h2>How It Works</h2>
+        <p class="subtitle">Get started in under 30 seconds. No account creation needed.</p>
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Upload Your PDF</h3>
+                <p>Drag and drop or click to upload. Your document stays private and secure.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Edit Freely</h3>
+                <p>Use all our powerful tools: edit text, add signatures, annotate, fill forms, and more.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Download or Share</h3>
+                <p>Export your finished PDF. Go Pro to remove watermarks and share via secure links.</p>
+            </div>
         </div>
     </section>
 
     <!-- Trust Section -->
     <section class="trust-section">
-        <h2>Why Choose PDFOX?</h2>
+        <h2>Why Users Trust PDFOX</h2>
         <div class="trust-badges">
             <div class="trust-badge">
                 <div class="trust-badge-icon">🔒</div>
-                <div class="trust-badge-text">Bank-Level Security</div>
+                <div class="trust-badge-text">Bank-Level Encryption</div>
             </div>
             <div class="trust-badge">
-                <div class="trust-badge-icon">💳</div>
-                <div class="trust-badge-text">No Credit Card Required</div>
+                <div class="trust-badge-icon">🚫</div>
+                <div class="trust-badge-text">No Account Required</div>
             </div>
             <div class="trust-badge">
-                <div class="trust-badge-icon">⏱️</div>
-                <div class="trust-badge-text">14-Day Free Trial</div>
+                <div class="trust-badge-icon">⚡</div>
+                <div class="trust-badge-text">Instant Access</div>
             </div>
             <div class="trust-badge">
-                <div class="trust-badge-icon">🔄</div>
-                <div class="trust-badge-text">Cancel Anytime</div>
+                <div class="trust-badge-icon">🗑️</div>
+                <div class="trust-badge-text">Auto-Delete Files</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section class="comparison-section">
+        <h2>Free vs Pro</h2>
+        <p class="subtitle">See what you get with each plan</p>
+        <div class="comparison-table">
+            <div class="comparison-row header">
+                <div class="comparison-cell">Feature</div>
+                <div class="comparison-cell">Free</div>
+                <div class="comparison-cell">Pro</div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">All editing tools</div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">AI text recognition</div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Digital signatures</div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Annotations & stamps</div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Watermark-free exports</div>
+                <div class="comparison-cell"><span class="cross">✗</span></div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Document sharing</div>
+                <div class="comparison-cell"><span class="cross">✗</span></div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Priority processing</div>
+                <div class="comparison-cell"><span class="cross">✗</span></div>
+                <div class="comparison-cell"><span class="check">✓</span></div>
             </div>
         </div>
     </section>
@@ -579,21 +897,31 @@
 
         <div class="faq-item">
             <div class="faq-question" onclick="toggleFaq(this)">
-                Do I need a credit card for the free trial?
+                What does the Free plan include?
                 <span>+</span>
             </div>
             <div class="faq-answer">
-                <p>No! You can start your 14-day free trial without entering any payment information. You'll only be charged if you decide to continue after your trial ends.</p>
+                <p>The Free plan gives you access to all editing features including text editing, AI text recognition, digital signatures, annotations, stamps, and form filling. The only limitations are that exported PDFs will have a small "PDFOX" watermark, and document sharing is not available.</p>
             </div>
         </div>
 
         <div class="faq-item">
             <div class="faq-question" onclick="toggleFaq(this)">
-                Can I cancel my subscription at any time?
+                How does the Pro 24-hour access work?
                 <span>+</span>
             </div>
             <div class="faq-answer">
-                <p>Yes, you can cancel your subscription at any time with no penalties or fees. Your access will continue until the end of your billing period.</p>
+                <p>When you purchase Pro access for €8.99, you get unlimited use of all features for 24 hours from the moment of activation. During this time, you can edit and export as many PDFs as you want, without watermarks, and with full sharing capabilities. It's perfect for when you have documents to process and want clean, professional results.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Do I need to create an account?
+                <span>+</span>
+            </div>
+            <div class="faq-answer">
+                <p>No! You can start editing PDFs immediately without creating an account. For Pro access, we only need minimal information to process your payment. Your documents remain private and are automatically deleted after processing.</p>
             </div>
         </div>
 
@@ -603,17 +931,7 @@
                 <span>+</span>
             </div>
             <div class="faq-answer">
-                <p>We accept all major credit cards (Visa, Mastercard, American Express), PayPal, and bank transfers for Enterprise plans.</p>
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                Can I upgrade or downgrade my plan?
-                <span>+</span>
-            </div>
-            <div class="faq-answer">
-                <p>Absolutely! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate the difference.</p>
+                <p>We accept all major credit and debit cards (Visa, Mastercard, American Express), PayPal, and Apple Pay. All payments are processed securely through our payment provider.</p>
             </div>
         </div>
 
@@ -623,19 +941,36 @@
                 <span>+</span>
             </div>
             <div class="faq-answer">
-                <p>Yes! We use enterprise-grade AES-256 encryption, SOC 2 compliance, and your documents are protected by Cloudflare's global security network. Your data is never shared with third parties.</p>
+                <p>Absolutely. We use enterprise-grade AES-256 encryption to protect your documents. Files are processed securely and automatically deleted after your session. We never store, share, or analyze your documents.</p>
             </div>
         </div>
 
         <div class="faq-item">
             <div class="faq-question" onclick="toggleFaq(this)">
-                Do you offer discounts for nonprofits or education?
+                What if I need more than 24 hours or have special requirements?
                 <span>+</span>
             </div>
             <div class="faq-answer">
-                <p>Yes! We offer special pricing for nonprofits, educational institutions, and students. Contact our sales team to learn more about our discount programs.</p>
+                <p>Contact us about our Custom plan! We offer flexible solutions for teams, businesses, and users with specific needs. This includes volume pricing, extended access periods, team features, and API access.</p>
             </div>
         </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Can I get a refund?
+                <span>+</span>
+            </div>
+            <div class="faq-answer">
+                <p>If you experience any technical issues that prevent you from using the service, please contact our support team. We're committed to ensuring you have a positive experience with PDFOX.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+        <h2>Ready to Edit Your PDFs?</h2>
+        <p>Start with Free to explore all features. Upgrade to Pro when you need clean, professional exports.</p>
+        <button class="cta-button" onclick="window.location.href='index.html#upload'">Start Editing Free</button>
     </section>
 
     <!-- Footer -->
@@ -651,7 +986,7 @@
                 <h4>Resources</h4>
                 <a href="#">Help Center</a>
                 <a href="#">Documentation</a>
-                <a href="#">API</a>
+                <a href="contact.html">Contact</a>
             </div>
             <div class="footer-section">
                 <h4>Legal</h4>
@@ -667,7 +1002,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            © 2025 PDFOX. All rights reserved. | Professional PDF Editing Platform
+            &copy; 2025 PDFOX. All rights reserved. | Professional PDF Editing Platform
         </div>
     </footer>
 
@@ -686,40 +1021,6 @@
         }
         requestAnimationFrame(raf);
 
-        // Billing toggle
-        let isAnnual = false;
-
-        function toggleBilling() {
-            isAnnual = !isAnnual;
-            const toggle = document.getElementById('billingToggle');
-            const monthlyLabel = document.getElementById('monthlyLabel');
-            const annualLabel = document.getElementById('annualLabel');
-
-            if (isAnnual) {
-                toggle.classList.add('active');
-                monthlyLabel.classList.remove('active');
-                annualLabel.classList.add('active');
-
-                // Update prices (20% discount for annual)
-                document.getElementById('starter-price').textContent = '15';
-                document.getElementById('starter-billing').textContent = '$180 billed annually';
-
-                document.getElementById('pro-price').textContent = '39';
-                document.getElementById('pro-billing').textContent = '$468 billed annually';
-            } else {
-                toggle.classList.remove('active');
-                monthlyLabel.classList.add('active');
-                annualLabel.classList.remove('active');
-
-                // Update prices (monthly)
-                document.getElementById('starter-price').textContent = '19';
-                document.getElementById('starter-billing').textContent = 'Billed monthly';
-
-                document.getElementById('pro-price').textContent = '49';
-                document.getElementById('pro-billing').textContent = 'Billed monthly';
-            }
-        }
-
         // FAQ toggle
         function toggleFaq(element) {
             const item = element.parentElement;
@@ -735,7 +1036,7 @@
 
             // Toggle current item
             item.classList.toggle('active');
-            element.querySelector('span').textContent = item.classList.contains('active') ? '−' : '+';
+            element.querySelector('span').textContent = item.classList.contains('active') ? '+' : '+';
         }
     </script>
 </body>
