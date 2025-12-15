@@ -4038,3 +4038,236 @@ body {
         display: none;
     }
 }
+
+/* ==========================================================================
+   Upgrade Modal (Pro Upsell)
+   ========================================================================== */
+.upgrade-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.upgrade-modal.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.upgrade-modal-content {
+    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 460px;
+    width: 90%;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(229, 9, 20, 0.2);
+    position: relative;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.upgrade-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #888;
+}
+
+.upgrade-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.upgrade-modal-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.2) 0%, rgba(229, 9, 20, 0.05) 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    border: 1px solid rgba(229, 9, 20, 0.3);
+}
+
+.upgrade-modal-icon svg {
+    width: 32px;
+    height: 32px;
+    color: var(--color-primary);
+}
+
+.upgrade-modal-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+}
+
+.upgrade-modal-subtitle {
+    font-size: 15px;
+    color: #888;
+    text-align: center;
+    margin-bottom: 28px;
+    line-height: 1.5;
+}
+
+.upgrade-modal-features {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.upgrade-modal-feature {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.upgrade-modal-feature:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.upgrade-modal-feature:first-child {
+    padding-top: 0;
+}
+
+.upgrade-modal-feature-icon {
+    width: 24px;
+    height: 24px;
+    background: rgba(76, 175, 80, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.upgrade-modal-feature-icon svg {
+    width: 14px;
+    height: 14px;
+    color: #4CAF50;
+}
+
+.upgrade-modal-feature-text {
+    font-size: 14px;
+    color: #ccc;
+}
+
+.upgrade-modal-feature-text strong {
+    color: #fff;
+}
+
+.upgrade-modal-cta {
+    width: 100%;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #E50914 0%, #B8070F 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 20px rgba(229, 9, 20, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.upgrade-modal-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(229, 9, 20, 0.5);
+}
+
+.upgrade-modal-cta:active {
+    transform: translateY(0);
+}
+
+.upgrade-modal-price {
+    font-size: 14px;
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+.upgrade-modal-secondary {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    color: #888;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 12px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.upgrade-modal-secondary:hover {
+    color: #fff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .upgrade-modal-content {
+        padding: 28px 20px;
+        margin: 16px;
+    }
+
+    .upgrade-modal-title {
+        font-size: 22px;
+    }
+
+    .upgrade-modal-icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .upgrade-modal-icon svg {
+        width: 28px;
+        height: 28px;
+    }
+}

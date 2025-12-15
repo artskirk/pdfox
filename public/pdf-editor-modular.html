@@ -821,6 +821,70 @@
         </div>
     </div>
 
+    <!-- Upgrade Modal (Pro Upsell) -->
+    <div id="upgradeModal" class="upgrade-modal">
+        <div class="upgrade-modal-content">
+            <button class="upgrade-modal-close" onclick="PDFoxApp.closeUpgradeModal()" title="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+
+            <div class="upgrade-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+            </div>
+
+            <h2 class="upgrade-modal-title">Unlock Clean PDF Exports</h2>
+            <p class="upgrade-modal-subtitle">Your PDF is ready! Upgrade to Pro for professional results.</p>
+
+            <div class="upgrade-modal-features">
+                <div class="upgrade-modal-feature">
+                    <div class="upgrade-modal-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <span class="upgrade-modal-feature-text"><strong>No watermarks</strong> on exports</span>
+                </div>
+                <div class="upgrade-modal-feature">
+                    <div class="upgrade-modal-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <span class="upgrade-modal-feature-text"><strong>Share documents</strong> via secure links</span>
+                </div>
+                <div class="upgrade-modal-feature">
+                    <div class="upgrade-modal-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <span class="upgrade-modal-feature-text"><strong>Priority processing</strong> speed</span>
+                </div>
+                <div class="upgrade-modal-feature">
+                    <div class="upgrade-modal-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <span class="upgrade-modal-feature-text"><strong>24 hours</strong> of unlimited access</span>
+                </div>
+            </div>
+
+            <button class="upgrade-modal-cta" onclick="PDFoxApp.goToPricing()">
+                Get Pro Access
+                <span class="upgrade-modal-price">- €8.99/24h</span>
+            </button>
+
+            <button class="upgrade-modal-secondary" onclick="PDFoxApp.saveWithWatermark()">
+                Save with watermark instead
+            </button>
+        </div>
+    </div>
+
     <!-- Loading Overlay -->
     <div class="loading" id="loading" style="display: none;">
         <div class="loading-content">

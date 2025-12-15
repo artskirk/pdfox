@@ -438,9 +438,77 @@ const PDFoxApp = (function() {
     }
 
     /**
-     * Save PDF with all modifications
+     * Show upgrade modal for non-Pro users
+     */
+    function showUpgradeModal() {
+        const modal = document.getElementById('upgradeModal');
+        if (modal) {
+            modal.classList.add('active');
+            // Close on click outside
+            modal.addEventListener('click', function handleOutsideClick(e) {
+                if (e.target === modal) {
+                    closeUpgradeModal();
+                    modal.removeEventListener('click', handleOutsideClick);
+                }
+            });
+            // Close on Escape key
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    closeUpgradeModal();
+                    document.removeEventListener('keydown', handleEscape);
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
+        }
+    }
+
+    /**
+     * Close upgrade modal
+     */
+    function closeUpgradeModal() {
+        const modal = document.getElementById('upgradeModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
+
+    /**
+     * Navigate to pricing page
+     */
+    function goToPricing() {
+        closeUpgradeModal();
+        window.location.href = '/pricing.html';
+    }
+
+    /**
+     * Save PDF with watermark (for free users who choose to proceed)
+     */
+    async function saveWithWatermark() {
+        closeUpgradeModal();
+        await _doSavePDF(true); // Force watermark
+    }
+
+    /**
+     * Public save function - shows upgrade modal for non-Pro users
      */
     async function savePDF() {
+        const isProUser = core.get('isProUser') || false;
+
+        if (!isProUser) {
+            // Show upgrade modal for free users
+            showUpgradeModal();
+            return;
+        }
+
+        // Pro users save directly without watermark
+        await _doSavePDF(false);
+    }
+
+    /**
+     * Internal: Save PDF with all modifications
+     * @param {boolean} applyWatermark - Whether to apply watermark
+     */
+    async function _doSavePDF(applyWatermark = true) {
         const pdfBytes = core.get('pdfBytes');
 
         if (!pdfBytes || pdfBytes.length === 0) {
@@ -989,9 +1057,8 @@ const PDFoxApp = (function() {
                 }
             }
 
-            // Apply watermarks for free tier (when not Pro)
-            const isProUser = core.get('isProUser') || false;
-            if (!isProUser) {
+            // Apply watermarks if requested (for free tier users)
+            if (applyWatermark) {
                 await applyWatermarks(pdfDoc, pages);
             }
 
@@ -2246,6 +2313,10 @@ const PDFoxApp = (function() {
         redo,
         duplicateCurrentLayer,
         savePDF,
+        saveWithWatermark,
+        showUpgradeModal,
+        closeUpgradeModal,
+        goToPricing,
         goBack,
         zoomIn,
         zoomOut,
