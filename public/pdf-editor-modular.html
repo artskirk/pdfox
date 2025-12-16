@@ -874,13 +874,80 @@
                 </div>
             </div>
 
-            <button class="upgrade-modal-cta" onclick="PDFoxApp.goToPricing()">
+            <!-- Email input for checkout -->
+            <div id="upgradeEmailSection" style="margin-bottom: 16px;">
+                <input type="email" id="upgradeEmail" placeholder="Enter your email for receipt"
+                    style="width: 100%; padding: 14px 16px; border: 2px solid #333; border-radius: 10px;
+                    background: #2a2a2a; color: #fff; font-size: 15px; outline: none; transition: border-color 0.2s;"
+                    onfocus="this.style.borderColor='#E50914'" onblur="this.style.borderColor='#333'">
+                <p id="upgradeEmailError" style="color: #ff6b6b; font-size: 12px; margin-top: 6px; display: none;"></p>
+            </div>
+
+            <button class="upgrade-modal-cta" onclick="PDFoxApp.startProCheckout()" id="upgradeCtaBtn">
                 Get Pro Access
                 <span class="upgrade-modal-price">- €8.99/24h</span>
             </button>
 
             <button class="upgrade-modal-secondary" onclick="PDFoxApp.saveWithWatermark()">
                 Save with watermark instead
+            </button>
+
+            <button class="upgrade-modal-secondary" onclick="PDFoxApp.showRecoveryForm()" id="showRecoveryBtn" style="margin-top: 4px; font-size: 12px;">
+                Already purchased? Restore access
+            </button>
+        </div>
+    </div>
+
+    <!-- Recovery Modal -->
+    <div id="recoveryModal" class="upgrade-modal">
+        <div class="upgrade-modal-content" style="max-width: 420px;">
+            <button class="upgrade-modal-close" onclick="PDFoxApp.closeRecoveryModal()" title="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+
+            <div class="upgrade-modal-icon" style="background: linear-gradient(135deg, rgba(33, 150, 243, 0.2) 0%, rgba(33, 150, 243, 0.05) 100%); border-color: rgba(33, 150, 243, 0.3);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c-1.657 0-3-4.03-3-9s1.343-9 3-9m0 18c1.657 0 3-4.03 3-9s-1.343-9-3-9"/>
+                </svg>
+            </div>
+
+            <h2 class="upgrade-modal-title" style="font-size: 22px;">Restore Pro Access</h2>
+            <p class="upgrade-modal-subtitle" style="font-size: 14px;">Enter your email and receipt number from your payment receipt to restore access.</p>
+
+            <div style="margin-bottom: 12px;">
+                <input type="email" id="recoveryEmail" placeholder="Email used for purchase"
+                    style="width: 100%; padding: 12px 14px; border: 2px solid #333; border-radius: 8px;
+                    background: #2a2a2a; color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s;"
+                    onfocus="this.style.borderColor='#2196F3'" onblur="this.style.borderColor='#333'">
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <input type="text" id="recoveryReceiptNumber" placeholder="Receipt # (e.g., 1099-0512)"
+                    style="width: 100%; padding: 12px 14px; border: 2px solid #333; border-radius: 8px;
+                    background: #2a2a2a; color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s; font-family: monospace;"
+                    onfocus="this.style.borderColor='#2196F3'" onblur="this.style.borderColor='#333'">
+            </div>
+
+            <p id="recoveryError" style="color: #ff6b6b; font-size: 12px; margin-bottom: 12px; display: none;"></p>
+
+            <div style="background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                <p style="font-size: 11px; color: #888; margin: 0; line-height: 1.5;">
+                    <strong style="color: #2196F3;">Where to find Receipt #:</strong><br>
+                    Check your email for a receipt from Stripe. The receipt number looks like <code style="background: #333; padding: 2px 4px; border-radius: 3px;">1099-0512</code>
+                </p>
+            </div>
+
+            <button onclick="PDFoxApp.recoverProAccess()" id="recoveryCtaBtn"
+                style="width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+                color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
+                transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);">
+                Restore Access
+            </button>
+
+            <button onclick="PDFoxApp.closeRecoveryModal(); PDFoxApp.showUpgradeModal();" class="upgrade-modal-secondary" style="margin-top: 8px;">
+                Back to upgrade
             </button>
         </div>
     </div>
@@ -904,6 +971,7 @@
     <!-- Application Modules (order matters for dependencies) -->
     <script src="/js/modules/utils.js"></script>
     <script src="/js/modules/core.js"></script>
+    <script src="/js/modules/pro-access.js"></script>
     <script src="/js/modules/ui.js"></script>
     <script src="/js/modules/unified-text-editor.js"></script>
     <script src="/js/modules/toolbar.js"></script>
@@ -922,7 +990,15 @@
 
     <!-- Initialize Application -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize Pro Access first (sets isProUser in core)
+            if (typeof PDFoxProAccess !== 'undefined') {
+                const proStatus = await PDFoxProAccess.init();
+                if (proStatus.isPro) {
+                    PDFoxProAccess.showProBadge();
+                }
+            }
+
             PDFoxApp.init();
             PDFoxToolbar.init();
             PDFoxOCR.init();

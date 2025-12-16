@@ -481,11 +481,200 @@ const PDFoxApp = (function() {
     }
 
     /**
+     * Start Pro checkout flow
+     */
+    async function startProCheckout() {
+        const emailInput = document.getElementById('upgradeEmail');
+        const errorEl = document.getElementById('upgradeEmailError');
+        const ctaBtn = document.getElementById('upgradeCtaBtn');
+
+        // Validate email
+        const email = emailInput?.value?.trim();
+        if (!email || !email.includes('@') || !email.includes('.')) {
+            if (errorEl) {
+                errorEl.textContent = 'Please enter a valid email address';
+                errorEl.style.display = 'block';
+            }
+            emailInput?.focus();
+            return;
+        }
+
+        // Hide error
+        if (errorEl) {
+            errorEl.style.display = 'none';
+        }
+
+        // Disable button and show loading
+        if (ctaBtn) {
+            ctaBtn.disabled = true;
+            ctaBtn.innerHTML = '<span class="spinner-small"></span> Processing...';
+        }
+
+        try {
+            // Check if PDFoxProAccess is available
+            if (typeof PDFoxProAccess === 'undefined') {
+                throw new Error('Pro Access module not loaded');
+            }
+
+            const result = await PDFoxProAccess.startCheckout(email);
+
+            // If user already has Pro access
+            if (result.alreadyPro) {
+                closeUpgradeModal();
+                core.set('isProUser', true);
+                PDFoxProAccess.showProBadge();
+                ui.showNotification('You already have Pro access! Saving without watermark...', 'success');
+                await _doSavePDF(false);
+                return;
+            }
+
+            // Checkout redirect happens in startCheckout
+        } catch (error) {
+            console.error('Checkout error:', error);
+            if (errorEl) {
+                errorEl.textContent = error.message || 'Failed to start checkout. Please try again.';
+                errorEl.style.display = 'block';
+            }
+
+            // Re-enable button
+            if (ctaBtn) {
+                ctaBtn.disabled = false;
+                ctaBtn.innerHTML = 'Get Pro Access <span class="upgrade-modal-price">- €8.99/24h</span>';
+            }
+        }
+    }
+
+    /**
      * Save PDF with watermark (for free users who choose to proceed)
      */
     async function saveWithWatermark() {
         closeUpgradeModal();
         await _doSavePDF(true); // Force watermark
+    }
+
+    /**
+     * Show recovery form modal
+     */
+    function showRecoveryForm() {
+        closeUpgradeModal();
+        const modal = document.getElementById('recoveryModal');
+        if (modal) {
+            modal.classList.add('active');
+            // Clear previous inputs
+            const emailInput = document.getElementById('recoveryEmail');
+            const receiptInput = document.getElementById('recoveryReceiptNumber');
+            const errorEl = document.getElementById('recoveryError');
+            if (emailInput) emailInput.value = '';
+            if (receiptInput) receiptInput.value = '';
+            if (errorEl) errorEl.style.display = 'none';
+
+            // Close on click outside
+            modal.addEventListener('click', function handleOutsideClick(e) {
+                if (e.target === modal) {
+                    closeRecoveryModal();
+                    modal.removeEventListener('click', handleOutsideClick);
+                }
+            });
+            // Close on Escape key
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    closeRecoveryModal();
+                    document.removeEventListener('keydown', handleEscape);
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
+        }
+    }
+
+    /**
+     * Close recovery modal
+     */
+    function closeRecoveryModal() {
+        const modal = document.getElementById('recoveryModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
+
+    /**
+     * Recover Pro access using email and receipt number
+     */
+    async function recoverProAccess() {
+        const emailInput = document.getElementById('recoveryEmail');
+        const receiptInput = document.getElementById('recoveryReceiptNumber');
+        const errorEl = document.getElementById('recoveryError');
+        const ctaBtn = document.getElementById('recoveryCtaBtn');
+
+        const email = emailInput?.value?.trim();
+        const receiptNumber = receiptInput?.value?.trim();
+
+        // Validate inputs
+        if (!email || !email.includes('@')) {
+            if (errorEl) {
+                errorEl.textContent = 'Please enter a valid email address';
+                errorEl.style.display = 'block';
+            }
+            emailInput?.focus();
+            return;
+        }
+
+        if (!receiptNumber) {
+            if (errorEl) {
+                errorEl.textContent = 'Please enter your receipt number from the payment receipt';
+                errorEl.style.display = 'block';
+            }
+            receiptInput?.focus();
+            return;
+        }
+
+        // Hide error
+        if (errorEl) errorEl.style.display = 'none';
+
+        // Disable button and show loading
+        if (ctaBtn) {
+            ctaBtn.disabled = true;
+            ctaBtn.textContent = 'Restoring...';
+        }
+
+        try {
+            if (typeof PDFoxProAccess === 'undefined') {
+                throw new Error('Pro Access module not loaded');
+            }
+
+            const result = await PDFoxProAccess.recoverAccess(email, receiptNumber);
+
+            if (result.success) {
+                closeRecoveryModal();
+                core.set('isProUser', true);
+                PDFoxProAccess.showProBadge();
+                ui.showNotification('Pro access restored! Saving without watermark...', 'success');
+                await _doSavePDF(false);
+            }
+        } catch (error) {
+            console.error('Recovery error:', error);
+            if (errorEl) {
+                // Check if it's an expiration error with purchase option
+                if (error.message && error.message.includes('expired')) {
+                    errorEl.innerHTML = `
+                        <span style="display: block; margin-bottom: 8px;">${error.message}</span>
+                        <button onclick="PDFoxApp.closeRecoveryModal(); PDFoxApp.showUpgradeModal();"
+                            style="background: #E50914; color: white; border: none; padding: 8px 16px;
+                            border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                            Purchase Pro Access
+                        </button>
+                    `;
+                } else {
+                    errorEl.textContent = error.message || 'Failed to restore access. Please check your details.';
+                }
+                errorEl.style.display = 'block';
+            }
+        } finally {
+            // Re-enable button
+            if (ctaBtn) {
+                ctaBtn.disabled = false;
+                ctaBtn.textContent = 'Restore Access';
+            }
+        }
     }
 
     /**
@@ -1928,6 +2117,7 @@ const PDFoxApp = (function() {
                     't': 'date',    // T for today's date
                     'n': 'na'       // N for N/A
                 };
+                if (!e.key) return;
                 const lowerKey = e.key.toLowerCase();
                 if (stampShortcuts[lowerKey]) {
                     // Don't trigger if user is typing in an input
@@ -2317,6 +2507,10 @@ const PDFoxApp = (function() {
         showUpgradeModal,
         closeUpgradeModal,
         goToPricing,
+        startProCheckout,
+        showRecoveryForm,
+        closeRecoveryModal,
+        recoverProAccess,
         goBack,
         zoomIn,
         zoomOut,

@@ -12,6 +12,7 @@ const Tesseract = require('tesseract.js');
 const { Document, Paragraph, TextRun, Packer } = require('docx');
 const Stripe = require('stripe');
 const { google } = require('googleapis');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +23,96 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY || 'your_stripe_secret_key')
 // Payment configuration
 const PAYMENT_AMOUNT = parseInt(process.env.PAYMENT_AMOUNT || '299'); // 2.99 EUR in cents
 const PAYMENT_CURRENCY = process.env.PAYMENT_CURRENCY || 'eur';
+
+// Pro access configuration
+const PRO_PAYMENT_AMOUNT = parseInt(process.env.PRO_PAYMENT_AMOUNT || '899'); // 8.99 EUR in cents
+const PRO_ACCESS_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
+const FINGERPRINT_TOLERANCE = 0.85; // 85% match required
+
+// Persistent storage for Pro access (file-based for MVP)
+const proAccessFile = path.join(__dirname, 'data', 'pro-access.json');
+
+// Ensure data directory exists
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// Load Pro access data from file
+function loadProAccess() {
+    try {
+        if (fs.existsSync(proAccessFile)) {
+            const data = JSON.parse(fs.readFileSync(proAccessFile, 'utf8'));
+            // Clean expired entries on load
+            const now = Date.now();
+            const valid = data.filter(entry => entry.expiresAt > now);
+            if (valid.length !== data.length) {
+                saveProAccess(valid);
+            }
+            return valid;
+        }
+    } catch (error) {
+        console.error('Error loading Pro access data:', error);
+    }
+    return [];
+}
+
+// Save Pro access data to file
+function saveProAccess(data) {
+    try {
+        fs.writeFileSync(proAccessFile, JSON.stringify(data, null, 2));
+    } catch (error) {
+        console.error('Error saving Pro access data:', error);
+    }
+}
+
+// Find Pro access by token
+function findProAccessByToken(token) {
+    const data = loadProAccess();
+    return data.find(entry => entry.tokenHash === hashToken(token) && entry.expiresAt > Date.now());
+}
+
+// Find Pro access by fingerprint
+function findProAccessByFingerprint(fingerprint) {
+    const data = loadProAccess();
+    return data.find(entry => entry.fingerprint === fingerprint && entry.expiresAt > Date.now());
+}
+
+// Hash token for storage
+function hashToken(token) {
+    return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+// Create Pro access entry
+function createProAccess(email, fingerprint, stripeSessionId, receiptNumber = null) {
+    const data = loadProAccess();
+
+    // Generate JWT token
+    const expiresAt = Date.now() + PRO_ACCESS_DURATION;
+    const token = jwt.sign({
+        email,
+        fingerprint,
+        exp: Math.floor(expiresAt / 1000) // JWT exp is in seconds
+    }, JWT_SECRET);
+
+    const entry = {
+        id: crypto.randomUUID(),
+        email,
+        fingerprint,
+        stripeSessionId,
+        receiptNumber,
+        tokenHash: hashToken(token),
+        createdAt: Date.now(),
+        expiresAt,
+        isRevoked: false
+    };
+
+    data.push(entry);
+    saveProAccess(data);
+
+    return { token, expiresAt, entry };
+}
 
 // Initialize Google OAuth2 Client
 const oauth2Client = new google.auth.OAuth2(
@@ -242,6 +333,394 @@ app.post('/create-checkout-session', async (req, res) => {
         res.status(500).json({ error: 'Failed to create checkout session' });
     }
 });
+
+// ============================================================================
+// PRO ACCESS ENDPOINTS (PDF Editor) - API v1
+// ============================================================================
+
+// Create Pro Access Checkout Session
+app.post('/api/v1/pro/create-checkout', async (req, res) => {
+    try {
+        const { email, fingerprint } = req.body;
+
+        if (!email || !fingerprint) {
+            return res.status(400).json({ error: 'Email and fingerprint are required' });
+        }
+
+        // Check if user already has active Pro access with this fingerprint
+        const existingAccess = findProAccessByFingerprint(fingerprint);
+        if (existingAccess) {
+            return res.status(400).json({
+                error: 'Active Pro access found',
+                message: 'You already have active Pro access on this device',
+                expiresAt: existingAccess.expiresAt
+            });
+        }
+
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            customer_email: email,
+            line_items: [
+                {
+                    price_data: {
+                        currency: PAYMENT_CURRENCY,
+                        product_data: {
+                            name: 'PDFOX Pro Access',
+                            description: '24-hour unlimited access to all Pro features',
+                            images: ['https://pdfox.cloud/favicon.svg'],
+                        },
+                        unit_amount: PRO_PAYMENT_AMOUNT,
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'payment',
+            success_url: `${req.headers.origin || 'http://localhost:3000'}/pro-success.html?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${req.headers.origin || 'http://localhost:3000'}/pdf-editor-modular.html?canceled=true`,
+            payment_intent_data: {
+                receipt_email: email,
+                description: 'PDFOX Pro Access - 24 hours',
+                metadata: {
+                    type: 'pro_access',
+                    email: email,
+                }
+            },
+            metadata: {
+                type: 'pro_access',
+                fingerprint: fingerprint,
+                email: email,
+            },
+        });
+
+        res.json({ sessionId: session.id, url: session.url });
+    } catch (error) {
+        console.error('Error creating Pro checkout session:', error);
+        res.status(500).json({ error: 'Failed to create checkout session' });
+    }
+});
+
+// Verify Pro Payment and Grant Access
+app.post('/api/v1/pro/verify-payment', async (req, res) => {
+    try {
+        const { sessionId, fingerprint } = req.body;
+
+        if (!sessionId || !fingerprint) {
+            return res.status(400).json({ error: 'Session ID and fingerprint are required' });
+        }
+
+        // Retrieve the session from Stripe with payment intent expanded
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {
+            expand: ['payment_intent.latest_charge']
+        });
+
+        if (session.payment_status !== 'paid') {
+            return res.status(400).json({ error: 'Payment not completed' });
+        }
+
+        // Verify this is a Pro access session
+        if (session.metadata?.type !== 'pro_access') {
+            return res.status(400).json({ error: 'Invalid session type' });
+        }
+
+        // Get receipt number from the charge
+        let receiptNumber = null;
+        if (session.payment_intent?.latest_charge?.receipt_number) {
+            receiptNumber = session.payment_intent.latest_charge.receipt_number;
+        }
+
+        // Verify fingerprint matches (with some tolerance for minor changes)
+        const storedFingerprint = session.metadata?.fingerprint;
+        if (storedFingerprint !== fingerprint) {
+            console.warn(`Fingerprint mismatch: expected ${storedFingerprint}, got ${fingerprint}`);
+            // For now, we'll allow it but log the mismatch
+            // In production, you might want stricter validation
+        }
+
+        // Check if access already granted for this session
+        const data = loadProAccess();
+        const existingEntry = data.find(e => e.stripeSessionId === sessionId);
+        if (existingEntry) {
+            // Return existing token info (regenerate token for security)
+            const token = jwt.sign({
+                email: existingEntry.email,
+                fingerprint: existingEntry.fingerprint,
+                exp: Math.floor(existingEntry.expiresAt / 1000)
+            }, JWT_SECRET);
+
+            return res.json({
+                success: true,
+                token,
+                expiresAt: existingEntry.expiresAt,
+                email: existingEntry.email,
+                receiptNumber: existingEntry.receiptNumber,
+                message: 'Pro access already active'
+            });
+        }
+
+        // Create new Pro access
+        const email = session.customer_email || session.metadata?.email || 'unknown@user.com';
+        const { token, expiresAt } = createProAccess(email, fingerprint, sessionId, receiptNumber);
+
+        res.json({
+            success: true,
+            token,
+            expiresAt,
+            email,
+            receiptNumber,
+            message: 'Pro access activated'
+        });
+    } catch (error) {
+        console.error('Error verifying Pro payment:', error);
+        res.status(500).json({ error: 'Failed to verify payment' });
+    }
+});
+
+// Validate Pro Access Token
+app.post('/api/v1/pro/validate', (req, res) => {
+    try {
+        const { token, fingerprint } = req.body;
+
+        if (!token) {
+            return res.json({ valid: false, reason: 'No token provided' });
+        }
+
+        // Verify JWT
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (err) {
+            if (err.name === 'TokenExpiredError') {
+                return res.json({ valid: false, reason: 'Token expired' });
+            }
+            return res.json({ valid: false, reason: 'Invalid token' });
+        }
+
+        // Verify token exists in storage and not revoked
+        const access = findProAccessByToken(token);
+        if (!access) {
+            return res.json({ valid: false, reason: 'Token not found or expired' });
+        }
+
+        if (access.isRevoked) {
+            return res.json({ valid: false, reason: 'Token revoked' });
+        }
+
+        // Verify fingerprint matches (optional strict mode)
+        if (fingerprint && decoded.fingerprint !== fingerprint) {
+            console.warn(`Fingerprint mismatch during validation: expected ${decoded.fingerprint}, got ${fingerprint}`);
+            // Log but don't reject - fingerprints can change slightly
+        }
+
+        res.json({
+            valid: true,
+            expiresAt: access.expiresAt,
+            email: decoded.email
+        });
+    } catch (error) {
+        console.error('Error validating Pro access:', error);
+        res.json({ valid: false, reason: 'Validation error' });
+    }
+});
+
+// Check Pro Status (by fingerprint - for returning users)
+app.post('/api/v1/pro/status', (req, res) => {
+    try {
+        const { fingerprint } = req.body;
+
+        if (!fingerprint) {
+            return res.json({ isPro: false });
+        }
+
+        const access = findProAccessByFingerprint(fingerprint);
+
+        if (access && !access.isRevoked) {
+            res.json({
+                isPro: true,
+                expiresAt: access.expiresAt,
+                email: access.email
+            });
+        } else {
+            res.json({ isPro: false });
+        }
+    } catch (error) {
+        console.error('Error checking Pro status:', error);
+        res.json({ isPro: false });
+    }
+});
+
+// Recover Pro Access using email and receipt number from payment receipt
+app.post('/api/v1/pro/recover', async (req, res) => {
+    try {
+        const { email, receiptNumber, fingerprint } = req.body;
+
+        if (!email || !receiptNumber || !fingerprint) {
+            return res.status(400).json({
+                error: 'Email, receipt number, and fingerprint are required'
+            });
+        }
+
+        // Normalize inputs
+        const normalizedEmail = email.toLowerCase().trim();
+        const normalizedReceiptNumber = receiptNumber.trim();
+
+        // Try to find existing Pro access by receipt number first
+        const data = loadProAccess();
+        let existingAccess = data.find(e =>
+            e.receiptNumber === normalizedReceiptNumber &&
+            e.email.toLowerCase() === normalizedEmail
+        );
+
+        // If found locally by receipt number
+        if (existingAccess) {
+            // Check if expired
+            if (existingAccess.expiresAt < Date.now()) {
+                const hoursAgo = Math.round((Date.now() - existingAccess.expiresAt) / (1000 * 60 * 60));
+                return res.status(400).json({
+                    error: 'Pro access has expired',
+                    message: `Your 24-hour Pro access expired ${hoursAgo > 0 ? hoursAgo + ' hour(s) ago' : 'recently'}. Purchase again to continue enjoying watermark-free exports.`,
+                    expiredAt: new Date(existingAccess.expiresAt).toISOString(),
+                    canPurchaseAgain: true
+                });
+            }
+
+            if (existingAccess.isRevoked) {
+                return res.status(400).json({ error: 'This Pro access has been revoked' });
+            }
+
+            // Update fingerprint for this access
+            existingAccess.fingerprint = fingerprint;
+            saveProAccess(data);
+
+            // Generate new token
+            const token = jwt.sign({
+                email: existingAccess.email,
+                fingerprint: fingerprint,
+                exp: Math.floor(existingAccess.expiresAt / 1000)
+            }, JWT_SECRET);
+
+            // Update token hash
+            existingAccess.tokenHash = hashToken(token);
+            saveProAccess(data);
+
+            return res.json({
+                success: true,
+                token,
+                expiresAt: existingAccess.expiresAt,
+                email: existingAccess.email,
+                message: 'Pro access restored successfully'
+            });
+        }
+
+        // If not found locally, search Stripe by listing charges for the email
+        // receipt_number is not searchable, so we list charges and filter
+        try {
+            const charges = await stripe.charges.list({
+                limit: 50
+            });
+
+            // Find charge with matching receipt number and email
+            const matchingCharge = charges.data.find(charge =>
+                charge.receipt_number === normalizedReceiptNumber &&
+                (charge.receipt_email?.toLowerCase() === normalizedEmail ||
+                 charge.billing_details?.email?.toLowerCase() === normalizedEmail)
+            );
+
+            if (matchingCharge) {
+                // Get the payment intent to check metadata
+                const paymentIntent = await stripe.paymentIntents.retrieve(matchingCharge.payment_intent);
+                const isProAccess = paymentIntent.metadata?.type === 'pro_access';
+
+                if (!isProAccess) {
+                    return res.status(400).json({ error: 'This payment is not for Pro access' });
+                }
+
+                // Check if within 24 hours of payment
+                const paymentTime = matchingCharge.created * 1000;
+                const expiresAt = paymentTime + PRO_ACCESS_DURATION;
+
+                if (expiresAt < Date.now()) {
+                    const hoursAgo = Math.round((Date.now() - expiresAt) / (1000 * 60 * 60));
+                    return res.status(400).json({
+                        error: 'Pro access has expired',
+                        message: `Your 24-hour Pro access expired ${hoursAgo > 0 ? hoursAgo + ' hour(s) ago' : 'recently'}. Purchase again to continue enjoying watermark-free exports.`,
+                        expiredAt: new Date(expiresAt).toISOString(),
+                        canPurchaseAgain: true
+                    });
+                }
+
+                // Create new Pro access entry with receipt number
+                const { token, entry } = createProAccess(normalizedEmail, fingerprint, paymentIntent.id, normalizedReceiptNumber);
+
+                return res.json({
+                    success: true,
+                    token,
+                    expiresAt: entry.expiresAt,
+                    email: normalizedEmail,
+                    message: 'Pro access restored from payment record'
+                });
+            }
+        } catch (stripeError) {
+            console.error('Stripe lookup error:', stripeError.message);
+        }
+
+        // Nothing found
+        return res.status(404).json({
+            error: 'No valid Pro access found',
+            message: 'Could not find a Pro access purchase with this email and receipt number. Please check your receipt and try again.'
+        });
+
+    } catch (error) {
+        console.error('Error recovering Pro access:', error);
+        res.status(500).json({ error: 'Failed to recover Pro access' });
+    }
+});
+
+// Stripe Webhook for Pro Access (production use)
+app.post('/api/v1/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+        console.warn('Stripe webhook secret not configured');
+        return res.status(400).send('Webhook secret not configured');
+    }
+
+    let event;
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err) {
+        console.error('Webhook signature verification failed:', err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+
+        // Only process Pro access payments
+        if (session.metadata?.type === 'pro_access') {
+            const fingerprint = session.metadata?.fingerprint;
+            const email = session.customer_email || session.metadata?.email;
+
+            if (fingerprint && email) {
+                // Check if already processed
+                const data = loadProAccess();
+                const exists = data.find(e => e.stripeSessionId === session.id);
+
+                if (!exists) {
+                    createProAccess(email, fingerprint, session.id);
+                    console.log(`Pro access granted via webhook for ${email}`);
+                }
+            }
+        }
+    }
+
+    res.json({ received: true });
+});
+
+// ============================================================================
+// END PRO ACCESS ENDPOINTS
+// ============================================================================
 
 // Verify payment and grant access
 app.post('/verify-payment', async (req, res) => {
