@@ -152,6 +152,39 @@ const PDFoxApp = (function() {
     }
 
     /**
+     * Re-render all restored content after session restore
+     */
+    function renderRestoredContent() {
+        const currentPage = core.get('currentPage');
+
+        // Re-render the page to show text edits
+        if (renderer && renderer.renderPage) {
+            renderer.renderPage(currentPage);
+        }
+
+        // Emit page:rendered to trigger overlays, stamps, patches, etc.
+        core.emit('page:rendered', { page: currentPage });
+
+        // Render stamps explicitly if module exists
+        if (typeof PDFoxStamps !== 'undefined' && PDFoxStamps.renderAllStamps) {
+            PDFoxStamps.renderAllStamps();
+        }
+
+        // Render patches explicitly if module exists
+        if (typeof PDFoxPatch !== 'undefined' && PDFoxPatch.renderAllPatches) {
+            PDFoxPatch.renderAllPatches();
+        }
+
+        // Navigate to restored page
+        if (currentPage > 1 && renderer && renderer.goToPage) {
+            renderer.goToPage(currentPage);
+        }
+
+        // Update zoom display
+        updateZoomDisplay();
+    }
+
+    /**
      * Undo last action
      */
     function undo() {
@@ -1261,6 +1294,11 @@ const PDFoxApp = (function() {
             a.click();
             URL.revokeObjectURL(url);
 
+            // Clear session after successful save
+            if (typeof PDFoxSessionPersistence !== 'undefined') {
+                PDFoxSessionPersistence.clear();
+            }
+
             ui.hideLoading();
             ui.showAlert('PDF saved successfully!', 'success');
         } catch (error) {
@@ -1983,6 +2021,11 @@ const PDFoxApp = (function() {
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
+                    // Clear any saved session state when loading a new file
+                    if (typeof PDFoxSessionPersistence !== 'undefined') {
+                        PDFoxSessionPersistence.clear();
+                    }
+
                     // Use PDFStorage to handle large files via IndexedDB
                     if (typeof PDFStorage !== 'undefined') {
                         await PDFStorage.store(e.target.result, file.name);
@@ -2273,6 +2316,11 @@ const PDFoxApp = (function() {
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
+                    // Clear any saved session state when loading a new file
+                    if (typeof PDFoxSessionPersistence !== 'undefined') {
+                        PDFoxSessionPersistence.clear();
+                    }
+
                     // Store in session/IndexedDB
                     if (typeof PDFStorage !== 'undefined') {
                         await PDFStorage.store(e.target.result, file.name);
@@ -2482,13 +2530,30 @@ const PDFoxApp = (function() {
                 // Load PDF (renderer will calculate optimal zoom automatically)
                 await renderer.loadPDF(new Uint8Array(pdfBytes));
 
-                // Set default tool (force to ensure UI is updated)
-                setTool('addText', true);
+                // Initialize session persistence and restore any saved state
+                if (typeof PDFoxSessionPersistence !== 'undefined') {
+                    PDFoxSessionPersistence.init();
+                    const restored = PDFoxSessionPersistence.restore(pdfBytes);
+                    if (restored) {
+                        // Re-render restored content
+                        renderRestoredContent();
+                        ui.showNotification('Previous session restored', 'success');
+                    }
+                }
 
-                // Initialize zoom display and notify user
+                // Set default tool (force to ensure UI is updated) - unless restored
+                if (!core.get('currentTool') || core.get('currentTool') === 'addText') {
+                    setTool('addText', true);
+                } else {
+                    setTool(core.get('currentTool'), true);
+                }
+
+                // Initialize zoom display and notify user (only if not restored)
                 updateZoomDisplay();
-                const appliedZoom = Math.round(core.get('scale') * 100);
-                ui.showNotification(`Zoom auto-adjusted to ${appliedZoom}% for best view`, 'success');
+                if (typeof PDFoxSessionPersistence === 'undefined' || !PDFoxSessionPersistence.hasSession()) {
+                    const appliedZoom = Math.round(core.get('scale') * 100);
+                    ui.showNotification(`Zoom auto-adjusted to ${appliedZoom}% for best view`, 'success');
+                }
             } catch (error) {
                 console.error('Error loading PDF:', error);
                 console.error('Failed to load PDF:', error);

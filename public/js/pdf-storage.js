@@ -1,7 +1,7 @@
 /**
  * PDFOX PDF Storage Module
- * Handles large PDF storage using IndexedDB
- * Falls back to sessionStorage for small files
+ * Handles PDF storage using IndexedDB for persistence across browser sessions
+ * Uses localStorage for metadata to survive browser close
  */
 
 const PDFStorage = (function() {
@@ -10,7 +10,7 @@ const PDFStorage = (function() {
     const DB_NAME = 'PDFoxStorage';
     const DB_VERSION = 1;
     const STORE_NAME = 'pdfs';
-    const MAX_SESSION_STORAGE_SIZE = 4 * 1024 * 1024; // 4MB limit for sessionStorage
+    const STORAGE_KEY = 'pdfox_pdf_meta'; // localStorage key for metadata
 
     let db = null;
 
@@ -72,28 +72,14 @@ const PDFStorage = (function() {
      * @returns {Promise<void>}
      */
     async function storePDF(data, fileName) {
-        // Always clear both storages first to ensure fresh state
+        // Clear previous storage
+        await clearIndexedDB();
+        // Clear legacy sessionStorage
         sessionStorage.removeItem('pdfToEdit');
         sessionStorage.removeItem('pdfFileName');
         sessionStorage.removeItem('pdfStorageType');
-        await clearIndexedDB();
 
-        // Try sessionStorage first for small files
-        const dataSize = data.length;
-
-        if (dataSize < MAX_SESSION_STORAGE_SIZE) {
-            try {
-                sessionStorage.setItem('pdfToEdit', data);
-                sessionStorage.setItem('pdfFileName', fileName);
-                sessionStorage.setItem('pdfStorageType', 'session');
-                console.log('PDF stored in sessionStorage');
-                return;
-            } catch (e) {
-                console.log('sessionStorage failed, falling back to IndexedDB');
-            }
-        }
-
-        // Use IndexedDB for large files
+        // Always use IndexedDB for persistence across browser sessions
         try {
             const database = await initDB();
 
@@ -111,10 +97,13 @@ const PDFStorage = (function() {
                 const request = store.put(pdfData);
 
                 request.onsuccess = () => {
-                    // Mark that we're using IndexedDB
-                    sessionStorage.setItem('pdfStorageType', 'indexeddb');
-                    sessionStorage.setItem('pdfFileName', fileName);
-                    console.log('PDF stored in IndexedDB');
+                    // Store metadata in localStorage (persists across browser sessions)
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        fileName: fileName,
+                        timestamp: Date.now(),
+                        stored: true
+                    }));
+                    console.log('PDF stored in IndexedDB (persistent)');
                     resolve();
                 };
 
@@ -133,17 +122,58 @@ const PDFStorage = (function() {
      * @returns {Promise<{data: string, fileName: string}|null>}
      */
     async function retrievePDF() {
-        const storageType = sessionStorage.getItem('pdfStorageType');
-        const fileName = sessionStorage.getItem('pdfFileName');
+        // Check localStorage metadata first
+        const metaStr = localStorage.getItem(STORAGE_KEY);
 
-        if (storageType === 'session') {
-            const data = sessionStorage.getItem('pdfToEdit');
-            if (data) {
-                return { data, fileName };
+        if (metaStr) {
+            try {
+                const meta = JSON.parse(metaStr);
+                if (meta.stored) {
+                    // Retrieve from IndexedDB
+                    const database = await initDB();
+
+                    return new Promise((resolve, reject) => {
+                        const transaction = database.transaction([STORE_NAME], 'readonly');
+                        const store = transaction.objectStore(STORE_NAME);
+                        const request = store.get('currentPDF');
+
+                        request.onsuccess = () => {
+                            if (request.result) {
+                                console.log('PDF retrieved from IndexedDB (persistent)');
+                                resolve({
+                                    data: request.result.data,
+                                    fileName: request.result.fileName
+                                });
+                            } else {
+                                // Data missing, clear metadata
+                                localStorage.removeItem(STORAGE_KEY);
+                                resolve(null);
+                            }
+                        };
+
+                        request.onerror = () => {
+                            reject(request.error);
+                        };
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to parse PDF metadata:', error);
+                localStorage.removeItem(STORAGE_KEY);
             }
         }
 
-        if (storageType === 'indexeddb') {
+        // Legacy fallback - check sessionStorage (for backward compatibility)
+        const legacyStorageType = sessionStorage.getItem('pdfStorageType');
+        if (legacyStorageType === 'session') {
+            const data = sessionStorage.getItem('pdfToEdit');
+            const fileName = sessionStorage.getItem('pdfFileName');
+            if (data) {
+                return { data, fileName: fileName || 'document.pdf' };
+            }
+        }
+
+        // Also try IndexedDB directly for legacy indexeddb storage
+        if (legacyStorageType === 'indexeddb') {
             try {
                 const database = await initDB();
 
@@ -164,19 +194,12 @@ const PDFStorage = (function() {
                     };
 
                     request.onerror = () => {
-                        reject(request.error);
+                        resolve(null);
                     };
                 });
             } catch (error) {
                 console.error('Failed to retrieve PDF from IndexedDB:', error);
-                return null;
             }
-        }
-
-        // Legacy fallback - check sessionStorage directly
-        const legacyData = sessionStorage.getItem('pdfToEdit');
-        if (legacyData) {
-            return { data: legacyData, fileName: fileName || 'document.pdf' };
         }
 
         return null;
@@ -187,10 +210,15 @@ const PDFStorage = (function() {
      * @returns {Promise<void>}
      */
     async function clearPDF() {
+        // Clear localStorage metadata
+        localStorage.removeItem(STORAGE_KEY);
+
+        // Clear legacy sessionStorage
         sessionStorage.removeItem('pdfToEdit');
         sessionStorage.removeItem('pdfFileName');
         sessionStorage.removeItem('pdfStorageType');
 
+        // Clear IndexedDB
         try {
             const database = await initDB();
 
@@ -213,7 +241,19 @@ const PDFStorage = (function() {
      * @returns {Promise<void>}
      */
     async function updatePDF(data) {
-        const fileName = sessionStorage.getItem('pdfFileName') || 'document.pdf';
+        // Get filename from localStorage metadata or fallback
+        let fileName = 'document.pdf';
+        const metaStr = localStorage.getItem(STORAGE_KEY);
+        if (metaStr) {
+            try {
+                const meta = JSON.parse(metaStr);
+                fileName = meta.fileName || fileName;
+            } catch (e) {}
+        }
+        // Legacy fallback
+        if (!fileName || fileName === 'document.pdf') {
+            fileName = sessionStorage.getItem('pdfFileName') || 'document.pdf';
+        }
         return storePDF(data, fileName);
     }
 
