@@ -320,7 +320,9 @@ const PDFoxTextEditor = (function() {
                 textColor: existingEdit?.customColor || '#000000',
                 bgColor: existingEdit?.customBgColor || '#ffffff',
                 fontFamily: existingEdit?.customFontFamily || 'Arial, sans-serif',
-                isTransparent: existingEdit?.isTransparent ?? false
+                isTransparent: existingEdit?.isTransparent ?? false,
+                isBold: existingEdit?.isBold ?? false,
+                isItalic: existingEdit?.isItalic ?? false
             });
         }
     }
@@ -708,7 +710,9 @@ const PDFoxTextEditor = (function() {
                     textColor: edit.customColor || '#000000',
                     bgColor: edit.customBgColor || '#ffffff',
                     fontFamily: edit.customFontFamily || 'Arial, sans-serif',
-                    isTransparent: edit.isTransparent ?? false
+                    isTransparent: edit.isTransparent ?? false,
+                    isBold: edit.isBold ?? false,
+                    isItalic: edit.isItalic ?? false
                 });
             }
         },

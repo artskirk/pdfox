@@ -776,16 +776,28 @@ const PDFoxApp = (function() {
              * @param {string} fontFamily - The font family name
              * @returns {Promise<PDFFont>} The embedded font
              */
-            async function getUnicodeFont(fontFamily) {
+            async function getUnicodeFont(fontFamily, isBold = false, isItalic = false) {
                 const fontLower = (fontFamily || '').toLowerCase();
-                let fontKey = 'sans'; // Default
+                let fontType = 'sans'; // Default
 
-                // Determine which font style to use
+                // Determine which font type to use
                 if (fontLower.includes('courier') || fontLower.includes('monospace')) {
-                    fontKey = 'mono';
+                    fontType = 'mono';
                 } else if (fontLower.includes('times') || fontLower.includes('georgia') || fontLower.includes('serif')) {
-                    fontKey = 'serif';
+                    fontType = 'serif';
                 }
+
+                // Build font key with style variant
+                let styleVariant = 'Regular';
+                if (isBold && isItalic) {
+                    styleVariant = 'BoldItalic';
+                } else if (isBold) {
+                    styleVariant = 'Bold';
+                } else if (isItalic) {
+                    styleVariant = 'Italic';
+                }
+
+                const fontKey = `${fontType}-${styleVariant}`;
 
                 // Return cached font if available
                 if (fontCache[fontKey]) {
@@ -793,11 +805,21 @@ const PDFoxApp = (function() {
                 }
 
                 // Try to load and embed a Unicode font
-                // Using raw GitHub URLs for Noto fonts (TTF format for best pdf-lib compatibility)
+                // Using CDN URLs for Noto fonts (TTF format for best pdf-lib compatibility)
+                // Note: NotoSansMono doesn't have italic/bold-italic, fallback to regular
                 const fontUrls = {
-                    'sans': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSans/hinted/ttf/NotoSans-Regular.ttf',
-                    'serif': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSerif/hinted/ttf/NotoSerif-Regular.ttf',
-                    'mono': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSansMono/hinted/ttf/NotoSansMono-Regular.ttf'
+                    'sans-Regular': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSans/hinted/ttf/NotoSans-Regular.ttf',
+                    'sans-Bold': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSans/hinted/ttf/NotoSans-Bold.ttf',
+                    'sans-Italic': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSans/hinted/ttf/NotoSans-Italic.ttf',
+                    'sans-BoldItalic': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSans/hinted/ttf/NotoSans-BoldItalic.ttf',
+                    'serif-Regular': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSerif/hinted/ttf/NotoSerif-Regular.ttf',
+                    'serif-Bold': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSerif/hinted/ttf/NotoSerif-Bold.ttf',
+                    'serif-Italic': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSerif/hinted/ttf/NotoSerif-Italic.ttf',
+                    'serif-BoldItalic': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSerif/hinted/ttf/NotoSerif-BoldItalic.ttf',
+                    'mono-Regular': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSansMono/hinted/ttf/NotoSansMono-Regular.ttf',
+                    'mono-Bold': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSansMono/hinted/ttf/NotoSansMono-Bold.ttf',
+                    'mono-Italic': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSansMono/hinted/ttf/NotoSansMono-Regular.ttf',
+                    'mono-BoldItalic': 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSansMono/hinted/ttf/NotoSansMono-Bold.ttf'
                 };
 
                 try {
@@ -819,15 +841,24 @@ const PDFoxApp = (function() {
                 } catch (fontError) {
                     console.warn('Failed to load Unicode font:', fontError.message);
 
-                    // Fallback to standard fonts
+                    // Fallback to standard fonts with bold/italic variants
                     const standardFontMap = {
-                        'sans': PDFLib.StandardFonts.Helvetica,
-                        'serif': PDFLib.StandardFonts.TimesRoman,
-                        'mono': PDFLib.StandardFonts.Courier
+                        'sans-Regular': PDFLib.StandardFonts.Helvetica,
+                        'sans-Bold': PDFLib.StandardFonts.HelveticaBold,
+                        'sans-Italic': PDFLib.StandardFonts.HelveticaOblique,
+                        'sans-BoldItalic': PDFLib.StandardFonts.HelveticaBoldOblique,
+                        'serif-Regular': PDFLib.StandardFonts.TimesRoman,
+                        'serif-Bold': PDFLib.StandardFonts.TimesRomanBold,
+                        'serif-Italic': PDFLib.StandardFonts.TimesRomanItalic,
+                        'serif-BoldItalic': PDFLib.StandardFonts.TimesRomanBoldItalic,
+                        'mono-Regular': PDFLib.StandardFonts.Courier,
+                        'mono-Bold': PDFLib.StandardFonts.CourierBold,
+                        'mono-Italic': PDFLib.StandardFonts.CourierOblique,
+                        'mono-BoldItalic': PDFLib.StandardFonts.CourierBoldOblique
                     };
 
                     try {
-                        const fallbackFont = await pdfDoc.embedFont(standardFontMap[fontKey]);
+                        const fallbackFont = await pdfDoc.embedFont(standardFontMap[fontKey] || PDFLib.StandardFonts.Helvetica);
                         fontCache[fontKey] = fallbackFont;
                         return fallbackFont;
                     } catch (embedError) {
@@ -901,9 +932,9 @@ const PDFoxApp = (function() {
                     });
                 }
 
-                // Draw new text with Unicode-compatible font
+                // Draw new text with Unicode-compatible font (with bold/italic support)
                 const rgb = hexToRgb(edit.customColor || '#000000');
-                const font = await getUnicodeFont(edit.customFontFamily || 'Arial');
+                const font = await getUnicodeFont(edit.customFontFamily || 'Arial', edit.isBold, edit.isItalic);
                 page.drawText(edit.newText, {
                     x: actualX,
                     y: baselineFromBottom,
@@ -1027,8 +1058,8 @@ const PDFoxApp = (function() {
                 const pdfX = actualX;
                 const pdfY = height - actualY - actualHeight;
 
-                // Get Unicode-compatible font
-                const font = await getUnicodeFont(overlay.fontFamily);
+                // Get Unicode-compatible font with bold/italic support
+                const font = await getUnicodeFont(overlay.fontFamily, overlay.isBold, overlay.isItalic);
 
                 // Draw background
                 const bgMatch = overlay.bgColor.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/);

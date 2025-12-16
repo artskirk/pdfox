@@ -71,6 +71,8 @@ const PDFoxOverlays = (function() {
             background-color: ${overlay.bgColor};
             text-align: ${overlay.alignment || 'left'};
             font-family: ${overlay.fontFamily || 'Arial, sans-serif'};
+            font-weight: ${overlay.isBold ? 'bold' : 'normal'};
+            font-style: ${overlay.isItalic ? 'italic' : 'normal'};
         `;
 
         // Apply text color with opacity
@@ -251,6 +253,8 @@ const PDFoxOverlays = (function() {
                 bgColor: overlay.bgColor,
                 textOpacity: overlay.textOpacity,
                 fontFamily: overlay.fontFamily,
+                isBold: overlay.isBold,
+                isItalic: overlay.isItalic,
                 alignment: overlay.alignment
             };
             ui.showNotification('Text overlay copied', 'success');
@@ -300,6 +304,8 @@ const PDFoxOverlays = (function() {
             bgColor: clipboardOverlay.bgColor,
             textOpacity: clipboardOverlay.textOpacity,
             fontFamily: clipboardOverlay.fontFamily,
+            isBold: clipboardOverlay.isBold,
+            isItalic: clipboardOverlay.isItalic,
             alignment: clipboardOverlay.alignment,
             page: currentPage
         };
@@ -354,6 +360,8 @@ const PDFoxOverlays = (function() {
             bgColor: overlay.bgColor,
             textOpacity: overlay.textOpacity,
             fontFamily: overlay.fontFamily,
+            isBold: overlay.isBold,
+            isItalic: overlay.isItalic,
             alignment: overlay.alignment,
             page: currentPage
         };

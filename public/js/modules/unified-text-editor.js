@@ -109,6 +109,8 @@ const PDFoxUnifiedTextEditor = (function() {
         const textColor = data.textColor || data.color || '#000000';
         const bgColor = data.bgColor ? rgbaToHex(data.bgColor) : '#ffffff';
         const fontFamily = data.fontFamily || 'Arial, sans-serif';
+        const isBold = data.isBold || false;
+        const isItalic = data.isItalic || false;
         // Default to transparent for 'add' mode, otherwise check existing data
         const isTransparent = data.isTransparent !== undefined
             ? data.isTransparent
@@ -199,6 +201,30 @@ const PDFoxUnifiedTextEditor = (function() {
                                 <select id="uteFontFamily">${fontOptions}</select>
                             </div>
                         </div>
+
+                        <!-- Font Style Controls -->
+                        <div class="unified-editor-row">
+                            <div class="unified-editor-field font-style-field">
+                                <label>Font Style</label>
+                                <div class="font-style-buttons">
+                                    <button type="button" class="font-style-btn ${isBold ? 'active' : ''}" id="uteBoldBtn" title="Bold (Ctrl+B)">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
+                                            <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
+                                        </svg>
+                                        <span>Bold</span>
+                                    </button>
+                                    <button type="button" class="font-style-btn ${isItalic ? 'active' : ''}" id="uteItalicBtn" title="Italic (Ctrl+I)">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="19" y1="4" x2="10" y2="4"/>
+                                            <line x1="14" y1="20" x2="5" y2="20"/>
+                                            <line x1="15" y1="4" x2="9" y2="20"/>
+                                        </svg>
+                                        <span>Italic</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Footer -->
@@ -277,13 +303,15 @@ const PDFoxUnifiedTextEditor = (function() {
         // Setup event listeners
         setupEventListeners(config);
 
-        // Focus textarea
+        // Focus textarea and apply initial styles
         setTimeout(() => {
             const textarea = document.getElementById('uteTextArea');
             if (textarea) {
                 textarea.focus();
                 // Place cursor at end
                 textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                // Apply bold/italic styles to textarea
+                updateTextareaStyle();
             }
         }, 100);
     }
@@ -346,6 +374,20 @@ const PDFoxUnifiedTextEditor = (function() {
         };
         document.addEventListener('keydown', escHandler);
 
+        // Bold button toggle
+        document.getElementById('uteBoldBtn')?.addEventListener('click', () => {
+            const btn = document.getElementById('uteBoldBtn');
+            btn.classList.toggle('active');
+            updateTextareaStyle();
+        });
+
+        // Italic button toggle
+        document.getElementById('uteItalicBtn')?.addEventListener('click', () => {
+            const btn = document.getElementById('uteItalicBtn');
+            btn.classList.toggle('active');
+            updateTextareaStyle();
+        });
+
         // Ctrl+Enter to save
         document.getElementById('uteTextArea')?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -356,6 +398,24 @@ const PDFoxUnifiedTextEditor = (function() {
             if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 openLinkDialog();
+            }
+            // Ctrl+B for bold
+            if (e.key === 'b' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                const btn = document.getElementById('uteBoldBtn');
+                if (btn) {
+                    btn.classList.toggle('active');
+                    updateTextareaStyle();
+                }
+            }
+            // Ctrl+I for italic
+            if (e.key === 'i' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                const btn = document.getElementById('uteItalicBtn');
+                if (btn) {
+                    btn.classList.toggle('active');
+                    updateTextareaStyle();
+                }
             }
         });
 
@@ -392,6 +452,20 @@ const PDFoxUnifiedTextEditor = (function() {
                 closeLinkDialog();
             }
         });
+    }
+
+    /**
+     * Update textarea style based on bold/italic toggles
+     */
+    function updateTextareaStyle() {
+        const textarea = document.getElementById('uteTextArea');
+        const boldBtn = document.getElementById('uteBoldBtn');
+        const italicBtn = document.getElementById('uteItalicBtn');
+
+        if (!textarea) return;
+
+        textarea.style.fontWeight = boldBtn?.classList.contains('active') ? 'bold' : 'normal';
+        textarea.style.fontStyle = italicBtn?.classList.contains('active') ? 'italic' : 'normal';
     }
 
     /**
@@ -496,6 +570,8 @@ const PDFoxUnifiedTextEditor = (function() {
         const transparentCheck = document.getElementById('uteTransparent');
         const bgColorHex = document.getElementById('uteBgColor')?.value || '#ffffff';
         const isTransparent = transparentCheck?.checked || false;
+        const boldBtn = document.getElementById('uteBoldBtn');
+        const italicBtn = document.getElementById('uteItalicBtn');
 
         let bgColor;
         if (isTransparent) {
@@ -514,7 +590,9 @@ const PDFoxUnifiedTextEditor = (function() {
             bgColor: bgColor,
             bgColorHex: bgColorHex,
             isTransparent: isTransparent,
-            fontFamily: document.getElementById('uteFontFamily')?.value || 'Arial, sans-serif'
+            fontFamily: document.getElementById('uteFontFamily')?.value || 'Arial, sans-serif',
+            isBold: boldBtn?.classList.contains('active') || false,
+            isItalic: italicBtn?.classList.contains('active') || false
         };
     }
 
@@ -562,6 +640,8 @@ const PDFoxUnifiedTextEditor = (function() {
             bgColor: values.bgColor,
             textOpacity: 1,
             fontFamily: values.fontFamily,
+            isBold: values.isBold,
+            isItalic: values.isItalic,
             alignment: 'left',
             page: currentData.page || core.get('currentPage')
         };
@@ -612,7 +692,9 @@ const PDFoxUnifiedTextEditor = (function() {
             customColor: values.textColor,
             customBgColor: values.bgColor,
             customFontFamily: values.fontFamily,
-            isTransparent: values.isTransparent
+            isTransparent: values.isTransparent,
+            isBold: values.isBold,
+            isItalic: values.isItalic
         };
 
         if (editIndex >= 0) {
@@ -629,6 +711,8 @@ const PDFoxUnifiedTextEditor = (function() {
             textSpan.style.color = values.textColor;
             textSpan.style.fontFamily = values.fontFamily;
             textSpan.style.background = values.isTransparent ? 'transparent' : values.bgColor;
+            textSpan.style.fontWeight = values.isBold ? 'bold' : 'normal';
+            textSpan.style.fontStyle = values.isItalic ? 'italic' : 'normal';
 
             // Add controls if not already present and select
             if (typeof PDFoxTextEditor !== 'undefined') {
@@ -672,7 +756,9 @@ const PDFoxUnifiedTextEditor = (function() {
             fontSize: values.fontSize,
             color: values.textColor,
             bgColor: values.bgColor,
-            fontFamily: values.fontFamily
+            fontFamily: values.fontFamily,
+            isBold: values.isBold,
+            isItalic: values.isItalic
         };
 
         core.updateAt('textOverlays', index, updated);
@@ -709,6 +795,8 @@ const PDFoxUnifiedTextEditor = (function() {
             fontFamily: values.fontFamily,
             color: values.textColor,
             bgColor: values.bgColor,
+            isBold: values.isBold,
+            isItalic: values.isItalic,
             isOCR: true
         };
 
@@ -808,7 +896,9 @@ const PDFoxUnifiedTextEditor = (function() {
                     color: overlay.color,
                     textColor: overlay.color,
                     bgColor: overlay.bgColor,
-                    fontFamily: overlay.fontFamily
+                    fontFamily: overlay.fontFamily,
+                    isBold: overlay.isBold || false,
+                    isItalic: overlay.isItalic || false
                 });
             }
         },

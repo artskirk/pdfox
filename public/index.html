@@ -1214,6 +1214,355 @@
             text-align: center;
         }
 
+        /* Pro User Dashboard Styles */
+        .pro-dashboard {
+            display: none;
+            min-height: 100vh;
+            background: #000000;
+            padding-top: 80px;
+        }
+
+        .pro-dashboard.active {
+            display: block;
+        }
+
+        .pro-welcome {
+            padding: 60px 50px 40px;
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.15) 0%, rgba(0, 0, 0, 0.95) 100%);
+            border-bottom: 1px solid rgba(229, 9, 20, 0.2);
+        }
+
+        .pro-welcome-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .pro-welcome-text h1 {
+            font-size: 42px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            color: #ffffff;
+        }
+
+        .pro-welcome-text h1 span {
+            color: #E50914;
+        }
+
+        .pro-welcome-text p {
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 0;
+        }
+
+        .pro-status-card {
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.2) 0%, rgba(184, 7, 15, 0.1) 100%);
+            border: 2px solid rgba(229, 9, 20, 0.4);
+            border-radius: 16px;
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .pro-status-badge {
+            background: linear-gradient(135deg, #E50914 0%, #B8070F 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pro-status-time {
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .pro-countdown {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .countdown-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 48px;
+        }
+
+        .countdown-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4CAF50;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            line-height: 1;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .countdown-label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .countdown-separator {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4CAF50;
+            opacity: 0.7;
+            animation: blink 1s ease-in-out infinite;
+            margin-bottom: 14px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 0.3; }
+        }
+
+        .pro-actions {
+            padding: 60px 50px;
+            background: #000000;
+        }
+
+        .pro-actions-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pro-section-header {
+            margin-bottom: 32px;
+        }
+
+        .pro-section-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .pro-section-header p {
+            font-size: 16px;
+            color: #888;
+        }
+
+        .pro-quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .pro-action-card {
+            background: #141414;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 32px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .pro-action-card:hover {
+            border-color: #E50914;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(229, 9, 20, 0.2);
+        }
+
+        .pro-action-card.primary {
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.15) 0%, #141414 100%);
+            border-color: rgba(229, 9, 20, 0.3);
+        }
+
+        .pro-action-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(229, 9, 20, 0.1);
+            border: 2px solid rgba(229, 9, 20, 0.2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .pro-action-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .pro-action-card p {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.5;
+        }
+
+        .pro-recent-docs {
+            padding: 40px 50px 60px;
+            background: #0d0d0d;
+        }
+
+        .pro-recent-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pro-docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .pro-doc-card {
+            background: #141414;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .pro-doc-card:hover {
+            border-color: #E50914;
+            background: #1a1a1a;
+        }
+
+        .pro-doc-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(229, 9, 20, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .pro-doc-icon svg {
+            width: 24px;
+            height: 24px;
+            color: #E50914;
+        }
+
+        .pro-doc-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pro-doc-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pro-doc-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .pro-doc-resume {
+            background: #E50914;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+
+        .pro-doc-resume:hover {
+            background: #f40612;
+        }
+
+        .pro-empty-docs {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .pro-empty-docs svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .pro-benefits {
+            padding: 60px 50px;
+            background: #000000;
+            border-top: 1px solid #222;
+        }
+
+        .pro-benefits-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .pro-benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+        }
+
+        .pro-benefit {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(76, 175, 80, 0.05);
+            border: 1px solid rgba(76, 175, 80, 0.15);
+            border-radius: 10px;
+        }
+
+        .pro-benefit svg {
+            width: 20px;
+            height: 20px;
+            color: #4CAF50;
+            flex-shrink: 0;
+        }
+
+        .pro-benefit span {
+            font-size: 14px;
+            color: #ffffff;
+        }
+
+        /* Hide marketing sections for Pro users */
+        body.is-pro .hero,
+        body.is-pro .social-proof,
+        body.is-pro .value-prop,
+        body.is-pro .features {
+            display: none !important;
+        }
+
+        body.is-pro .upload-section {
+            padding-top: 40px;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .nav {
@@ -1268,6 +1617,57 @@
             .social-proof {
                 padding: 60px 20px;
             }
+
+            /* Pro Dashboard Responsive */
+            .pro-welcome {
+                padding: 40px 20px 30px;
+            }
+
+            .pro-welcome-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .pro-welcome-text h1 {
+                font-size: 28px;
+            }
+
+            .pro-status-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .countdown-value {
+                font-size: 20px;
+            }
+
+            .countdown-unit {
+                min-width: 40px;
+            }
+
+            .countdown-separator {
+                font-size: 16px;
+            }
+
+            .pro-actions {
+                padding: 40px 20px;
+            }
+
+            .pro-quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .pro-recent-docs {
+                padding: 30px 20px;
+            }
+
+            .pro-benefits {
+                padding: 40px 20px;
+            }
+
+            .pro-benefits-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 
@@ -1275,6 +1675,140 @@
     <script src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
 </head>
 <body>
+    <!-- Pro User Dashboard (hidden by default, shown via JS for Pro users) -->
+    <div id="proDashboard" class="pro-dashboard">
+        <!-- Pro Welcome Section -->
+        <section class="pro-welcome">
+            <div class="pro-welcome-content">
+                <div class="pro-welcome-text">
+                    <h1>Welcome back, <span>Pro</span> user</h1>
+                    <p>Your watermark-free editing experience is ready</p>
+                </div>
+                <div class="pro-status-card">
+                    <div class="pro-status-badge">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M9 12l2 2 4-4"/>
+                        </svg>
+                        PRO ACTIVE
+                    </div>
+                    <div class="pro-status-time">
+                        <div class="pro-countdown">
+                            <div class="countdown-unit">
+                                <span class="countdown-value" id="proHours">00</span>
+                                <span class="countdown-label">hours</span>
+                            </div>
+                            <span class="countdown-separator">:</span>
+                            <div class="countdown-unit">
+                                <span class="countdown-value" id="proMinutes">00</span>
+                                <span class="countdown-label">min</span>
+                            </div>
+                            <span class="countdown-separator">:</span>
+                            <div class="countdown-unit">
+                                <span class="countdown-value" id="proSeconds">00</span>
+                                <span class="countdown-label">sec</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="pro-actions">
+            <div class="pro-actions-container">
+                <div class="pro-section-header">
+                    <h2>Quick Actions</h2>
+                    <p>Get started with your PDF in seconds</p>
+                </div>
+                <div class="pro-quick-actions">
+                    <div class="pro-action-card primary" onclick="document.getElementById('proFileInput').click()">
+                        <div class="pro-action-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
+                                <path d="M12 5v14M5 12l7-7 7 7"/>
+                            </svg>
+                        </div>
+                        <h3>Upload New PDF</h3>
+                        <p>Drop or select a new document to edit</p>
+                    </div>
+                    <div class="pro-action-card" id="continueEditingCard" style="display: none;" onclick="resumeLastSession()">
+                        <div class="pro-action-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                        </div>
+                        <h3>Continue Editing</h3>
+                        <p id="lastDocName">Resume your last document</p>
+                    </div>
+                    <div class="pro-action-card" onclick="window.location.href='/pdf-editor-modular.html'">
+                        <div class="pro-action-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="12" y1="18" x2="12" y2="12"/>
+                                <line x1="9" y1="15" x2="15" y2="15"/>
+                            </svg>
+                        </div>
+                        <h3>Create from Scratch</h3>
+                        <p>Start with a blank document</p>
+                    </div>
+                </div>
+                <input type="file" id="proFileInput" accept=".pdf" style="display: none;">
+            </div>
+        </section>
+
+        <!-- Recent Documents -->
+        <section class="pro-recent-docs" id="proRecentDocs" style="display: none;">
+            <div class="pro-recent-container">
+                <div class="pro-section-header">
+                    <h2>Recent Documents</h2>
+                    <p>Pick up where you left off</p>
+                </div>
+                <div class="pro-docs-grid" id="proDocsGrid">
+                    <!-- Documents will be populated via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Pro Benefits Reminder -->
+        <section class="pro-benefits">
+            <div class="pro-benefits-container">
+                <div class="pro-section-header" style="text-align: center; margin-bottom: 32px;">
+                    <h2>Your Pro Benefits</h2>
+                </div>
+                <div class="pro-benefits-grid">
+                    <div class="pro-benefit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12l2 2 4-4"/>
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        <span>No watermarks on exports</span>
+                    </div>
+                    <div class="pro-benefit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12l2 2 4-4"/>
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        <span>Unlimited document editing</span>
+                    </div>
+                    <div class="pro-benefit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12l2 2 4-4"/>
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        <span>Share via secure links</span>
+                    </div>
+                    <div class="pro-benefit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12l2 2 4-4"/>
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        <span>Priority support</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
     <!-- Navigation -->
     <nav class="nav" id="nav">
         <div class="logo">PDFOX</div>
@@ -2075,6 +2609,282 @@
             };
             reader.readAsDataURL(file);
         }
+
+        // ==========================================
+        // Pro User Dashboard Logic
+        // ==========================================
+
+        const PRO_STORAGE_KEY = 'pdfox_pro_access';
+        const SESSION_STATE_KEY = 'pdfox_session_state';
+
+        // Check Pro status on page load
+        async function checkAndShowProDashboard() {
+            const proData = getProAccessData();
+
+            if (proData && proData.expiresAt && proData.expiresAt > Date.now()) {
+                // User is Pro - show Pro dashboard
+                showProDashboard(proData);
+                return true;
+            }
+
+            // Also check with server for Pro status
+            const fingerprint = localStorage.getItem('pdfox_fingerprint');
+            if (fingerprint) {
+                try {
+                    const response = await fetch('/api/v1/pro/status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fingerprint })
+                    });
+
+                    const data = await response.json();
+                    if (data.isPro && data.expiresAt > Date.now()) {
+                        showProDashboard({ expiresAt: data.expiresAt, email: data.email });
+                        return true;
+                    }
+                } catch (error) {
+                    console.log('Could not verify Pro status with server');
+                }
+            }
+
+            return false;
+        }
+
+        function getProAccessData() {
+            try {
+                const stored = localStorage.getItem(PRO_STORAGE_KEY);
+                return stored ? JSON.parse(stored) : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function showProDashboard(proData) {
+            // Add Pro class to body (hides marketing sections)
+            document.body.classList.add('is-pro');
+
+            // Show Pro dashboard
+            const proDashboard = document.getElementById('proDashboard');
+            if (proDashboard) {
+                proDashboard.classList.add('active');
+            }
+
+            // Update time remaining
+            updateProTimeRemaining(proData.expiresAt);
+
+            // Check for recent documents
+            loadRecentDocuments();
+
+            // Check for last session
+            checkLastSession();
+
+            // Set up Pro file input handler
+            const proFileInput = document.getElementById('proFileInput');
+            if (proFileInput) {
+                proFileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        handleProFileUpload(file);
+                    }
+                });
+            }
+
+            // Update time remaining every second for live countdown
+            setInterval(() => {
+                updateProTimeRemaining(proData.expiresAt);
+            }, 1000);
+        }
+
+        function updateProTimeRemaining(expiresAt) {
+            const hoursEl = document.getElementById('proHours');
+            const minutesEl = document.getElementById('proMinutes');
+            const secondsEl = document.getElementById('proSeconds');
+
+            if (!hoursEl || !minutesEl || !secondsEl) return;
+
+            const remaining = expiresAt - Date.now();
+            if (remaining <= 0) {
+                hoursEl.textContent = '00';
+                minutesEl.textContent = '00';
+                secondsEl.textContent = '00';
+                // Reload page to show regular view after a brief delay
+                setTimeout(() => window.location.reload(), 1000);
+                return;
+            }
+
+            const hours = Math.floor(remaining / (1000 * 60 * 60));
+            const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+            // Update with zero-padded values
+            hoursEl.textContent = hours.toString().padStart(2, '0');
+            minutesEl.textContent = minutes.toString().padStart(2, '0');
+            secondsEl.textContent = seconds.toString().padStart(2, '0');
+
+            // Add urgency styling when time is low
+            const countdownValues = document.querySelectorAll('.countdown-value');
+            const separators = document.querySelectorAll('.countdown-separator');
+
+            if (remaining < 60 * 60 * 1000) { // Less than 1 hour
+                countdownValues.forEach(el => {
+                    el.style.color = '#FFA500'; // Orange
+                    el.style.textShadow = '0 0 10px rgba(255, 165, 0, 0.5)';
+                });
+                separators.forEach(el => el.style.color = '#FFA500');
+            }
+            if (remaining < 10 * 60 * 1000) { // Less than 10 minutes
+                countdownValues.forEach(el => {
+                    el.style.color = '#E50914'; // Red
+                    el.style.textShadow = '0 0 10px rgba(229, 9, 20, 0.5)';
+                });
+                separators.forEach(el => el.style.color = '#E50914');
+            }
+        }
+
+        function checkLastSession() {
+            const sessionState = localStorage.getItem(SESSION_STATE_KEY);
+            if (sessionState) {
+                try {
+                    const state = JSON.parse(sessionState);
+                    if (state.pdfFileName) {
+                        const continueCard = document.getElementById('continueEditingCard');
+                        const lastDocName = document.getElementById('lastDocName');
+
+                        if (continueCard && lastDocName) {
+                            continueCard.style.display = 'flex';
+                            lastDocName.textContent = state.pdfFileName;
+                        }
+                    }
+                } catch (error) {
+                    console.log('Could not parse session state');
+                }
+            }
+        }
+
+        function resumeLastSession() {
+            window.location.href = '/pdf-editor-modular.html';
+        }
+
+        async function loadRecentDocuments() {
+            // Check IndexedDB for stored PDFs
+            try {
+                const request = indexedDB.open('PDFoxStorage', 1);
+
+                request.onsuccess = function(event) {
+                    const db = event.target.result;
+
+                    if (!db.objectStoreNames.contains('pdfs')) {
+                        return;
+                    }
+
+                    const transaction = db.transaction(['pdfs'], 'readonly');
+                    const store = transaction.objectStore('pdfs');
+                    const getAllRequest = store.getAll();
+
+                    getAllRequest.onsuccess = function() {
+                        const docs = getAllRequest.result;
+                        if (docs && docs.length > 0) {
+                            displayRecentDocuments(docs);
+                        }
+                    };
+                };
+            } catch (error) {
+                console.log('Could not load recent documents:', error);
+            }
+        }
+
+        function displayRecentDocuments(docs) {
+            const recentSection = document.getElementById('proRecentDocs');
+            const docsGrid = document.getElementById('proDocsGrid');
+
+            if (!recentSection || !docsGrid || docs.length === 0) return;
+
+            recentSection.style.display = 'block';
+            docsGrid.innerHTML = '';
+
+            // Sort by timestamp (most recent first) and limit to 6
+            const sortedDocs = docs
+                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+                .slice(0, 6);
+
+            sortedDocs.forEach((doc, index) => {
+                const card = document.createElement('div');
+                card.className = 'pro-doc-card';
+                card.onclick = () => openDocument(doc.id);
+
+                const date = doc.timestamp ? new Date(doc.timestamp) : new Date();
+                const dateStr = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                card.innerHTML = `
+                    <div class="pro-doc-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                    </div>
+                    <div class="pro-doc-info">
+                        <div class="pro-doc-name">${doc.filename || 'Untitled Document'}</div>
+                        <div class="pro-doc-meta">${dateStr}</div>
+                    </div>
+                    <button class="pro-doc-resume" onclick="event.stopPropagation(); openDocument('${doc.id}')">Open</button>
+                `;
+
+                docsGrid.appendChild(card);
+            });
+        }
+
+        function openDocument(docId) {
+            // Store the document ID to load in editor
+            sessionStorage.setItem('pdfox_load_doc_id', docId);
+            window.location.href = '/pdf-editor-modular.html';
+        }
+
+        async function handleProFileUpload(file) {
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+                showNotification(
+                    `Your file is ${fileSizeMB}MB, but the maximum size is ${MAX_FILE_SIZE_MB}MB.`,
+                    'error'
+                );
+                return;
+            }
+
+            // Show loading in the action card
+            const uploadCard = document.querySelector('.pro-action-card.primary');
+            if (uploadCard) {
+                uploadCard.innerHTML = `
+                    <div class="spinner" style="width: 40px; height: 40px; margin-bottom: 16px;"></div>
+                    <h3>Loading PDF...</h3>
+                `;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    await PDFStorage.store(e.target.result, file.name);
+                    window.location.href = '/pdf-editor-modular.html';
+                } catch (error) {
+                    console.error('Failed to store PDF:', error);
+                    showNotification('Failed to load PDF. Please try again.', 'error');
+                    window.location.reload();
+                }
+            };
+            reader.onerror = function() {
+                showNotification('Failed to read file.', 'error');
+                window.location.reload();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Initialize Pro dashboard check on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAndShowProDashboard();
+        });
     </script>
 </body>
 </html>
