@@ -246,6 +246,7 @@ const PDFoxSignatures = (function() {
     function selectSignature(signature) {
         selectedSignature = signature;
         core.set('selectedSignature', signature);
+        core.set('selectedLayerId', signature.id);
         renderSignatures();
     }
 
@@ -360,6 +361,10 @@ const PDFoxSignatures = (function() {
             // Deselect on document click
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.signature-overlay') && selectedSignature) {
+                    // Clear selectedLayerId only if it was set by this module
+                    if (core.get('selectedLayerId') === selectedSignature.id) {
+                        core.set('selectedLayerId', null);
+                    }
                     selectedSignature = null;
                     core.set('selectedSignature', null);
                     renderSignatures();
@@ -626,6 +631,9 @@ const PDFoxSignatures = (function() {
             const index = signatures.findIndex(sig => sig === selectedSignature);
             if (index !== -1) {
                 core.removeAt('signatures', index);
+                if (core.get('selectedLayerId') === selectedSignature.id) {
+                    core.set('selectedLayerId', null);
+                }
                 selectedSignature = null;
                 core.set('selectedSignature', null);
                 ui.showNotification('Signature deleted', 'success');
@@ -639,6 +647,9 @@ const PDFoxSignatures = (function() {
         deleteSignature(index) {
             core.removeAt('signatures', index);
             if (selectedSignature) {
+                if (core.get('selectedLayerId') === selectedSignature.id) {
+                    core.set('selectedLayerId', null);
+                }
                 selectedSignature = null;
                 core.set('selectedSignature', null);
             }

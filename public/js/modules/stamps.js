@@ -501,6 +501,7 @@ const PDFoxStamps = (function() {
         const element = document.getElementById(stampId);
         if (element) {
             element.classList.add('selected');
+            core.set('selectedLayerId', stampId);
         }
     }
 
@@ -511,6 +512,10 @@ const PDFoxStamps = (function() {
         document.querySelectorAll('.stamp-element.selected').forEach(el => {
             el.classList.remove('selected');
         });
+        // Clear selectedLayerId only if it was set by this module
+        if (selectedStampId && core.get('selectedLayerId') === selectedStampId) {
+            core.set('selectedLayerId', null);
+        }
         selectedStampId = null;
     }
 
@@ -918,6 +923,8 @@ const PDFoxStamps = (function() {
                 if (!e.target.closest('.stamp-element') &&
                     !e.target.closest('.stamp-options-popup') &&
                     !e.target.closest('[data-stamp]') &&
+                    !e.target.closest('.layer-item') &&
+                    !(e.target.closest('#textLayer') && core.get('currentTool') === 'editText') &&
                     selectedStampId) {
                     deselectStamp();
                 }

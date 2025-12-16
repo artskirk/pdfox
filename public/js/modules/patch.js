@@ -503,6 +503,7 @@ const PDFoxPatch = (function() {
         const element = document.getElementById(patchId);
         if (element) {
             element.classList.add('selected');
+            core.set('selectedLayerId', patchId);
         }
     }
 
@@ -513,6 +514,10 @@ const PDFoxPatch = (function() {
         document.querySelectorAll('.patch-element.selected').forEach(el => {
             el.classList.remove('selected');
         });
+        // Clear selectedLayerId only if it was set by this module
+        if (selectedPatchId && core.get('selectedLayerId') === selectedPatchId) {
+            core.set('selectedLayerId', null);
+        }
         selectedPatchId = null;
     }
 
@@ -868,6 +873,8 @@ const PDFoxPatch = (function() {
             document.addEventListener('mousedown', (e) => {
                 if (!e.target.closest('.patch-element') &&
                     !e.target.closest('.patch-options-popup') &&
+                    !e.target.closest('.layer-item') &&
+                    !(e.target.closest('#textLayer') && core.get('currentTool') === 'editText') &&
                     selectedPatchId) {
                     deselectPatch();
                 }

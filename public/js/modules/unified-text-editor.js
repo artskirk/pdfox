@@ -56,11 +56,11 @@ const PDFoxUnifiedTextEditor = (function() {
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>`,
-                subtitle: null,
+                subtitle: 'Edit existing text in the document',
                 showOriginal: true,
                 showOcrInfo: false,
                 showCopyBtn: false,
-                showTransparent: false,
+                showTransparent: true,
                 primaryBtn: 'Save Changes',
                 primaryAction: saveEdit
             },
@@ -610,8 +610,9 @@ const PDFoxUnifiedTextEditor = (function() {
             width: currentData.originalWidth || textSpan?.offsetWidth || 100,
             customFontSize: values.fontSize,
             customColor: values.textColor,
-            customBgColor: values.bgColorHex,
-            customFontFamily: values.fontFamily
+            customBgColor: values.bgColor,
+            customFontFamily: values.fontFamily,
+            isTransparent: values.isTransparent
         };
 
         if (editIndex >= 0) {
@@ -627,7 +628,17 @@ const PDFoxUnifiedTextEditor = (function() {
             textSpan.style.fontSize = values.fontSize + 'px';
             textSpan.style.color = values.textColor;
             textSpan.style.fontFamily = values.fontFamily;
-            textSpan.style.background = values.bgColorHex;
+            textSpan.style.background = values.isTransparent ? 'transparent' : values.bgColor;
+
+            // Add controls if not already present and select
+            if (typeof PDFoxTextEditor !== 'undefined') {
+                if (PDFoxTextEditor.addEditControls) {
+                    PDFoxTextEditor.addEditControls(textSpan);
+                }
+                if (PDFoxTextEditor.selectEditSpan) {
+                    PDFoxTextEditor.selectEditSpan(textSpan);
+                }
+            }
         }
 
         core.emit('textEdit:saved', editData);

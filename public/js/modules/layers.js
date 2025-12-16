@@ -496,6 +496,9 @@ const PDFoxLayers = (function() {
             core.on('annotations:changed', () => this.render());
             core.on('page:rendered', () => this.render());
 
+            // Subscribe to selection changes (for canvas-initiated selection)
+            core.on('selectedLayerId:changed', () => this.render());
+
             // Handle annotation deletion from layers panel
             core.on('layer:delete', (layer) => {
                 if (layer.type.startsWith('annotation-')) {

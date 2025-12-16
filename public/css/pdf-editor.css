@@ -1784,25 +1784,90 @@ body {
 }
 
 #textLayer > span.edited {
-    background: rgb(255, 255, 255) !important;
-    color: #1a1a1a !important;
     opacity: 1 !important;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.4);
-    border: 1px solid rgba(76, 175, 80, 0.5);
-    padding: 4px 6px !important;
-    margin: -4px -6px !important;
+    box-shadow: none;
+    border: 2px solid transparent;
+    padding: 4px 8px !important;
+    margin: -4px -8px !important;
     cursor: move !important;
     user-select: none;
     pointer-events: auto !important;
+    transition: all var(--transition-fast);
+    border-radius: 2px;
+}
+
+#textLayer > span.edited:hover {
+    border-color: rgba(229, 9, 20, 0.5);
+}
+
+#textLayer > span.edited.selected {
+    border: 2px solid var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.2), 0 4px 16px rgba(0, 0, 0, 0.3);
+    z-index: 200;
 }
 
 #textLayer > span.dragging,
 #textLayer > span.edited.dragging {
     opacity: 0.7;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.6);
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.4);
     z-index: 1000 !important;
     cursor: grabbing !important;
 }
+
+/* Edit text delete button */
+#textLayer > span.edited .edit-delete-btn {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    width: 24px;
+    height: 24px;
+    background: var(--color-primary);
+    border: 2px solid white;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 201;
+    transition: all var(--transition-fast);
+}
+
+#textLayer > span.edited .edit-delete-btn:hover {
+    background: var(--color-primary-dark);
+    transform: scale(1.1);
+}
+
+#textLayer > span.edited.selected .edit-delete-btn {
+    display: flex;
+}
+
+/* Edit text resize handles */
+#textLayer > span.edited .edit-resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--color-primary);
+    border: 2px solid white;
+    border-radius: 50%;
+    display: none;
+    z-index: 201;
+}
+
+#textLayer > span.edited .edit-resize-handle:hover {
+    transform: scale(1.2);
+}
+
+#textLayer > span.edited.selected .edit-resize-handle {
+    display: block;
+}
+
+#textLayer > span.edited .edit-resize-handle.se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+#textLayer > span.edited .edit-resize-handle.sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+#textLayer > span.edited .edit-resize-handle.ne { top: -5px; right: -5px; cursor: nesw-resize; }
+#textLayer > span.edited .edit-resize-handle.nw { top: -5px; left: -5px; cursor: nwse-resize; }
 
 /* ==========================================================================
    Overlay Layer

@@ -173,6 +173,10 @@ const PDFoxOverlays = (function() {
         document.querySelectorAll('.text-overlay').forEach(el => {
             el.classList.remove('selected');
         });
+        // Clear selectedLayerId only if it was set by this module
+        if (selectedOverlay && core.get('selectedLayerId') === selectedOverlay) {
+            core.set('selectedLayerId', null);
+        }
         selectedOverlay = null;
         core.set('selectedOverlay', null);
     }
@@ -191,6 +195,7 @@ const PDFoxOverlays = (function() {
             element.classList.add('selected');
             selectedOverlay = overlayId;
             core.set('selectedOverlay', overlayId);
+            core.set('selectedLayerId', overlayId);
         }
     }
 
@@ -661,6 +666,18 @@ const PDFoxOverlays = (function() {
                     e.target.closest('.signature-overlay') ||
                     e.target.closest('.resize-handle') ||
                     e.target.closest('.delete-btn')) {
+                    return;
+                }
+
+                // Don't deselect if clicking on text layer in editText mode
+                if (e.target.closest('#textLayer') && core.get('currentTool') === 'editText') {
+                    return;
+                }
+
+                // Don't deselect if clicking on stamps or patches
+                if (e.target.closest('.stamp-overlay') ||
+                    e.target.closest('.patch-overlay') ||
+                    e.target.closest('.layer-item')) {
                     return;
                 }
 

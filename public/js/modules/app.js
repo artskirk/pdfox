@@ -863,14 +863,43 @@ const PDFoxApp = (function() {
                 const rectY = originalBaselineFromBottom - (actualFontSize * 0.2);
                 const rectHeight = actualFontSize * 1.5;
 
-                // Cover original text
+                // Determine background color
+                const isTransparent = edit.isTransparent === true;
+                let bgR = 1, bgG = 1, bgB = 1, bgOpacity = 1; // Default white
+
+                if (!isTransparent && edit.customBgColor) {
+                    // Parse the background color (could be rgba or hex)
+                    const bgMatch = edit.customBgColor.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/);
+                    if (bgMatch) {
+                        bgR = parseInt(bgMatch[1]) / 255;
+                        bgG = parseInt(bgMatch[2]) / 255;
+                        bgB = parseInt(bgMatch[3]) / 255;
+                        bgOpacity = bgMatch[4] !== undefined ? parseFloat(bgMatch[4]) : 1;
+                    }
+                }
+
+                // Cover original text (always needed to hide the original)
                 page.drawRectangle({
                     x: originalX - actualPadding,
                     y: rectY,
                     width: actualWidth + (actualPadding * 2),
                     height: rectHeight,
-                    color: PDFLib.rgb(1, 1, 1)
+                    color: PDFLib.rgb(1, 1, 1) // Always white to cover original
                 });
+
+                // Draw background at new text position if not transparent and text was moved
+                const textMoved = Math.abs(actualX - originalX) > 0.1 || Math.abs(actualY - originalY) > 0.1;
+                if (!isTransparent && bgOpacity > 0 && (textMoved || (bgR !== 1 || bgG !== 1 || bgB !== 1))) {
+                    const newTextRectY = baselineFromBottom - (actualFontSize * 0.2);
+                    page.drawRectangle({
+                        x: actualX - actualPadding,
+                        y: newTextRectY,
+                        width: actualWidth + (actualPadding * 2),
+                        height: rectHeight,
+                        color: PDFLib.rgb(bgR, bgG, bgB),
+                        opacity: bgOpacity
+                    });
+                }
 
                 // Draw new text with Unicode-compatible font
                 const rgb = hexToRgb(edit.customColor || '#000000');
@@ -2112,6 +2141,108 @@ const PDFoxApp = (function() {
             if (e.ctrlKey && e.key === 'd') {
                 e.preventDefault();
                 duplicateCurrentLayer();
+            }
+
+            // Delete/Backspace - Delete selected layer
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                const activeTag = document.activeElement.tagName;
+                if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
+                    return;
+                }
+
+                // Check if a modal is open
+                if (document.querySelector('.custom-modal[style*="flex"]') ||
+                    document.querySelector('.overlay-edit-modal') ||
+                    document.getElementById('unifiedTextEditorModal')) {
+                    return;
+                }
+
+                // Get selected layer from core
+                const selectedLayerId = core.get('selectedLayerId');
+                if (selectedLayerId) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Check text edits (id format: edit-{page}-{index})
+                    if (selectedLayerId.startsWith('edit-')) {
+                        const textEdits = core.get('textEdits') || [];
+                        const parts = selectedLayerId.split('-');
+                        const page = parseInt(parts[1]);
+                        const dataIndex = parseInt(parts[2]);
+                        const editIndex = textEdits.findIndex(e => e.page === page && e.index === dataIndex);
+                        if (editIndex >= 0) {
+                            core.emit('layer:delete', { type: 'text-edit', editIndex: editIndex });
+                            core.set('selectedLayerId', null);
+                            return;
+                        }
+                    }
+
+                    // Check text overlays
+                    const textOverlays = core.get('textOverlays') || [];
+                    const overlay = textOverlays.find(o => o.id === selectedLayerId);
+                    if (overlay) {
+                        core.emit('layer:delete', { type: 'text-overlay', id: selectedLayerId });
+                        core.set('selectedLayerId', null);
+                        return;
+                    }
+
+                    // Check signatures
+                    const signatures = core.get('signatures') || [];
+                    const sigIndex = signatures.findIndex(s => s.id === selectedLayerId);
+                    if (sigIndex >= 0) {
+                        core.emit('layer:delete', { type: 'signature', signatureIndex: sigIndex });
+                        core.set('selectedLayerId', null);
+                        return;
+                    }
+
+                    // Check annotations (id format: ann-{index} or custom id)
+                    const annotations = core.get('annotations') || [];
+                    if (selectedLayerId.startsWith('ann-')) {
+                        const annIndex = parseInt(selectedLayerId.replace('ann-', ''));
+                        if (annIndex >= 0 && annIndex < annotations.length) {
+                            core.emit('layer:delete', { type: 'annotation-' + annotations[annIndex].type, annotationIndex: annIndex });
+                            core.set('selectedLayerId', null);
+                            return;
+                        }
+                    } else {
+                        const annIndex = annotations.findIndex(a => a.id === selectedLayerId);
+                        if (annIndex >= 0) {
+                            core.emit('layer:delete', { type: 'annotation-' + annotations[annIndex].type, annotationIndex: annIndex });
+                            core.set('selectedLayerId', null);
+                            return;
+                        }
+                    }
+
+                    // Check fill areas (id format: fill-{index})
+                    if (selectedLayerId.startsWith('fill-')) {
+                        const fillIndex = parseInt(selectedLayerId.replace('fill-', ''));
+                        core.emit('layer:delete', { type: 'fill', fillIndex: fillIndex });
+                        core.set('selectedLayerId', null);
+                        return;
+                    }
+
+                    // Check stamps
+                    if (typeof PDFoxStamps !== 'undefined') {
+                        const stamps = PDFoxStamps.getStamps ? PDFoxStamps.getStamps() : [];
+                        const stamp = stamps.find(s => s.id === selectedLayerId);
+                        if (stamp) {
+                            PDFoxStamps.deleteStamp(selectedLayerId);
+                            core.set('selectedLayerId', null);
+                            return;
+                        }
+                    }
+
+                    // Check patches
+                    if (typeof PDFoxPatch !== 'undefined') {
+                        const patches = PDFoxPatch.getPatches ? PDFoxPatch.getPatches() : [];
+                        const patch = patches.find(p => p.id === selectedLayerId);
+                        if (patch) {
+                            PDFoxPatch.deletePatch(selectedLayerId);
+                            core.set('selectedLayerId', null);
+                            return;
+                        }
+                    }
+                }
             }
 
             // +/= - Zoom in

@@ -22,6 +22,180 @@ const PDFoxTextEditor = (function() {
     let hasMoved = false;
     let clickTimeout = null;
 
+    // Selection state for edited text spans
+    let selectedEditSpan = null;
+
+    // Resize state
+    let isResizing = false;
+    let resizeHandle = null;
+    let resizeStartX = 0;
+    let resizeStartY = 0;
+    let resizeStartFontSize = 14;
+
+    /**
+     * Add controls (delete button, resize handles) to an edited span
+     * @param {HTMLElement} span - The edited span element
+     */
+    function addEditControls(span) {
+        // Don't add if already has controls
+        if (span.querySelector('.edit-delete-btn')) return;
+
+        // Make span position relative for absolute children
+        span.style.position = 'absolute';
+
+        // Delete button
+        const deleteBtn = document.createElement('div');
+        deleteBtn.className = 'edit-delete-btn';
+        deleteBtn.textContent = '×';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            deleteEditedSpan(span);
+        });
+        deleteBtn.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+        });
+        span.appendChild(deleteBtn);
+
+        // Resize handles
+        const positions = ['se', 'sw', 'ne', 'nw'];
+        positions.forEach(pos => {
+            const handle = document.createElement('div');
+            handle.className = `edit-resize-handle ${pos}`;
+            handle.dataset.position = pos;
+            handle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                startResize(e, span, pos);
+            });
+            span.appendChild(handle);
+        });
+    }
+
+    /**
+     * Select an edited span
+     * @param {HTMLElement} span - The span to select
+     */
+    function selectEditSpan(span) {
+        // Deselect previous
+        if (selectedEditSpan && selectedEditSpan !== span) {
+            selectedEditSpan.classList.remove('selected');
+        }
+
+        span.classList.add('selected');
+        selectedEditSpan = span;
+
+        // Update core selection
+        const page = parseInt(span.dataset.page);
+        const index = parseInt(span.dataset.index);
+        core.set('selectedLayerId', `edit-${page}-${index}`);
+    }
+
+    /**
+     * Deselect all edited spans
+     */
+    function deselectAllEditSpans() {
+        if (selectedEditSpan) {
+            selectedEditSpan.classList.remove('selected');
+            selectedEditSpan = null;
+        }
+    }
+
+    /**
+     * Delete an edited span (revert to original)
+     * @param {HTMLElement} span - The span to delete/revert
+     */
+    function deleteEditedSpan(span) {
+        const page = parseInt(span.dataset.page);
+        const index = parseInt(span.dataset.index);
+        const textEdits = core.get('textEdits');
+
+        const editIndex = textEdits.findIndex(e => e.page === page && e.index === index);
+        if (editIndex >= 0) {
+            const edit = textEdits[editIndex];
+
+            // Restore original text and position
+            span.textContent = edit.originalText;
+            span.style.left = edit.originalX + 'px';
+            span.style.top = edit.originalY + 'px';
+            span.style.fontSize = edit.fontSize + 'px';
+            span.style.color = '';
+            span.style.fontFamily = '';
+            span.style.background = '';
+            span.classList.remove('edited', 'selected');
+
+            // Remove controls
+            span.querySelectorAll('.edit-delete-btn, .edit-resize-handle').forEach(el => el.remove());
+
+            // Remove the white overlay
+            const overlay = span.parentElement.querySelector(`.text-edit-overlay[data-edit-index="${index}"][data-edit-page="${page}"]`);
+            if (overlay) overlay.remove();
+
+            // Remove from textEdits
+            core.removeAt('textEdits', editIndex);
+            core.set('selectedLayerId', null);
+
+            ui.showNotification('Text edit removed', 'success');
+        }
+
+        if (selectedEditSpan === span) {
+            selectedEditSpan = null;
+        }
+    }
+
+    /**
+     * Start resize operation
+     * @param {MouseEvent} e - The mousedown event
+     * @param {HTMLElement} span - The span being resized
+     * @param {string} position - The handle position (se, sw, ne, nw)
+     */
+    function startResize(e, span, position) {
+        isResizing = true;
+        resizeHandle = position;
+        resizeStartX = e.clientX;
+        resizeStartY = e.clientY;
+        resizeStartFontSize = parseFloat(span.style.fontSize) || 14;
+
+        const onMouseMove = (moveEvent) => {
+            if (!isResizing) return;
+
+            const deltaY = moveEvent.clientY - resizeStartY;
+
+            // Resize by adjusting font size based on vertical drag
+            let newFontSize = resizeStartFontSize;
+            if (position === 'se' || position === 'sw') {
+                newFontSize = Math.max(8, Math.min(72, resizeStartFontSize + deltaY * 0.2));
+            } else {
+                newFontSize = Math.max(8, Math.min(72, resizeStartFontSize - deltaY * 0.2));
+            }
+
+            span.style.fontSize = newFontSize + 'px';
+        };
+
+        const onMouseUp = () => {
+            if (isResizing) {
+                // Update the edit data with new font size
+                const page = parseInt(span.dataset.page);
+                const index = parseInt(span.dataset.index);
+                const textEdits = core.get('textEdits');
+                const editIndex = textEdits.findIndex(e => e.page === page && e.index === index);
+
+                if (editIndex >= 0) {
+                    textEdits[editIndex].customFontSize = parseFloat(span.style.fontSize);
+                    core.set('textEdits', textEdits);
+                }
+
+                isResizing = false;
+                resizeHandle = null;
+            }
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }
+
     /**
      * Create font size control HTML
      * @param {string} prefix - ID prefix
@@ -145,7 +319,8 @@ const PDFoxTextEditor = (function() {
                 fontSize: existingEdit?.customFontSize || Math.round(fontSize),
                 textColor: existingEdit?.customColor || '#000000',
                 bgColor: existingEdit?.customBgColor || '#ffffff',
-                fontFamily: existingEdit?.customFontFamily || 'Arial, sans-serif'
+                fontFamily: existingEdit?.customFontFamily || 'Arial, sans-serif',
+                isTransparent: existingEdit?.isTransparent ?? false
             });
         }
     }
@@ -216,6 +391,10 @@ const PDFoxTextEditor = (function() {
                     textSpan.classList.add('edited');
                     textSpan.style.zIndex = '2';
                     textSpan.style.display = 'inline-block';
+
+                    // Add controls and select
+                    addEditControls(textSpan);
+                    selectEditSpan(textSpan);
 
                     // Create edit entry (text not changed, just repositioned)
                     const editData = {
@@ -365,11 +544,11 @@ const PDFoxTextEditor = (function() {
         // Setup global drag handlers
         setupDragHandlers();
 
-        textLayer.addEventListener('click', (e) => {
-            console.log('[PDFox TextEditor] Click on textLayer, target:', e.target.tagName, 'editable:', textLayer.classList.contains('editable'));
+        textLayer.addEventListener('dblclick', (e) => {
+            console.log('[PDFox TextEditor] Double-click on textLayer, target:', e.target.tagName, 'editable:', textLayer.classList.contains('editable'));
             const span = e.target.closest('span');
             if (span && span.dataset.index !== undefined) {
-                console.log('[PDFox TextEditor] Span clicked, index:', span.dataset.index, 'text:', span.textContent.substring(0, 20));
+                console.log('[PDFox TextEditor] Span double-clicked, index:', span.dataset.index, 'text:', span.textContent.substring(0, 20));
                 handleTextSpanClick(span);
             }
         });
@@ -379,6 +558,10 @@ const PDFoxTextEditor = (function() {
             const spans = textLayer.querySelectorAll('span[data-index]');
             spans.forEach(span => {
                 enableTextDrag(span);
+                // Add controls to any edited spans (e.g., from session restore)
+                if (span.classList.contains('edited')) {
+                    addEditControls(span);
+                }
             });
         });
     }
@@ -402,6 +585,62 @@ const PDFoxTextEditor = (function() {
             core.on('layer:delete', (layer) => {
                 if (layer.type === 'text-edit') {
                     this.removeEdit(layer.editIndex);
+                }
+            });
+
+            // Click handler for selecting edited spans
+            const textLayer = document.getElementById('textLayer');
+            if (textLayer) {
+                textLayer.addEventListener('click', (e) => {
+                    const editedSpan = e.target.closest('span.edited');
+                    if (editedSpan) {
+                        selectEditSpan(editedSpan);
+                    }
+                });
+            }
+
+            // Click-away handler to deselect edited spans
+            document.addEventListener('mousedown', (e) => {
+                if (!selectedEditSpan) return;
+
+                // Don't deselect if clicking on an edited span or its controls
+                if (e.target.closest('span.edited') ||
+                    e.target.closest('.edit-delete-btn') ||
+                    e.target.closest('.edit-resize-handle') ||
+                    e.target.closest('.layer-item') ||
+                    e.target.closest('.unified-editor-modal')) {
+                    return;
+                }
+
+                deselectAllEditSpans();
+                core.set('selectedLayerId', null);
+            });
+
+            // Delete key handler for selected edit spans
+            document.addEventListener('keydown', (e) => {
+                if (!selectedEditSpan) return;
+
+                const activeTag = document.activeElement.tagName;
+                if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return;
+
+                if (e.key === 'Delete' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    deleteEditedSpan(selectedEditSpan);
+                }
+            });
+
+            // Listen for layer selection from layers panel
+            core.on('layer:selected', (layer) => {
+                if (layer.type === 'text-edit') {
+                    const textSpan = document.querySelector(
+                        `#textLayer span[data-index="${layer.dataIndex}"][data-page="${layer.page}"]`
+                    );
+                    if (textSpan && textSpan.classList.contains('edited')) {
+                        selectEditSpan(textSpan);
+                    }
+                } else {
+                    // Another layer type selected, deselect edit spans
+                    deselectAllEditSpans();
                 }
             });
         },
@@ -468,7 +707,8 @@ const PDFoxTextEditor = (function() {
                     fontSize: edit.customFontSize || Math.round(parseFloat(textSpan?.style.fontSize)) || 14,
                     textColor: edit.customColor || '#000000',
                     bgColor: edit.customBgColor || '#ffffff',
-                    fontFamily: edit.customFontFamily || 'Arial, sans-serif'
+                    fontFamily: edit.customFontFamily || 'Arial, sans-serif',
+                    isTransparent: edit.isTransparent ?? false
                 });
             }
         },
@@ -550,6 +790,10 @@ const PDFoxTextEditor = (function() {
                 textSpan.style.color = customColor;
                 textSpan.style.fontFamily = customFontFamily;
                 textSpan.style.background = customBgColor;
+
+                // Add controls if not already present and select
+                addEditControls(textSpan);
+                selectEditSpan(textSpan);
             }
 
             core.emit('textEdit:saved', editData);
@@ -677,6 +921,29 @@ const PDFoxTextEditor = (function() {
          */
         getCurrentEditingItem() {
             return currentEditingTextItem;
+        },
+
+        /**
+         * Add controls to an edited span (for external use)
+         * @param {HTMLElement} span - The span element
+         */
+        addEditControls(span) {
+            addEditControls(span);
+        },
+
+        /**
+         * Select an edited span
+         * @param {HTMLElement} span - The span to select
+         */
+        selectEditSpan(span) {
+            selectEditSpan(span);
+        },
+
+        /**
+         * Deselect all edited spans
+         */
+        deselectAllEditSpans() {
+            deselectAllEditSpans();
         }
     };
 })();
