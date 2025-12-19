@@ -316,8 +316,8 @@ const upload = multer({
     }
 });
 
-// Serve static files
-app.use(express.static('public'));
+// Serve static files (use absolute path to avoid working directory issues)
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Extract text from scanned/image PDF using OCR
 async function extractTextWithOCR(filePath) {
@@ -470,7 +470,7 @@ app.post('/create-checkout-session', async (req, res) => {
                 },
             ],
             mode: 'payment',
-            success_url: `${req.headers.origin || 'http://localhost:3000'}/payment-success.html?session_id={CHECKOUT_SESSION_ID}&filename=${encodeURIComponent(filename)}`,
+            success_url: `${req.headers.origin || 'http://localhost:3000'}/thank-you?session_id={CHECKOUT_SESSION_ID}&filename=${encodeURIComponent(filename)}`,
             cancel_url: `${req.headers.origin || 'http://localhost:3000'}/?canceled=true`,
             metadata: {
                 filename: filename,
@@ -525,8 +525,8 @@ app.post('/api/v1/pro/create-checkout', async (req, res) => {
                 },
             ],
             mode: 'payment',
-            success_url: `${req.headers.origin || 'http://localhost:3000'}/pro-success.html?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${req.headers.origin || 'http://localhost:3000'}/pdf-editor-modular.html?canceled=true`,
+            success_url: `${req.headers.origin || 'http://localhost:3000'}/welcome?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${req.headers.origin || 'http://localhost:3000'}/editor?canceled=true`,
             payment_intent_data: {
                 receipt_email: email,
                 description: 'PDFOX Pro Access - 24 hours',
@@ -1352,6 +1352,101 @@ app.get('/api/v1/share/:hash/view', (req, res) => {
 // Serve share viewer page
 app.get('/share/:hash', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'share-viewer.html'));
+});
+
+// Short share link alias
+app.get('/s/:hash', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'share-viewer.html'));
+});
+
+// ============================================================================
+// Clean URL Routes (Sales-Friendly URLs)
+// ============================================================================
+
+// Main pages - clean URLs
+app.get('/editor', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'pdf-editor-modular.html'));
+});
+
+app.get('/edit', (req, res) => {
+    res.redirect(301, '/editor');
+});
+
+app.get('/pricing', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'pricing.html'));
+});
+
+app.get('/about', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'about.html'));
+});
+
+app.get('/contact', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'contact.html'));
+});
+
+app.get('/privacy', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+});
+
+app.get('/terms', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'terms.html'));
+});
+
+app.get('/security', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'security.html'));
+});
+
+// Success pages - friendly names
+app.get('/thank-you', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'payment-success.html'));
+});
+
+app.get('/welcome', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'pro-success.html'));
+});
+
+// ============================================================================
+// Legacy URL Redirects (301 Permanent)
+// ============================================================================
+
+app.get('/pdf-editor-modular.html', (req, res) => {
+    res.redirect(301, '/editor');
+});
+
+app.get('/pricing.html', (req, res) => {
+    res.redirect(301, '/pricing');
+});
+
+app.get('/about.html', (req, res) => {
+    res.redirect(301, '/about');
+});
+
+app.get('/contact.html', (req, res) => {
+    res.redirect(301, '/contact');
+});
+
+app.get('/privacy.html', (req, res) => {
+    res.redirect(301, '/privacy');
+});
+
+app.get('/terms.html', (req, res) => {
+    res.redirect(301, '/terms');
+});
+
+app.get('/security.html', (req, res) => {
+    res.redirect(301, '/security');
+});
+
+app.get('/payment-success.html', (req, res) => {
+    res.redirect(301, '/thank-you');
+});
+
+app.get('/pro-success.html', (req, res) => {
+    res.redirect(301, '/welcome');
+});
+
+app.get('/index.html', (req, res) => {
+    res.redirect(301, '/');
 });
 
 // Health check endpoint

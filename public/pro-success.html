@@ -232,7 +232,7 @@
                 </div>
             </div>
 
-            <a href="/pdf-editor-modular.html" class="btn btn-primary">Continue Editing</a>
+            <a href="/editor" class="btn btn-primary">Continue Editing</a>
             <p class="countdown">Redirecting in <span id="countdown">5</span> seconds...</p>
         </div>
 
@@ -248,7 +248,7 @@
             <h1 class="error">Activation Failed</h1>
             <p id="errorMessage">There was an issue activating your Pro access. Please try again or contact support.</p>
 
-            <a href="/pdf-editor-modular.html" class="btn btn-secondary">Return to Editor</a>
+            <a href="/editor" class="btn btn-secondary">Return to Editor</a>
         </div>
     </div>
 
@@ -348,7 +348,7 @@
                 countdownEl.textContent = count;
                 if (count <= 0) {
                     clearInterval(interval);
-                    window.location.href = '/pdf-editor-modular.html';
+                    window.location.href = '/editor';
                 }
             }, 1000);
         }

@@ -510,7 +510,7 @@ const PDFoxApp = (function() {
      */
     function goToPricing() {
         closeUpgradeModal();
-        window.location.href = '/pricing.html';
+        window.location.href = '/pricing';
     }
 
     /**

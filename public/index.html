@@ -1739,7 +1739,7 @@
                         <h3>Continue Editing</h3>
                         <p id="lastDocName">Resume your last document</p>
                     </div>
-                    <div class="pro-action-card" onclick="window.location.href='/pdf-editor-modular.html'">
+                    <div class="pro-action-card" onclick="window.location.href='/editor'">
                         <div class="pro-action-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -2352,8 +2352,8 @@
             <div class="footer-section">
                 <h4>PDFOX</h4>
                 <a href="#features">Features</a>
-                <a href="pricing.html">Pricing</a>
-                <a href="about.html">About Us</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/about">About Us</a>
             </div>
             <div class="footer-section">
                 <h4>Resources</h4>
@@ -2363,14 +2363,14 @@
             </div>
             <div class="footer-section">
                 <h4>Legal</h4>
-                <a href="privacy.html">Privacy Policy</a>
-                <a href="terms.html">Terms of Service</a>
-                <a href="security.html">Security</a>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms of Service</a>
+                <a href="/security">Security</a>
             </div>
             <div class="footer-section">
                 <h4>Company</h4>
-                <a href="about.html">About</a>
-                <a href="contact.html">Contact</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
                 <a href="#">Support</a>
             </div>
         </div>
@@ -2594,7 +2594,7 @@
                 const base64data = e.target.result;
                 try {
                     await PDFStorage.store(base64data, file.name);
-                    window.location.href = '/pdf-editor-modular.html';
+                    window.location.href = '/editor';
                 } catch (error) {
                     console.error('Failed to store PDF:', error);
                     showNotification('Failed to load PDF. Please try again or use a smaller file.', 'error');
@@ -2762,7 +2762,7 @@
         }
 
         function resumeLastSession() {
-            window.location.href = '/pdf-editor-modular.html';
+            window.location.href = '/editor';
         }
 
         async function loadRecentDocuments() {
@@ -2841,7 +2841,7 @@
         function openDocument(docId) {
             // Store the document ID to load in editor
             sessionStorage.setItem('pdfox_load_doc_id', docId);
-            window.location.href = '/pdf-editor-modular.html';
+            window.location.href = '/editor';
         }
 
         async function handleProFileUpload(file) {
@@ -2867,7 +2867,7 @@
             reader.onload = async function(e) {
                 try {
                     await PDFStorage.store(e.target.result, file.name);
-                    window.location.href = '/pdf-editor-modular.html';
+                    window.location.href = '/editor';
                 } catch (error) {
                     console.error('Failed to store PDF:', error);
                     showNotification('Failed to load PDF. Please try again.', 'error');
