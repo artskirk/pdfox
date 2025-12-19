@@ -114,6 +114,156 @@ function createProAccess(email, fingerprint, stripeSessionId, receiptNumber = nu
     return { token, expiresAt, entry };
 }
 
+// ============================================================================
+// Document Sharing Storage & Functions
+// ============================================================================
+
+const sharesDir = path.join(__dirname, 'data', 'shares');
+const shareMetadataFile = path.join(__dirname, 'data', 'share-metadata.json');
+const SHARE_EXPIRY_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+// Ensure shares directory exists
+if (!fs.existsSync(sharesDir)) {
+    fs.mkdirSync(sharesDir, { recursive: true });
+}
+
+// Rate limiting for password attempts
+const passwordAttempts = new Map(); // { hash: { count, lastAttempt } }
+
+// Load share metadata from file
+function loadShareMetadata() {
+    try {
+        if (fs.existsSync(shareMetadataFile)) {
+            return JSON.parse(fs.readFileSync(shareMetadataFile, 'utf8'));
+        }
+    } catch (error) {
+        console.error('Error loading share metadata:', error);
+    }
+    return { shares: {} };
+}
+
+// Save share metadata to file
+function saveShareMetadata(data) {
+    try {
+        fs.writeFileSync(shareMetadataFile, JSON.stringify(data, null, 2));
+    } catch (error) {
+        console.error('Error saving share metadata:', error);
+    }
+}
+
+// Generate secure share hash
+function generateShareHash() {
+    return crypto.randomBytes(16).toString('hex'); // 32 characters
+}
+
+// Hash password for storage
+function hashSharePassword(password) {
+    return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+// Find share by hash
+function findShareByHash(hash) {
+    const data = loadShareMetadata();
+    const share = data.shares[hash];
+    if (share && share.expiresAt > Date.now()) {
+        return share;
+    }
+    return null;
+}
+
+// Create share entry
+function createShare(hash, fileName, passwordHash = null) {
+    const data = loadShareMetadata();
+    const now = Date.now();
+
+    data.shares[hash] = {
+        fileName,
+        passwordHash,
+        createdAt: now,
+        expiresAt: now + SHARE_EXPIRY_DURATION
+    };
+
+    saveShareMetadata(data);
+    return data.shares[hash];
+}
+
+// Delete share
+function deleteShare(hash) {
+    const data = loadShareMetadata();
+    if (data.shares[hash]) {
+        delete data.shares[hash];
+        saveShareMetadata(data);
+
+        // Delete PDF file
+        const pdfPath = path.join(sharesDir, `${hash}.pdf`);
+        if (fs.existsSync(pdfPath)) {
+            fs.unlinkSync(pdfPath);
+        }
+        return true;
+    }
+    return false;
+}
+
+// Cleanup expired shares
+function cleanupExpiredShares() {
+    const data = loadShareMetadata();
+    const now = Date.now();
+    let cleaned = 0;
+
+    for (const hash in data.shares) {
+        if (data.shares[hash].expiresAt <= now) {
+            // Delete PDF file
+            const pdfPath = path.join(sharesDir, `${hash}.pdf`);
+            if (fs.existsSync(pdfPath)) {
+                fs.unlinkSync(pdfPath);
+            }
+            delete data.shares[hash];
+            cleaned++;
+        }
+    }
+
+    if (cleaned > 0) {
+        saveShareMetadata(data);
+        console.log(`Cleaned up ${cleaned} expired shares`);
+    }
+}
+
+// Rate limit constants
+const MAX_PASSWORD_ATTEMPTS = 3;
+const LOCKOUT_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+// Check rate limit for password attempts
+function checkPasswordRateLimit(hash) {
+    const attempts = passwordAttempts.get(hash);
+    if (attempts && attempts.count >= MAX_PASSWORD_ATTEMPTS) {
+        const timeSinceLock = Date.now() - attempts.lastAttempt;
+        if (timeSinceLock < LOCKOUT_DURATION) {
+            const remainingSeconds = Math.ceil((LOCKOUT_DURATION - timeSinceLock) / 1000);
+            return { allowed: false, remainingSeconds };
+        } else {
+            // Lockout expired, reset attempts
+            passwordAttempts.delete(hash);
+            return { allowed: true };
+        }
+    }
+    return { allowed: true, attemptsRemaining: MAX_PASSWORD_ATTEMPTS - (attempts?.count || 0) };
+}
+
+// Record password attempt
+function recordPasswordAttempt(hash, success) {
+    if (success) {
+        passwordAttempts.delete(hash);
+    } else {
+        const attempts = passwordAttempts.get(hash) || { count: 0, lastAttempt: 0 };
+        attempts.count++;
+        attempts.lastAttempt = Date.now();
+        passwordAttempts.set(hash, attempts);
+    }
+}
+
+// Run cleanup every 5 minutes
+setInterval(cleanupExpiredShares, 5 * 60 * 1000);
+
 // Initialize Google OAuth2 Client
 const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -1039,6 +1189,169 @@ app.post('/convert', upload.single('pdf'), async (req, res) => {
             details: error.message
         });
     }
+});
+
+// ============================================================================
+// Document Sharing API Endpoints
+// ============================================================================
+
+// Configure multer for share uploads
+const shareUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB
+});
+
+// Create a new share
+app.post('/api/v1/share/create', shareUpload.single('pdf'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No PDF file provided' });
+        }
+
+        const fileName = req.body.fileName || 'document.pdf';
+        const password = req.body.password;
+
+        // Generate unique hash
+        const hash = generateShareHash();
+
+        // Hash password if provided
+        const passwordHash = password ? hashSharePassword(password) : null;
+
+        // Save PDF to shares directory
+        const pdfPath = path.join(sharesDir, `${hash}.pdf`);
+        fs.writeFileSync(pdfPath, req.file.buffer);
+
+        // Create share metadata
+        const share = createShare(hash, fileName, passwordHash);
+
+        // Generate share URL
+        const shareUrl = `${req.protocol}://${req.get('host')}/share/${hash}`;
+
+        res.json({
+            success: true,
+            hash,
+            url: shareUrl,
+            expiresAt: share.expiresAt,
+            hasPassword: !!passwordHash
+        });
+    } catch (error) {
+        console.error('Error creating share:', error);
+        res.status(500).json({ error: 'Failed to create share' });
+    }
+});
+
+// Get share metadata
+app.get('/api/v1/share/:hash', (req, res) => {
+    const { hash } = req.params;
+    const share = findShareByHash(hash);
+
+    if (!share) {
+        return res.status(404).json({
+            error: 'Document not found',
+            message: 'This shared document has expired or does not exist.'
+        });
+    }
+
+    res.json({
+        fileName: share.fileName,
+        hasPassword: !!share.passwordHash,
+        createdAt: share.createdAt,
+        expiresAt: share.expiresAt
+    });
+});
+
+// Verify share password
+app.post('/api/v1/share/:hash/verify', express.json(), (req, res) => {
+    const { hash } = req.params;
+    const { password } = req.body;
+
+    // Check rate limit
+    const rateLimit = checkPasswordRateLimit(hash);
+    if (!rateLimit.allowed) {
+        const minutes = Math.floor(rateLimit.remainingSeconds / 60);
+        const seconds = rateLimit.remainingSeconds % 60;
+        const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+        return res.status(429).json({
+            error: 'Too many attempts',
+            message: `Too many failed attempts. Please try again in ${timeStr}.`,
+            remainingSeconds: rateLimit.remainingSeconds,
+            locked: true
+        });
+    }
+
+    const share = findShareByHash(hash);
+    if (!share) {
+        return res.status(404).json({ error: 'Document not found' });
+    }
+
+    if (!share.passwordHash) {
+        return res.json({ verified: true });
+    }
+
+    const inputHash = hashSharePassword(password || '');
+    const verified = inputHash === share.passwordHash;
+
+    recordPasswordAttempt(hash, verified);
+
+    if (verified) {
+        res.json({ verified: true });
+    } else {
+        // Get updated attempts info for response
+        const attempts = passwordAttempts.get(hash);
+        const attemptsRemaining = MAX_PASSWORD_ATTEMPTS - (attempts?.count || 0);
+
+        res.status(401).json({
+            error: 'Invalid password',
+            message: attemptsRemaining > 0
+                ? `Incorrect password. ${attemptsRemaining} attempt${attemptsRemaining !== 1 ? 's' : ''} remaining.`
+                : 'Incorrect password. You have been temporarily locked out.',
+            attemptsRemaining,
+            locked: attemptsRemaining <= 0
+        });
+    }
+});
+
+// Download shared PDF
+app.get('/api/v1/share/:hash/download', (req, res) => {
+    const { hash } = req.params;
+    const share = findShareByHash(hash);
+
+    if (!share) {
+        return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const pdfPath = path.join(sharesDir, `${hash}.pdf`);
+    if (!fs.existsSync(pdfPath)) {
+        return res.status(404).json({ error: 'PDF file not found' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${share.fileName}"`);
+    res.sendFile(pdfPath);
+});
+
+// Get PDF data for viewer (inline)
+app.get('/api/v1/share/:hash/view', (req, res) => {
+    const { hash } = req.params;
+    const share = findShareByHash(hash);
+
+    if (!share) {
+        return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const pdfPath = path.join(sharesDir, `${hash}.pdf`);
+    if (!fs.existsSync(pdfPath)) {
+        return res.status(404).json({ error: 'PDF file not found' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${share.fileName}"`);
+    res.sendFile(pdfPath);
+});
+
+// Serve share viewer page
+app.get('/share/:hash', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'share-viewer.html'));
 });
 
 // Health check endpoint

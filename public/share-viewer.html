@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDFOX - Shared Document</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/share-viewer.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="share-header">
+        <div class="share-header-left">
+            <a href="/" class="share-logo">
+                <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="docGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#E50914;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#C40812;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="editGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#E50914;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#B00610;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <rect x="8" y="6" width="28" height="36" rx="3" fill="url(#docGradient)" stroke="rgba(229,9,20,0.8)" stroke-width="1.5"/>
+                    <path d="M36 6 L36 12 L30 12 L36 6 Z" fill="rgba(196,8,18,0.7)"/>
+                    <line x1="14" y1="16" x2="30" y2="16" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="14" y1="21" x2="28" y2="21" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="14" y1="26" x2="30" y2="26" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="14" y1="31" x2="24" y2="31" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="36" cy="36" r="9" fill="url(#editGradient)" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
+                    <path d="M32 36 L36 32 L38 34 L34 38 Z" fill="white" opacity="0.95"/>
+                    <path d="M38 34 L39 33 L40 34 L39 35 Z" fill="white" opacity="0.95"/>
+                </svg>
+                <span>PDFOX</span>
+            </a>
+            <span class="share-badge">Shared Document</span>
+        </div>
+        <div class="share-header-right">
+            <span id="docName" class="share-doc-name"></span>
+            <button id="downloadBtn" class="share-download-btn" onclick="ShareViewer.download()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="share-main">
+        <!-- Loading State -->
+        <div id="loadingState" class="share-state">
+            <div class="share-loading-spinner"></div>
+            <p>Loading document...</p>
+        </div>
+
+        <!-- Not Found State -->
+        <div id="notFoundState" class="share-state" style="display: none;">
+            <div class="share-not-found-icon">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <path d="M14 2v6h6"/>
+                    <line x1="9" y1="15" x2="15" y2="15" stroke="#E50914" stroke-width="2"/>
+                </svg>
+            </div>
+            <h2>Document Not Found</h2>
+            <p>This shared document has expired or doesn't exist.</p>
+            <a href="/" class="share-home-btn">Go to PDFOX</a>
+        </div>
+
+        <!-- Password Prompt -->
+        <div id="passwordState" class="share-state" style="display: none;">
+            <div class="share-password-icon">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#E50914" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4"/>
+                </svg>
+            </div>
+            <h2>Password Protected</h2>
+            <p>This document requires a password to view.</p>
+            <form id="passwordForm" class="share-password-form" onsubmit="ShareViewer.verifyPassword(event)">
+                <input type="password" id="passwordInput" placeholder="Enter password" required autofocus>
+                <p id="passwordError" class="share-password-error"></p>
+                <button type="submit" class="share-password-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
+                        <polyline points="10 17 15 12 10 7"/>
+                        <line x1="15" y1="12" x2="3" y2="12"/>
+                    </svg>
+                    Unlock Document
+                </button>
+            </form>
+        </div>
+
+        <!-- PDF Viewer -->
+        <div id="pdfViewer" class="share-pdf-viewer" style="display: none;">
+            <div class="share-canvas-container">
+                <canvas id="pdfCanvas"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <!-- Page Controls -->
+    <div id="pageControls" class="share-page-controls" style="display: none;">
+        <div class="share-page-nav">
+            <button onclick="ShareViewer.prevPage()" id="prevBtn" class="share-nav-btn" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+            </button>
+            <span class="share-page-info">
+                <span id="currentPage">1</span> / <span id="totalPages">1</span>
+            </span>
+            <button onclick="ShareViewer.nextPage()" id="nextBtn" class="share-nav-btn" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </button>
+        </div>
+        <div class="share-zoom-controls">
+            <button onclick="ShareViewer.zoomOut()" class="share-nav-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="8" y1="11" x2="14" y2="11"/>
+                </svg>
+            </button>
+            <span id="zoomLevel" class="share-zoom-level">100%</span>
+            <button onclick="ShareViewer.zoomIn()" class="share-nav-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="11" y1="8" x2="11" y2="14"/>
+                    <line x1="8" y1="11" x2="14" y2="11"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/share-viewer.js"></script>
+</body>
+</html>

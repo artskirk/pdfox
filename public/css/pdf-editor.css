@@ -157,6 +157,45 @@ body {
     box-shadow: 0 5px 18px rgba(229, 9, 20, 0.5);
 }
 
+/* Share Button with Pro Badge */
+.header-btn.header-btn-share {
+    position: relative;
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    border: 2px solid #444;
+    padding-right: 50px;
+}
+
+.header-btn.header-btn-share:hover {
+    background: linear-gradient(135deg, #333 0%, #222 100%);
+    border-color: #E50914;
+    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
+}
+
+.header-pro-badge {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #1a1a1a;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 3px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+    animation: proBadgePulse 2s ease-in-out infinite;
+}
+
+@keyframes proBadgePulse {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+    }
+    50% {
+        box-shadow: 0 2px 15px rgba(255, 215, 0, 0.7);
+    }
+}
+
 /* ==========================================================================
    Toolbar
    ========================================================================== */

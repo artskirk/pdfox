@@ -727,18 +727,34 @@ const PDFoxApp = (function() {
     }
 
     /**
+     * Build PDF with all current edits applied (without downloading)
+     * Used for sharing functionality
+     * @returns {Promise<Uint8Array|null>} The PDF bytes or null if failed
+     */
+    async function buildCurrentPDF() {
+        // Use _doSavePDF with returnBytes=true and no watermark for sharing
+        return await _doSavePDF(false, true);
+    }
+
+    /**
      * Internal: Save PDF with all modifications
      * @param {boolean} applyWatermark - Whether to apply watermark
+     * @param {boolean} returnBytes - If true, return bytes instead of downloading
+     * @returns {Promise<Uint8Array|null>} PDF bytes if returnBytes=true, otherwise undefined
      */
-    async function _doSavePDF(applyWatermark = true) {
+    async function _doSavePDF(applyWatermark = true, returnBytes = false) {
         const pdfBytes = core.get('pdfBytes');
 
         if (!pdfBytes || pdfBytes.length === 0) {
-            ui.showAlert('PDF data not loaded. Please reload the page.', 'error');
-            return;
+            if (!returnBytes) {
+                ui.showAlert('PDF data not loaded. Please reload the page.', 'error');
+            }
+            return returnBytes ? null : undefined;
         }
 
-        ui.showLoading('Saving PDF...');
+        if (!returnBytes) {
+            ui.showLoading('Saving PDF...');
+        }
 
         try {
             // Load PDF with pdf-lib
@@ -1344,8 +1360,15 @@ const PDFoxApp = (function() {
                 await applyWatermarks(pdfDoc, pages);
             }
 
-            // Save and download
+            // Save PDF
             const pdfBytesModified = await pdfDoc.save();
+
+            // If returnBytes mode, just return the bytes without downloading
+            if (returnBytes) {
+                return new Uint8Array(pdfBytesModified);
+            }
+
+            // Download the PDF
             const blob = new Blob([pdfBytesModified], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1363,9 +1386,11 @@ const PDFoxApp = (function() {
             ui.showAlert('PDF saved successfully!', 'success');
         } catch (error) {
             console.error('Error saving PDF:', error);
-            ui.hideLoading();
-            console.error('Failed to save PDF:', error);
-            ui.showAlert('Sorry, we couldn\'t save your PDF. Please try again.', 'error');
+            if (!returnBytes) {
+                ui.hideLoading();
+                ui.showAlert('Sorry, we couldn\'t save your PDF. Please try again.', 'error');
+            }
+            return returnBytes ? null : undefined;
         }
     }
 
@@ -1955,70 +1980,146 @@ const PDFoxApp = (function() {
     }
 
     /**
-     * Generate and show shareable link
+     * Show share options modal (replaces direct share link generation)
      */
-    async function shareLink() {
+    function shareLink() {
         const pdfBytes = core.get('pdfBytes');
         if (!pdfBytes) {
             ui.showAlert('No PDF loaded', 'error');
             return;
         }
 
-        // Show modal
+        showShareOptionsModal();
+    }
+
+    /**
+     * Show share options modal
+     */
+    function showShareOptionsModal() {
+        const modal = document.getElementById('shareOptionsModal');
+        if (modal) {
+            // Reset form
+            const passwordCheckbox = document.getElementById('sharePasswordEnabled');
+            const passwordInput = document.getElementById('sharePassword');
+            if (passwordCheckbox) passwordCheckbox.checked = false;
+            if (passwordInput) {
+                passwordInput.value = '';
+                passwordInput.style.display = 'none';
+            }
+            modal.style.display = 'flex';
+        }
+    }
+
+    /**
+     * Close share options modal
+     */
+    function closeShareOptionsModal() {
+        const modal = document.getElementById('shareOptionsModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    /**
+     * Toggle password input visibility
+     */
+    function toggleSharePassword() {
+        const passwordCheckbox = document.getElementById('sharePasswordEnabled');
+        const passwordInput = document.getElementById('sharePassword');
+        if (passwordCheckbox && passwordInput) {
+            passwordInput.style.display = passwordCheckbox.checked ? 'block' : 'none';
+            if (passwordCheckbox.checked) {
+                passwordInput.focus();
+            }
+        }
+    }
+
+    /**
+     * Generate share link via server API
+     */
+    async function generateShareLink() {
+        const passwordCheckbox = document.getElementById('sharePasswordEnabled');
+        const passwordInput = document.getElementById('sharePassword');
+        const password = passwordCheckbox?.checked ? passwordInput?.value : null;
+
+        // Validate password if enabled
+        if (passwordCheckbox?.checked && (!password || password.length < 4)) {
+            ui.showAlert('Password must be at least 4 characters', 'error');
+            return;
+        }
+
+        // Close options modal
+        closeShareOptionsModal();
+
+        // Show loading
+        ui.showLoading('Creating shareable link...');
+
+        try {
+            // Build PDF with current edits
+            const pdfBytes = await buildCurrentPDF();
+            if (!pdfBytes) {
+                throw new Error('Failed to build PDF');
+            }
+
+            // Get filename
+            const docNameEl = document.getElementById('docName');
+            const fileName = docNameEl?.textContent || 'document.pdf';
+
+            // Create form data
+            const formData = new FormData();
+            formData.append('pdf', new Blob([pdfBytes], { type: 'application/pdf' }));
+            formData.append('fileName', fileName);
+            if (password) {
+                formData.append('password', password);
+            }
+
+            // Send to server
+            const response = await fetch('/api/v1/share/create', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create share');
+            }
+
+            const data = await response.json();
+
+            // Show result in share link modal
+            ui.hideLoading();
+            showShareLinkResult(data.url, data.hasPassword, data.expiresAt);
+
+        } catch (error) {
+            console.error('Error creating share:', error);
+            ui.hideLoading();
+            ui.showAlert('Failed to create share link. Please try again.', 'error');
+        }
+    }
+
+    /**
+     * Show share link result modal
+     */
+    function showShareLinkResult(url, hasPassword, expiresAt) {
         const modal = document.getElementById('shareLinkModal');
         const input = document.getElementById('shareUrlInput');
         const status = document.getElementById('shareLinkStatus');
 
         if (modal) {
             modal.style.display = 'flex';
-            input.value = 'Generating link...';
-            status.textContent = '';
-        }
-
-        try {
-            // Generate a unique ID for this document
-            const docId = generateShareId();
-
-            // Store in sessionStorage with expiry (in real app, use server)
-            const shareData = {
-                pdfData: sessionStorage.getItem('pdfToEdit'),
-                fileName: sessionStorage.getItem('pdfFileName'),
-                timestamp: Date.now(),
-                expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
-            };
-
-            sessionStorage.setItem('share_' + docId, JSON.stringify(shareData));
-
-            // Generate URL
-            const shareUrl = `${window.location.origin}/pdf-editor-modular.html?share=${docId}`;
-
             if (input) {
-                input.value = shareUrl;
+                input.value = url;
             }
             if (status) {
-                status.textContent = 'Link generated! Valid for 24 hours.';
+                const expiryDate = new Date(expiresAt).toLocaleString();
+                let statusText = `Link created! Expires: ${expiryDate}`;
+                if (hasPassword) {
+                    statusText += ' (Password protected)';
+                }
+                status.textContent = statusText;
                 status.style.color = '#4CAF50';
             }
-        } catch (error) {
-            console.error('Error generating share link:', error);
-            if (status) {
-                console.error('Failed to generate link:', error);
-                status.textContent = 'Sorry, we couldn\'t generate the link. Please try again.';
-                status.style.color = '#dc3545';
-            }
         }
-    }
-
-    /**
-     * Generate a random share ID
-     */
-    function generateShareId() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let result = '';
-        for (let i = 0; i < 12; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return result;
     }
 
     /**
@@ -2026,7 +2127,7 @@ const PDFoxApp = (function() {
      */
     function copyShareLink() {
         const input = document.getElementById('shareUrlInput');
-        if (input && input.value && !input.value.includes('Generating')) {
+        if (input && input.value && !input.value.includes('Generating') && !input.value.includes('Creating')) {
             navigator.clipboard.writeText(input.value).then(() => {
                 ui.showNotification('Link copied to clipboard!', 'success');
             }).catch(() => {
@@ -2039,12 +2140,88 @@ const PDFoxApp = (function() {
     }
 
     /**
-     * Close share modal
+     * Close share link result modal
      */
     function closeShareModal() {
         const modal = document.getElementById('shareLinkModal');
         if (modal) {
             modal.style.display = 'none';
+        }
+    }
+
+    /**
+     * Header share link - checks Pro status first
+     * For non-Pro users, shows upgrade modal with share-focused messaging
+     */
+    function headerShareLink() {
+        const isProUser = core.get('isProUser') || false;
+
+        if (isProUser) {
+            // Pro user - proceed with share functionality
+            shareLink();
+        } else {
+            // Free user - show upgrade modal with share-specific message
+            showShareUpgradePrompt();
+        }
+    }
+
+    /**
+     * Show upgrade prompt specifically for share feature
+     */
+    function showShareUpgradePrompt() {
+        const modal = document.getElementById('upgradeModal');
+        if (!modal) return;
+
+        // Update modal content for share-specific messaging
+        const title = modal.querySelector('.upgrade-modal-title');
+        const subtitle = modal.querySelector('.upgrade-modal-subtitle');
+
+        if (title) {
+            title.textContent = 'Unlock Document Sharing';
+        }
+        if (subtitle) {
+            subtitle.innerHTML = 'Share your PDFs with anyone via secure links!<br><strong style="color: #4CAF50;">Upgrade to Pro for free to unlock this feature!</strong>';
+        }
+
+        // Show modal
+        modal.classList.add('active');
+
+        // Handle click outside
+        const handleOutsideClick = (e) => {
+            if (e.target === modal) {
+                closeUpgradeModal();
+                restoreUpgradeModalText();
+                modal.removeEventListener('click', handleOutsideClick);
+            }
+        };
+        modal.addEventListener('click', handleOutsideClick);
+
+        // Handle Escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                closeUpgradeModal();
+                restoreUpgradeModalText();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    }
+
+    /**
+     * Restore upgrade modal to default text
+     */
+    function restoreUpgradeModalText() {
+        const modal = document.getElementById('upgradeModal');
+        if (!modal) return;
+
+        const title = modal.querySelector('.upgrade-modal-title');
+        const subtitle = modal.querySelector('.upgrade-modal-subtitle');
+
+        if (title) {
+            title.textContent = 'Unlock Clean PDF Exports';
+        }
+        if (subtitle) {
+            subtitle.textContent = 'Your PDF is ready! Upgrade to Pro for professional results.';
         }
     }
 
@@ -2749,7 +2926,12 @@ const PDFoxApp = (function() {
         exportText,
         shareLink,
         copyShareLink,
-        closeShareModal
+        closeShareModal,
+        headerShareLink,
+        showShareOptionsModal,
+        closeShareOptionsModal,
+        toggleSharePassword,
+        generateShareLink
     };
 })();
 
