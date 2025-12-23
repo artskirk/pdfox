@@ -4,9 +4,8 @@ const multer = require('multer');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const util = require('util');
-const execPromise = util.promisify(exec);
 const pdfParse = require('pdf-parse');
 const Tesseract = require('tesseract.js');
 const { Document, Paragraph, TextRun, Packer } = require('docx');
@@ -16,6 +15,149 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const APP_ENV = process.env.APP_ENV || 'prod';
+const APP_DEBUG = process.env.APP_DEBUG === '1';
+const isProduction = APP_ENV === 'prod';
+
+// ============================================================================
+// Input Validation & Sanitization Helpers
+// ============================================================================
+
+// Validate email format
+function isValidEmail(email) {
+    if (!email || typeof email !== 'string') return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && email.length <= 254;
+}
+
+// Validate fingerprint format (alphanumeric string)
+function isValidFingerprint(fingerprint) {
+    if (!fingerprint || typeof fingerprint !== 'string') return false;
+    return /^[a-zA-Z0-9_-]+$/.test(fingerprint) && fingerprint.length <= 64;
+}
+
+// Validate filename - prevent path traversal
+function sanitizeFilename(filename) {
+    if (!filename || typeof filename !== 'string') return null;
+    // Remove any path components and null bytes
+    const sanitized = path.basename(filename).replace(/\0/g, '');
+    // Only allow safe characters
+    if (!/^[\w\-. ]+$/.test(sanitized)) return null;
+    // Prevent hidden files
+    if (sanitized.startsWith('.')) return null;
+    return sanitized;
+}
+
+// Validate share hash format (32 hex characters)
+function isValidShareHash(hash) {
+    if (!hash || typeof hash !== 'string') return false;
+    return /^[a-f0-9]{32}$/.test(hash);
+}
+
+// Validate conversion format
+function isValidFormat(format) {
+    const allowedFormats = ['txt', 'docx', 'html'];
+    return allowedFormats.includes(format);
+}
+
+// Validate Stripe session ID format
+function isValidStripeSessionId(sessionId) {
+    if (!sessionId || typeof sessionId !== 'string') return false;
+    return /^cs_[a-zA-Z0-9_]+$/.test(sessionId) && sessionId.length <= 200;
+}
+
+// Validate token format (64 hex characters)
+function isValidToken(token) {
+    if (!token || typeof token !== 'string') return false;
+    return /^[a-zA-Z0-9_\-.]+$/.test(token) && token.length <= 500;
+}
+
+// Sanitize password (remove control characters, limit length)
+function sanitizePassword(password) {
+    if (!password || typeof password !== 'string') return '';
+    // Remove control characters, limit to 128 chars
+    return password.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 128);
+}
+
+// ============================================================================
+// Security Headers Middleware
+// ============================================================================
+app.use((req, res, next) => {
+    // Prevent MIME type sniffing
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+
+    // Prevent clickjacking
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+
+    // XSS Protection (legacy browsers)
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+
+    // Referrer Policy
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    // Permissions Policy (formerly Feature-Policy)
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+
+    // Content Security Policy
+    res.setHeader('Content-Security-Policy', [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://js.stripe.com https://accounts.google.com https://openfpcdn.io",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net",
+        "img-src 'self' data: blob: https:",
+        "connect-src 'self' https://api.stripe.com https://accounts.google.com https://cdn.jsdelivr.net https://openfpcdn.io https://fonts.googleapis.com https://fonts.gstatic.com",
+        "frame-src 'self' https://js.stripe.com https://accounts.google.com",
+        "worker-src 'self' blob: https://cdnjs.cloudflare.com",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'"
+    ].join('; '));
+
+    // HSTS (only in production with HTTPS)
+    if (isProduction) {
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+
+    next();
+});
+
+// ============================================================================
+// CORS Configuration
+// ============================================================================
+const ALLOWED_ORIGINS = isProduction
+    ? [
+        process.env.ALLOWED_ORIGIN || 'https://pdfox.cloud',
+        'https://www.pdfox.cloud',
+        'https://accounts.google.com',
+        'https://js.stripe.com'
+    ]
+    : [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:5173', // Vite dev server
+        'https://accounts.google.com',
+        'https://js.stripe.com'
+    ];
+
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+
+    // Check if origin is in allowlist
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+        return res.status(204).end();
+    }
+
+    next();
+});
 
 // Initialize Stripe
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY || 'your_stripe_secret_key');
@@ -319,10 +461,43 @@ const upload = multer({
 // Serve static files (use absolute path to avoid working directory issues)
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Safe command execution using spawn (prevents command injection)
+function safeSpawn(command, args, options = {}) {
+    return new Promise((resolve, reject) => {
+        const proc = spawn(command, args, { timeout: options.timeout || 30000, ...options });
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout?.on('data', (data) => { stdout += data; });
+        proc.stderr?.on('data', (data) => { stderr += data; });
+
+        proc.on('close', (code) => {
+            if (code === 0) {
+                resolve({ stdout, stderr });
+            } else {
+                reject(new Error(`Command failed with code ${code}: ${stderr}`));
+            }
+        });
+
+        proc.on('error', (err) => {
+            reject(err);
+        });
+    });
+}
+
 // Extract text from scanned/image PDF using OCR
 async function extractTextWithOCR(filePath) {
     try {
-        console.log('Attempting OCR extraction for scanned PDF...');
+        if (!isProduction) {
+            console.log('Attempting OCR extraction for scanned PDF...');
+        }
+
+        // Validate file path - must be within uploads directory
+        const resolvedPath = path.resolve(filePath);
+        const uploadsResolved = path.resolve(uploadsDir);
+        if (!resolvedPath.startsWith(uploadsResolved)) {
+            throw new Error('Invalid file path');
+        }
 
         // Convert PDF to images using ImageMagick directly
         const pageLimit = 10; // Process up to 10 pages
@@ -332,9 +507,13 @@ async function extractTextWithOCR(filePath) {
             try {
                 const imagePath = path.join(uploadsDir, `ocr-${Date.now()}-page${page}.png`);
 
-                // Use ImageMagick convert command directly
-                const convertCmd = `convert -density 200 "${filePath}[${page - 1}]" -quality 75 "${imagePath}"`;
-                await execPromise(convertCmd, { timeout: 30000 });
+                // Use spawn with argument array (safe - prevents command injection)
+                await safeSpawn('convert', [
+                    '-density', '200',
+                    `${resolvedPath}[${page - 1}]`,
+                    '-quality', '75',
+                    imagePath
+                ], { timeout: 30000 });
 
                 // Perform OCR on the image
                 const { data: { text } } = await Tesseract.recognize(
@@ -352,19 +531,25 @@ async function extractTextWithOCR(filePath) {
                     fs.unlinkSync(imagePath);
                 }
             } catch (pageError) {
-                console.log(`Could not process page ${page}:`, pageError.message);
+                if (!isProduction) {
+                    console.log(`Could not process page ${page}:`, pageError.message);
+                }
                 break; // Stop if we can't process a page
             }
         }
 
         if (extractedText.trim().length > 0) {
-            console.log(`OCR extracted ${extractedText.length} characters`);
+            if (!isProduction) {
+                console.log(`OCR extracted ${extractedText.length} characters`);
+            }
             return extractedText;
         } else {
             throw new Error('No text could be extracted via OCR');
         }
     } catch (error) {
-        console.error('OCR extraction error:', error);
+        if (!isProduction) {
+            console.error('OCR extraction error:', error);
+        }
         throw new Error('Could not extract text from PDF using OCR');
     }
 }
@@ -962,6 +1147,11 @@ app.post('/generate-preview-token', (req, res) => {
 app.get('/preview/:previewToken', (req, res) => {
     const { previewToken } = req.params;
 
+    // Validate token format
+    if (!isValidToken(previewToken)) {
+        return res.status(400).send('Invalid preview token format');
+    }
+
     const preview = previewTokens.get(previewToken);
 
     if (!preview) {
@@ -973,16 +1163,32 @@ app.get('/preview/:previewToken', (req, res) => {
         return res.status(401).send('Preview link expired');
     }
 
-    const filePath = path.join(outputsDir, preview.filename);
+    // Sanitize filename and verify path stays within outputs directory
+    const safeFilename = sanitizeFilename(preview.filename);
+    if (!safeFilename) {
+        return res.status(400).send('Invalid file');
+    }
 
-    if (!fs.existsSync(filePath)) {
+    const filePath = path.join(outputsDir, safeFilename);
+    const resolvedPath = path.resolve(filePath);
+    const resolvedOutputsDir = path.resolve(outputsDir);
+
+    if (!resolvedPath.startsWith(resolvedOutputsDir)) {
+        return res.status(400).send('Invalid file path');
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
         return res.status(404).send('File not found');
     }
 
     // Serve the file with proper headers for Google Docs Viewer
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // Note: Google Docs Viewer requires CORS for external access
+    const origin = req.headers.origin;
+    if (origin && (origin.includes('google.com') || origin.includes('googleapis.com'))) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.download(filePath, preview.filename);
+    res.download(resolvedPath, safeFilename);
 });
 
 // Upload file to Google Drive
@@ -1059,8 +1265,15 @@ app.get('/download/:filename', (req, res) => {
     const { filename } = req.params;
     const { token } = req.query;
 
-    if (!token) {
+    // Validate token format
+    if (!token || !isValidToken(token)) {
         return res.status(401).json({ error: 'Access token required' });
+    }
+
+    // Sanitize filename to prevent path traversal
+    const safeFilename = sanitizeFilename(filename);
+    if (!safeFilename) {
+        return res.status(400).json({ error: 'Invalid filename' });
     }
 
     const access = paidAccess.get(token);
@@ -1074,23 +1287,33 @@ app.get('/download/:filename', (req, res) => {
         return res.status(401).json({ error: 'Access token expired' });
     }
 
-    if (access.filename !== filename) {
+    // Verify filename matches (stored filename should already be safe)
+    if (access.filename !== safeFilename) {
         return res.status(403).json({ error: 'Access denied for this file' });
     }
 
-    const filePath = path.join(outputsDir, filename);
+    // Build path and verify it's within outputs directory
+    const filePath = path.join(outputsDir, safeFilename);
+    const resolvedPath = path.resolve(filePath);
+    const resolvedOutputsDir = path.resolve(outputsDir);
 
-    if (!fs.existsSync(filePath)) {
+    if (!resolvedPath.startsWith(resolvedOutputsDir)) {
+        return res.status(400).json({ error: 'Invalid file path' });
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
         return res.status(404).json({ error: 'File not found' });
     }
 
-    res.download(filePath, filename);
+    res.download(resolvedPath, safeFilename);
 });
 
-// Get Stripe publishable key for frontend
+// Get app configuration for frontend
 app.get('/config', (req, res) => {
     res.json({
         publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || 'your_publishable_key',
+        env: APP_ENV,
+        debug: APP_DEBUG
     });
 });
 
@@ -1208,8 +1431,17 @@ app.post('/api/v1/share/create', shareUpload.single('pdf'), async (req, res) => 
             return res.status(400).json({ error: 'No PDF file provided' });
         }
 
-        const fileName = req.body.fileName || 'document.pdf';
-        const password = req.body.password;
+        // Validate and sanitize filename
+        let fileName = req.body.fileName || 'document.pdf';
+        const sanitizedFileName = sanitizeFilename(fileName);
+        if (!sanitizedFileName) {
+            fileName = 'document.pdf';
+        } else {
+            fileName = sanitizedFileName;
+        }
+
+        // Sanitize password
+        const password = req.body.password ? sanitizePassword(req.body.password) : null;
 
         // Generate unique hash
         const hash = generateShareHash();
@@ -1235,7 +1467,9 @@ app.post('/api/v1/share/create', shareUpload.single('pdf'), async (req, res) => 
             hasPassword: !!passwordHash
         });
     } catch (error) {
-        console.error('Error creating share:', error);
+        if (!isProduction) {
+            console.error('Error creating share:', error);
+        }
         res.status(500).json({ error: 'Failed to create share' });
     }
 });
@@ -1243,6 +1477,12 @@ app.post('/api/v1/share/create', shareUpload.single('pdf'), async (req, res) => 
 // Get share metadata
 app.get('/api/v1/share/:hash', (req, res) => {
     const { hash } = req.params;
+
+    // Validate hash format
+    if (!isValidShareHash(hash)) {
+        return res.status(400).json({ error: 'Invalid share ID format' });
+    }
+
     const share = findShareByHash(hash);
 
     if (!share) {
@@ -1264,6 +1504,11 @@ app.get('/api/v1/share/:hash', (req, res) => {
 app.post('/api/v1/share/:hash/verify', express.json(), (req, res) => {
     const { hash } = req.params;
     const { password } = req.body;
+
+    // Validate hash format
+    if (!isValidShareHash(hash)) {
+        return res.status(400).json({ error: 'Invalid share ID format' });
+    }
 
     // Check rate limit
     const rateLimit = checkPasswordRateLimit(hash);
@@ -1314,39 +1559,73 @@ app.post('/api/v1/share/:hash/verify', express.json(), (req, res) => {
 // Download shared PDF
 app.get('/api/v1/share/:hash/download', (req, res) => {
     const { hash } = req.params;
+
+    // Validate hash format
+    if (!isValidShareHash(hash)) {
+        return res.status(400).json({ error: 'Invalid share ID format' });
+    }
+
     const share = findShareByHash(hash);
 
     if (!share) {
         return res.status(404).json({ error: 'Document not found' });
     }
 
+    // Build path and verify it's within shares directory
     const pdfPath = path.join(sharesDir, `${hash}.pdf`);
-    if (!fs.existsSync(pdfPath)) {
+    const resolvedPath = path.resolve(pdfPath);
+    const resolvedSharesDir = path.resolve(sharesDir);
+
+    if (!resolvedPath.startsWith(resolvedSharesDir)) {
+        return res.status(400).json({ error: 'Invalid file path' });
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
         return res.status(404).json({ error: 'PDF file not found' });
     }
 
+    // Sanitize filename for Content-Disposition header (prevent header injection)
+    const safeFileName = (share.fileName || 'document.pdf').replace(/["\r\n]/g, '');
+
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${share.fileName}"`);
-    res.sendFile(pdfPath);
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFileName}"`);
+    res.sendFile(resolvedPath);
 });
 
 // Get PDF data for viewer (inline)
 app.get('/api/v1/share/:hash/view', (req, res) => {
     const { hash } = req.params;
+
+    // Validate hash format
+    if (!isValidShareHash(hash)) {
+        return res.status(400).json({ error: 'Invalid share ID format' });
+    }
+
     const share = findShareByHash(hash);
 
     if (!share) {
         return res.status(404).json({ error: 'Document not found' });
     }
 
+    // Build path and verify it's within shares directory
     const pdfPath = path.join(sharesDir, `${hash}.pdf`);
-    if (!fs.existsSync(pdfPath)) {
+    const resolvedPath = path.resolve(pdfPath);
+    const resolvedSharesDir = path.resolve(sharesDir);
+
+    if (!resolvedPath.startsWith(resolvedSharesDir)) {
+        return res.status(400).json({ error: 'Invalid file path' });
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
         return res.status(404).json({ error: 'PDF file not found' });
     }
 
+    // Sanitize filename for Content-Disposition header (prevent header injection)
+    const safeFileName = (share.fileName || 'document.pdf').replace(/["\r\n]/g, '');
+
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${share.fileName}"`);
-    res.sendFile(pdfPath);
+    res.setHeader('Content-Disposition', `inline; filename="${safeFileName}"`);
+    res.sendFile(resolvedPath);
 });
 
 // Serve share viewer page
@@ -1394,6 +1673,19 @@ app.get('/terms', (req, res) => {
 
 app.get('/security', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'security.html'));
+});
+
+// Resource pages
+app.get('/help', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'help.html'));
+});
+
+app.get('/docs', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'docs.html'));
+});
+
+app.get('/api', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'api.html'));
 });
 
 // Success pages - friendly names
@@ -1451,12 +1743,42 @@ app.get('/index.html', (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok', message: 'PDF to Text Converter is running' });
+    res.json({ status: 'ok', message: 'PDFOX is running' });
+});
+
+// ============================================================================
+// Centralized Error Handling
+// ============================================================================
+
+// 404 handler
+app.use((req, res, next) => {
+    res.status(404).json({
+        error: 'Not Found',
+        message: 'The requested resource was not found'
+    });
+});
+
+// Global error handler - MUST NOT expose internal details
+app.use((err, req, res, next) => {
+    // Log error details server-side only (not to client)
+    if (!isProduction) {
+        console.error('Server Error:', err);
+    }
+
+    // Determine status code
+    const statusCode = err.status || err.statusCode || 500;
+
+    // Generic error response - no stack traces or internal details
+    res.status(statusCode).json({
+        error: statusCode === 500 ? 'Internal Server Error' : err.message || 'An error occurred',
+        message: 'Something went wrong. Please try again later.'
+    });
 });
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`PDF to Text Converter running on http://localhost:${PORT}`);
-    console.log(`Uploads directory: ${uploadsDir}`);
-    console.log(`Outputs directory: ${outputsDir}`);
+    if (!isProduction) {
+        console.log(`PDFOX running on http://localhost:${PORT}`);
+        console.log(`Environment: ${isProduction ? 'production' : 'development'}`);
+    }
 });

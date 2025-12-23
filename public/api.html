@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - PDFOX</title>
+    <meta name="description" content="PDFOX API documentation. Integrate PDF editing capabilities into your applications with our REST API.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #000000; color: #ffffff; overflow-x: hidden; line-height: 1.6; }
+        .nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(229, 9, 20, 0.2); }
+        .logo { font-family: 'Bebas Neue', sans-serif; font-size: 40px; font-weight: 700; color: #E50914; cursor: pointer; letter-spacing: 2px; text-decoration: none; }
+        .nav-links { display: flex; gap: 30px; align-items: center; }
+        .nav-link { color: #ffffff; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        .nav-link:hover { color: #E50914; }
+        .cta-button { background: #E50914; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .cta-button:hover { background: #B8070F; }
+
+        .hero { padding: 140px 50px 60px; text-align: center; background: linear-gradient(180deg, rgba(229, 9, 20, 0.05) 0%, rgba(0, 0, 0, 0) 100%); }
+        .hero h1 { font-size: 56px; font-weight: 700; margin-bottom: 20px; background: linear-gradient(135deg, #ffffff 0%, #E50914 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 20px; color: #cccccc; max-width: 700px; margin: 0 auto; }
+
+        .badge { display: inline-block; background: rgba(229, 9, 20, 0.2); color: #E50914; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-top: 20px; }
+
+        .content { max-width: 1000px; margin: 0 auto; padding: 60px 50px 100px; }
+
+        .section { margin-bottom: 60px; }
+        .section h2 { font-size: 32px; color: #E50914; margin-bottom: 20px; }
+        .section h3 { font-size: 22px; margin: 30px 0 15px; color: #fff; }
+        .section p { font-size: 16px; color: #ccc; margin-bottom: 16px; line-height: 1.8; }
+        .section ul { margin: 16px 0 16px 24px; color: #ccc; }
+        .section li { margin-bottom: 10px; }
+
+        .info-box { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3B82F6; padding: 20px 24px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+        .info-box strong { color: #3B82F6; }
+        .info-box p { margin: 0; }
+
+        .coming-soon-box { background: rgba(229, 9, 20, 0.1); border: 2px dashed rgba(229, 9, 20, 0.4); padding: 40px; border-radius: 12px; text-align: center; margin: 40px 0; }
+        .coming-soon-box h3 { font-size: 28px; margin-bottom: 15px; }
+        .coming-soon-box p { color: #888; margin-bottom: 20px; }
+
+        .endpoint { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin: 24px 0; overflow: hidden; }
+        .endpoint-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .method { padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+        .method.get { background: rgba(34, 197, 94, 0.2); color: #22C55E; }
+        .method.post { background: rgba(59, 130, 246, 0.2); color: #3B82F6; }
+        .method.put { background: rgba(249, 115, 22, 0.2); color: #F97316; }
+        .method.delete { background: rgba(239, 68, 68, 0.2); color: #EF4444; }
+        .endpoint-path { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #fff; }
+        .endpoint-body { padding: 20px; }
+        .endpoint-body p { font-size: 15px; margin-bottom: 16px; }
+
+        .code-block { background: #0d0d0d; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; margin: 16px 0; }
+        .code-header { background: rgba(255, 255, 255, 0.05); padding: 10px 16px; font-size: 12px; color: #888; display: flex; justify-content: space-between; align-items: center; }
+        .code-content { padding: 16px; overflow-x: auto; }
+        .code-content pre { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #e0e0e0; margin: 0; white-space: pre; }
+        .code-content .comment { color: #6b7280; }
+        .code-content .string { color: #22C55E; }
+        .code-content .number { color: #F97316; }
+        .code-content .keyword { color: #E50914; }
+        .code-content .property { color: #3B82F6; }
+
+        .params-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        .params-table th, .params-table td { text-align: left; padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .params-table th { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .params-table td { font-size: 14px; }
+        .params-table code { background: rgba(255, 255, 255, 0.1); padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+        .required { color: #E50914; font-size: 11px; font-weight: 600; }
+        .optional { color: #888; font-size: 11px; }
+
+        .rate-limit-box { background: rgba(249, 115, 22, 0.1); border-left: 4px solid #F97316; padding: 16px 20px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+        .rate-limit-box strong { color: #F97316; }
+
+        .cta-section { text-align: center; padding: 60px 40px; background: rgba(229, 9, 20, 0.05); border-radius: 16px; margin-top: 60px; }
+        .cta-section h2 { font-size: 32px; margin-bottom: 15px; }
+        .cta-section p { color: #888; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; }
+        .cta-section .cta-button { padding: 14px 32px; font-size: 16px; }
+
+        .footer { background: #000000; padding: 60px 50px 40px; border-top: 1px solid #333333; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px; }
+        .footer-section h4 { font-size: 16px; margin-bottom: 20px; color: #ffffff; }
+        .footer-section a { display: block; color: #808080; text-decoration: none; margin-bottom: 12px; font-size: 14px; transition: color 0.3s; }
+        .footer-section a:hover { color: #ffffff; }
+        .footer-bottom { max-width: 1200px; margin: 0 auto; padding-top: 30px; border-top: 1px solid #333333; color: #808080; font-size: 13px; text-align: center; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 36px; }
+            .content { padding: 40px 20px 60px; }
+            .nav { padding: 15px 20px; }
+            .endpoint-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/" class="logo">PDFOX</a>
+        <div class="nav-links">
+            <a href="/#features" class="nav-link">Features</a>
+            <a href="/pricing" class="nav-link">Pricing</a>
+            <a href="/about" class="nav-link">About</a>
+            <button class="cta-button" onclick="window.location.href='/editor'">Try Now</button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>API Documentation</h1>
+        <p>Integrate PDFOX capabilities into your applications with our REST API.</p>
+        <span class="badge">Coming Soon</span>
+    </section>
+
+    <div class="content">
+        <section class="section">
+            <h2>Overview</h2>
+            <p>The PDFOX API allows you to programmatically edit, convert, and manage PDF documents. Build powerful document workflows directly into your applications.</p>
+
+            <div class="info-box">
+                <strong>API Access:</strong>
+                <p>The PDFOX API is currently in development. Join the waitlist below to get early access and be notified when it launches.</p>
+            </div>
+
+            <div class="coming-soon-box">
+                <h3>API Coming Soon</h3>
+                <p>We're building a powerful API for developers. Sign up to be notified when it's ready.</p>
+                <a href="/contact" class="cta-button">Join Waitlist</a>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Planned Features</h2>
+            <p>Here's what you'll be able to do with the PDFOX API:</p>
+
+            <h3>Document Operations</h3>
+            <ul>
+                <li><strong>Convert PDFs</strong> - Transform PDFs to/from Word, images, HTML</li>
+                <li><strong>Merge PDFs</strong> - Combine multiple documents into one</li>
+                <li><strong>Split PDFs</strong> - Extract pages or split by range</li>
+                <li><strong>Compress PDFs</strong> - Reduce file size while maintaining quality</li>
+                <li><strong>OCR Processing</strong> - Extract text from scanned documents</li>
+            </ul>
+
+            <h3>Editing Operations</h3>
+            <ul>
+                <li><strong>Add Text</strong> - Insert text at specific coordinates</li>
+                <li><strong>Add Images</strong> - Place images on PDF pages</li>
+                <li><strong>Add Signatures</strong> - Apply digital signatures</li>
+                <li><strong>Fill Forms</strong> - Populate PDF form fields programmatically</li>
+                <li><strong>Redact Content</strong> - Remove sensitive information</li>
+            </ul>
+
+            <h3>Metadata & Security</h3>
+            <ul>
+                <li><strong>Read/Write Metadata</strong> - Access document properties</li>
+                <li><strong>Password Protection</strong> - Add/remove encryption</li>
+                <li><strong>Watermarks</strong> - Add text or image watermarks</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>API Preview</h2>
+            <p>Get a preview of how the API will work:</p>
+
+            <h3>Authentication</h3>
+            <p>All API requests require an API key passed in the header:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span>Request Header</span>
+                </div>
+                <div class="code-content">
+<pre><span class="property">Authorization</span>: Bearer <span class="string">your_api_key_here</span>
+<span class="property">Content-Type</span>: application/json</pre>
+                </div>
+            </div>
+
+            <h3>Base URL</h3>
+            <div class="code-block">
+                <div class="code-content">
+<pre><span class="string">https://api.pdfox.cloud/v1</span></pre>
+                </div>
+            </div>
+
+            <div class="rate-limit-box">
+                <strong>Rate Limits:</strong> API requests will be rate-limited based on your plan. Free tier: 100 requests/day. Pro tier: 10,000 requests/day. Enterprise: Unlimited.
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Example Endpoints</h2>
+            <p>Here's a preview of some planned endpoints:</p>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/documents/convert</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Convert a PDF to another format (DOCX, PNG, HTML, TXT).</p>
+
+                    <h4 style="font-size: 14px; margin: 16px 0 12px; color: #888;">Request Body</h4>
+                    <table class="params-table">
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td><code>file</code> <span class="required">required</span></td>
+                            <td>file</td>
+                            <td>PDF file to convert (max 50MB)</td>
+                        </tr>
+                        <tr>
+                            <td><code>format</code> <span class="required">required</span></td>
+                            <td>string</td>
+                            <td>Output format: docx, png, html, txt</td>
+                        </tr>
+                        <tr>
+                            <td><code>pages</code> <span class="optional">optional</span></td>
+                            <td>string</td>
+                            <td>Page range, e.g., "1-5" or "1,3,5"</td>
+                        </tr>
+                    </table>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span>Example Request</span>
+                            <span>cURL</span>
+                        </div>
+                        <div class="code-content">
+<pre>curl -X POST https://api.pdfox.cloud/v1/documents/convert \
+  -H <span class="string">"Authorization: Bearer your_api_key"</span> \
+  -F <span class="string">"file=@document.pdf"</span> \
+  -F <span class="string">"format=docx"</span></pre>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span>Example Response</span>
+                            <span>JSON</span>
+                        </div>
+                        <div class="code-content">
+<pre>{
+  <span class="property">"success"</span>: <span class="keyword">true</span>,
+  <span class="property">"document_id"</span>: <span class="string">"doc_abc123"</span>,
+  <span class="property">"download_url"</span>: <span class="string">"https://api.pdfox.cloud/v1/download/doc_abc123"</span>,
+  <span class="property">"expires_at"</span>: <span class="string">"2025-01-16T12:00:00Z"</span>,
+  <span class="property">"pages_processed"</span>: <span class="number">5</span>
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/documents/merge</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Merge multiple PDF files into a single document.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span>Example Request</span>
+                            <span>cURL</span>
+                        </div>
+                        <div class="code-content">
+<pre>curl -X POST https://api.pdfox.cloud/v1/documents/merge \
+  -H <span class="string">"Authorization: Bearer your_api_key"</span> \
+  -F <span class="string">"files[]=@doc1.pdf"</span> \
+  -F <span class="string">"files[]=@doc2.pdf"</span> \
+  -F <span class="string">"files[]=@doc3.pdf"</span></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/documents/ocr</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Apply OCR to extract text from scanned documents.</p>
+
+                    <table class="params-table">
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td><code>file</code> <span class="required">required</span></td>
+                            <td>file</td>
+                            <td>PDF file to process</td>
+                        </tr>
+                        <tr>
+                            <td><code>language</code> <span class="optional">optional</span></td>
+                            <td>string</td>
+                            <td>Language code (default: "eng")</td>
+                        </tr>
+                        <tr>
+                            <td><code>output</code> <span class="optional">optional</span></td>
+                            <td>string</td>
+                            <td>"text" or "searchable_pdf"</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/documents/add-signature</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Add a signature to a PDF document at specified coordinates.</p>
+
+                    <table class="params-table">
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td><code>file</code> <span class="required">required</span></td>
+                            <td>file</td>
+                            <td>PDF file</td>
+                        </tr>
+                        <tr>
+                            <td><code>signature</code> <span class="required">required</span></td>
+                            <td>file</td>
+                            <td>Signature image (PNG with transparency)</td>
+                        </tr>
+                        <tr>
+                            <td><code>page</code> <span class="required">required</span></td>
+                            <td>integer</td>
+                            <td>Page number (1-indexed)</td>
+                        </tr>
+                        <tr>
+                            <td><code>x</code> <span class="required">required</span></td>
+                            <td>number</td>
+                            <td>X coordinate (points from left)</td>
+                        </tr>
+                        <tr>
+                            <td><code>y</code> <span class="required">required</span></td>
+                            <td>number</td>
+                            <td>Y coordinate (points from bottom)</td>
+                        </tr>
+                        <tr>
+                            <td><code>width</code> <span class="optional">optional</span></td>
+                            <td>number</td>
+                            <td>Signature width in points</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>SDKs & Libraries</h2>
+            <p>Official SDKs will be available for popular programming languages:</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin: 24px 0;">
+                <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">🟨</div>
+                    <div>JavaScript</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">🐍</div>
+                    <div>Python</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">💎</div>
+                    <div>Ruby</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">🐘</div>
+                    <div>PHP</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">☕</div>
+                    <div>Java</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">🔷</div>
+                    <div>C#</div>
+                </div>
+            </div>
+        </section>
+
+        <div class="cta-section">
+            <h2>Get Early API Access</h2>
+            <p>Be among the first to integrate PDFOX into your applications. Join our API waitlist for early access and developer updates.</p>
+            <a href="/contact" class="cta-button">Join the Waitlist</a>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>PDFOX</h4>
+                <a href="/#features">Features</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/about">About Us</a>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <a href="/help">Help Center</a>
+                <a href="/docs">Documentation</a>
+                <a href="/api">API</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms of Service</a>
+                <a href="/security">Security</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 PDFOX. All rights reserved. | Professional PDF Editing Platform
+        </div>
+    </footer>
+
+    <script>
+        const lenis = new Lenis({ duration: 1.2, lerp: 0.1, wheelMultiplier: 1, smoothTouch: false });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+    </script>
+</body>
+</html>

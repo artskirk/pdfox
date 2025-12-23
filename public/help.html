@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Center - PDFOX</title>
+    <meta name="description" content="Get help with PDFOX. Find answers to common questions, troubleshooting guides, and contact support.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #000000; color: #ffffff; overflow-x: hidden; line-height: 1.6; }
+        .nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(229, 9, 20, 0.2); }
+        .logo { font-family: 'Bebas Neue', sans-serif; font-size: 40px; font-weight: 700; color: #E50914; cursor: pointer; letter-spacing: 2px; text-decoration: none; }
+        .nav-links { display: flex; gap: 30px; align-items: center; }
+        .nav-link { color: #ffffff; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        .nav-link:hover { color: #E50914; }
+        .cta-button { background: #E50914; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .cta-button:hover { background: #B8070F; }
+
+        .hero { padding: 140px 50px 60px; text-align: center; background: linear-gradient(180deg, rgba(229, 9, 20, 0.05) 0%, rgba(0, 0, 0, 0) 100%); }
+        .hero h1 { font-size: 56px; font-weight: 700; margin-bottom: 20px; background: linear-gradient(135deg, #ffffff 0%, #E50914 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 20px; color: #cccccc; max-width: 700px; margin: 0 auto; }
+
+        .search-box { max-width: 600px; margin: 40px auto 0; position: relative; }
+        .search-box input { width: 100%; padding: 18px 24px 18px 50px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; font-size: 16px; }
+        .search-box input::placeholder { color: #888; }
+        .search-box input:focus { outline: none; border-color: #E50914; }
+        .search-box svg { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #888; }
+
+        .quick-links { max-width: 1000px; margin: 60px auto; padding: 0 50px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .quick-link { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.3s; text-decoration: none; color: inherit; }
+        .quick-link:hover { border-color: #E50914; transform: translateY(-5px); }
+        .quick-link-icon { font-size: 40px; margin-bottom: 15px; }
+        .quick-link h3 { font-size: 18px; margin-bottom: 8px; }
+        .quick-link p { font-size: 14px; color: #888; }
+
+        .content { max-width: 900px; margin: 0 auto; padding: 40px 50px 100px; }
+        .section-title { font-size: 32px; margin-bottom: 30px; color: #E50914; }
+
+        .faq-category { margin-bottom: 50px; }
+        .faq-category h3 { font-size: 22px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+
+        .faq-item { margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; }
+        .faq-item:hover { border-color: rgba(229, 9, 20, 0.3); }
+        .faq-question { padding: 20px 24px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.3s; }
+        .faq-question:hover { background: rgba(255, 255, 255, 0.03); }
+        .faq-question span { color: #E50914; font-size: 24px; transition: transform 0.3s; }
+        .faq-item.active .faq-question span { transform: rotate(45deg); }
+        .faq-answer { padding: 0 24px; max-height: 0; overflow: hidden; transition: all 0.3s; }
+        .faq-item.active .faq-answer { padding: 0 24px 24px; max-height: 500px; }
+        .faq-answer p { color: #aaaaaa; line-height: 1.7; font-size: 15px; }
+        .faq-answer ul { color: #aaaaaa; margin: 10px 0 10px 20px; }
+        .faq-answer li { margin-bottom: 8px; }
+
+        .contact-section { background: rgba(229, 9, 20, 0.05); border-radius: 16px; padding: 50px; text-align: center; margin-top: 60px; }
+        .contact-section h2 { font-size: 32px; margin-bottom: 15px; }
+        .contact-section p { color: #888; margin-bottom: 30px; }
+        .contact-options { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
+        .contact-option { background: rgba(0,0,0,0.3); padding: 30px 40px; border-radius: 12px; text-align: center; }
+        .contact-option h4 { margin-bottom: 10px; color: #E50914; }
+        .contact-option a { color: #fff; text-decoration: none; }
+        .contact-option a:hover { color: #E50914; }
+
+        .footer { background: #000000; padding: 60px 50px 40px; border-top: 1px solid #333333; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px; }
+        .footer-section h4 { font-size: 16px; margin-bottom: 20px; color: #ffffff; }
+        .footer-section a { display: block; color: #808080; text-decoration: none; margin-bottom: 12px; font-size: 14px; transition: color 0.3s; }
+        .footer-section a:hover { color: #ffffff; }
+        .footer-bottom { max-width: 1200px; margin: 0 auto; padding-top: 30px; border-top: 1px solid #333333; color: #808080; font-size: 13px; text-align: center; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 36px; }
+            .content { padding: 30px 20px 60px; }
+            .nav { padding: 15px 20px; }
+            .contact-options { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/" class="logo">PDFOX</a>
+        <div class="nav-links">
+            <a href="/#features" class="nav-link">Features</a>
+            <a href="/pricing" class="nav-link">Pricing</a>
+            <a href="/about" class="nav-link">About</a>
+            <button class="cta-button" onclick="window.location.href='/editor'">Try Now</button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Help Center</h1>
+        <p>Find answers, guides, and support to get the most out of PDFOX.</p>
+        <div class="search-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" placeholder="Search for help..." id="searchInput" onkeyup="searchFAQ()">
+        </div>
+    </section>
+
+    <section class="quick-links">
+        <a href="#getting-started" class="quick-link">
+            <div class="quick-link-icon">🚀</div>
+            <h3>Getting Started</h3>
+            <p>New to PDFOX? Start here</p>
+        </a>
+        <a href="#editing" class="quick-link">
+            <div class="quick-link-icon">✏️</div>
+            <h3>Editing PDFs</h3>
+            <p>Learn editing features</p>
+        </a>
+        <a href="#pro-access" class="quick-link">
+            <div class="quick-link-icon">⭐</div>
+            <h3>Pro Access</h3>
+            <p>Billing & subscriptions</p>
+        </a>
+        <a href="#troubleshooting" class="quick-link">
+            <div class="quick-link-icon">🔧</div>
+            <h3>Troubleshooting</h3>
+            <p>Fix common issues</p>
+        </a>
+    </section>
+
+    <div class="content">
+        <h2 class="section-title">Frequently Asked Questions</h2>
+
+        <div class="faq-category" id="getting-started">
+            <h3>Getting Started</h3>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    How do I upload a PDF to edit?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Simply drag and drop your PDF file onto the editor, or click the "Open PDF" button to select a file from your computer. PDFOX supports PDF files up to 50MB in size.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Do I need to create an account?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>No! PDFOX works without any account or registration. Just open the editor and start working on your PDFs immediately. If you purchase Pro access, we only need minimal payment information.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What browsers are supported?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>PDFOX works on all modern browsers including:</p>
+                    <ul>
+                        <li>Google Chrome (recommended)</li>
+                        <li>Mozilla Firefox</li>
+                        <li>Microsoft Edge</li>
+                        <li>Safari</li>
+                        <li>Opera</li>
+                    </ul>
+                    <p>For best performance, we recommend using the latest version of Chrome or Firefox.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Is my data secure?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Absolutely. Your documents are processed using 256-bit AES encryption. Files are automatically deleted from our servers within 24 hours. We never store, analyze, or share your document content.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-category" id="editing">
+            <h3>Editing PDFs</h3>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    How do I add text to a PDF?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Select the "Add Text" tool from the toolbar, then click anywhere on your PDF where you want to add text. Type your content, and use the formatting options to change font, size, and color.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    How do I add a signature?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Click the "Signature" tool in the toolbar. You can:</p>
+                    <ul>
+                        <li>Draw your signature using your mouse or touchpad</li>
+                        <li>Type your name and select a signature style</li>
+                        <li>Upload an image of your signature</li>
+                    </ul>
+                    <p>Once created, click on the PDF to place your signature. You can resize and reposition it as needed.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Can I edit existing text in a PDF?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Yes! Use the "Edit Text" tool to modify existing text in your PDF. Click on any text element to select it, then edit the content directly. Note: Some PDFs with complex formatting or scanned documents may have limitations.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    How does AI text recognition work?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Our AI-powered OCR (Optical Character Recognition) automatically detects and extracts text from scanned documents and images within your PDF. This makes it possible to edit, search, and copy text from documents that were originally just images.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    How do I save my edited PDF?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Click the "Save" or "Download" button in the toolbar. Your edited PDF will be downloaded to your computer. With Free access, exports include a small PDFOX watermark. Pro users get clean, watermark-free exports.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-category" id="pro-access">
+            <h3>Pro Access & Billing</h3>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What's the difference between Free and Pro?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Free access includes all editing features, but exported PDFs have a small PDFOX watermark. Pro access removes all watermarks, enables document sharing, and provides priority processing. Pro costs just €8.99 for 24 hours of unlimited use.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    How does the 24-hour Pro access work?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>When you purchase Pro access, you get unlimited use of all features for 24 hours from the moment of activation. Edit and export as many PDFs as you want during this period, completely watermark-free.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What payment methods do you accept?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>We accept all major payment methods through Stripe:</p>
+                    <ul>
+                        <li>Credit/Debit cards (Visa, Mastercard, Amex)</li>
+                        <li>Apple Pay</li>
+                        <li>Google Pay</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    How do I recover my Pro access on a new device?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>If you need to access Pro on a different device or browser, use the "Recover Access" option. Enter the email address and receipt number from your payment confirmation to restore your Pro access.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Can I get a refund?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>If you experience technical issues that prevent you from using PDFOX, please contact our support team. We handle refund requests on a case-by-case basis and are committed to ensuring customer satisfaction.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-category" id="troubleshooting">
+            <h3>Troubleshooting</h3>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    My PDF won't upload. What should I do?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Try these solutions:</p>
+                    <ul>
+                        <li>Check that your file is a valid PDF (not corrupted)</li>
+                        <li>Ensure the file is under 50MB</li>
+                        <li>Try a different browser</li>
+                        <li>Clear your browser cache and refresh</li>
+                        <li>Disable browser extensions that might interfere</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    The editor is running slowly. How can I fix this?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>For better performance:</p>
+                    <ul>
+                        <li>Close other browser tabs to free up memory</li>
+                        <li>Use Chrome or Firefox for best performance</li>
+                        <li>For large PDFs (50+ pages), be patient during initial loading</li>
+                        <li>Ensure you have a stable internet connection</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    My changes aren't saving. What's wrong?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>PDFOX automatically saves your session in your browser. If changes aren't persisting:</p>
+                    <ul>
+                        <li>Make sure you're not using incognito/private browsing mode</li>
+                        <li>Don't clear browser data while working</li>
+                        <li>Always download your final PDF to save permanently</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    The text looks different after editing. Why?
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>If fonts appear different, the original PDF may use fonts not available in your browser. PDFOX will substitute with the closest matching font. For best results with text editing, use common fonts like Arial, Times New Roman, or Helvetica.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    I can't access my Pro features after payment.
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>If Pro access isn't working after payment:</p>
+                    <ul>
+                        <li>Wait a few seconds and refresh the page</li>
+                        <li>Use the "Recover Access" feature with your receipt number</li>
+                        <li>Check your email for the payment confirmation</li>
+                        <li>Contact support@pdfox.cloud with your receipt number</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="contact-section">
+            <h2>Still Need Help?</h2>
+            <p>Can't find what you're looking for? Our support team is here to help.</p>
+            <div class="contact-options">
+                <div class="contact-option">
+                    <h4>Email Support</h4>
+                    <a href="mailto:support@pdfox.cloud">support@pdfox.cloud</a>
+                </div>
+                <div class="contact-option">
+                    <h4>Response Time</h4>
+                    <p>Within 24 hours</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>PDFOX</h4>
+                <a href="/#features">Features</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/about">About Us</a>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <a href="/help">Help Center</a>
+                <a href="/docs">Documentation</a>
+                <a href="/api">API</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms of Service</a>
+                <a href="/security">Security</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 PDFOX. All rights reserved. | Professional PDF Editing Platform
+        </div>
+    </footer>
+
+    <script>
+        const lenis = new Lenis({ duration: 1.2, lerp: 0.1, wheelMultiplier: 1, smoothTouch: false });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+
+        function toggleFaq(element) {
+            const item = element.parentElement;
+            item.classList.toggle('active');
+        }
+
+        function searchFAQ() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const items = document.querySelectorAll('.faq-item');
+
+            items.forEach(item => {
+                const question = item.querySelector('.faq-question').textContent.toLowerCase();
+                const answer = item.querySelector('.faq-answer').textContent.toLowerCase();
+
+                if (question.includes(query) || answer.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = query ? 'none' : 'block';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

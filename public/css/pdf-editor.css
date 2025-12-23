@@ -123,6 +123,10 @@ body {
 
 .header-logo-link:hover { opacity: 0.85; }
 
+.header-logo-link svg {
+    pointer-events: none;
+}
+
 .header-actions {
     display: flex;
     gap: 15px;

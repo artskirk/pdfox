@@ -6,6 +6,25 @@
     <title>PDFOX - Professional PDF Editor</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
+    <!-- App Config (injected by server, must load before logger) -->
+    <script>
+        (function() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/config', false); // Synchronous request
+            try {
+                xhr.send();
+                if (xhr.status === 200) {
+                    window.PDFOX_CONFIG = JSON.parse(xhr.responseText);
+                }
+            } catch (e) {
+                window.PDFOX_CONFIG = { env: 'prod', debug: false }; // Safe default
+            }
+        })();
+    </script>
+
+    <!-- Production Logger (must load after config) -->
+    <script src="/js/modules/logger.js"></script>
+
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>

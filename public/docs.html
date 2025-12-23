@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - PDFOX</title>
+    <meta name="description" content="Complete documentation for PDFOX PDF editor. Learn how to use all features including text editing, signatures, annotations, and more.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #000000; color: #ffffff; overflow-x: hidden; line-height: 1.6; }
+        .nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(229, 9, 20, 0.2); }
+        .logo { font-family: 'Bebas Neue', sans-serif; font-size: 40px; font-weight: 700; color: #E50914; cursor: pointer; letter-spacing: 2px; text-decoration: none; }
+        .nav-links { display: flex; gap: 30px; align-items: center; }
+        .nav-link { color: #ffffff; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        .nav-link:hover { color: #E50914; }
+        .cta-button { background: #E50914; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .cta-button:hover { background: #B8070F; }
+
+        .hero { padding: 140px 50px 60px; text-align: center; background: linear-gradient(180deg, rgba(229, 9, 20, 0.05) 0%, rgba(0, 0, 0, 0) 100%); }
+        .hero h1 { font-size: 56px; font-weight: 700; margin-bottom: 20px; background: linear-gradient(135deg, #ffffff 0%, #E50914 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 20px; color: #cccccc; max-width: 700px; margin: 0 auto; }
+
+        .docs-layout { max-width: 1400px; margin: 0 auto; padding: 40px 50px 100px; display: grid; grid-template-columns: 250px 1fr; gap: 60px; }
+
+        .sidebar { position: sticky; top: 100px; height: fit-content; }
+        .sidebar-section { margin-bottom: 30px; }
+        .sidebar-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 15px; font-weight: 600; }
+        .sidebar-links { list-style: none; }
+        .sidebar-links li { margin-bottom: 8px; }
+        .sidebar-links a { color: #ccc; text-decoration: none; font-size: 14px; display: block; padding: 8px 12px; border-radius: 6px; transition: all 0.2s; }
+        .sidebar-links a:hover, .sidebar-links a.active { color: #fff; background: rgba(229, 9, 20, 0.15); }
+
+        .docs-content h2 { font-size: 32px; color: #E50914; margin-bottom: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .docs-content h2:first-child { border-top: none; padding-top: 0; }
+        .docs-content h3 { font-size: 22px; margin: 30px 0 15px; color: #fff; }
+        .docs-content p { font-size: 16px; color: #ccc; margin-bottom: 16px; line-height: 1.8; }
+        .docs-content ul, .docs-content ol { margin: 16px 0 16px 24px; color: #ccc; }
+        .docs-content li { margin-bottom: 10px; line-height: 1.7; }
+        .docs-content strong { color: #fff; }
+
+        .feature-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin: 20px 0; }
+        .feature-card h4 { font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+        .feature-card p { margin: 0; font-size: 15px; }
+
+        .tip-box { background: rgba(229, 9, 20, 0.1); border-left: 4px solid #E50914; padding: 16px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .tip-box strong { color: #E50914; }
+
+        .warning-box { background: rgba(255, 152, 0, 0.1); border-left: 4px solid #FF9800; padding: 16px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .warning-box strong { color: #FF9800; }
+
+        .steps { counter-reset: step; margin: 20px 0; }
+        .step { display: flex; gap: 16px; margin-bottom: 20px; padding: 20px; background: rgba(255,255,255,0.02); border-radius: 8px; }
+        .step-number { width: 32px; height: 32px; background: #E50914; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+        .step-content h4 { margin-bottom: 8px; }
+        .step-content p { margin: 0; color: #aaa; font-size: 15px; }
+
+        .keyboard-shortcut { display: inline-block; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 13px; margin: 2px; }
+
+        .shortcuts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+        .shortcut-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; }
+        .shortcut-item span:first-child { color: #ccc; }
+
+        .footer { background: #000000; padding: 60px 50px 40px; border-top: 1px solid #333333; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px; }
+        .footer-section h4 { font-size: 16px; margin-bottom: 20px; color: #ffffff; }
+        .footer-section a { display: block; color: #808080; text-decoration: none; margin-bottom: 12px; font-size: 14px; transition: color 0.3s; }
+        .footer-section a:hover { color: #ffffff; }
+        .footer-bottom { max-width: 1200px; margin: 0 auto; padding-top: 30px; border-top: 1px solid #333333; color: #808080; font-size: 13px; text-align: center; }
+
+        @media (max-width: 992px) {
+            .docs-layout { grid-template-columns: 1fr; }
+            .sidebar { position: relative; top: 0; display: flex; flex-wrap: wrap; gap: 20px; }
+            .sidebar-section { margin-bottom: 0; }
+        }
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 36px; }
+            .docs-layout { padding: 30px 20px 60px; }
+            .nav { padding: 15px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/" class="logo">PDFOX</a>
+        <div class="nav-links">
+            <a href="/#features" class="nav-link">Features</a>
+            <a href="/pricing" class="nav-link">Pricing</a>
+            <a href="/about" class="nav-link">About</a>
+            <button class="cta-button" onclick="window.location.href='/editor'">Try Now</button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Documentation</h1>
+        <p>Everything you need to know about using PDFOX effectively.</p>
+    </section>
+
+    <div class="docs-layout">
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Getting Started</div>
+                <ul class="sidebar-links">
+                    <li><a href="#overview">Overview</a></li>
+                    <li><a href="#quick-start">Quick Start</a></li>
+                    <li><a href="#interface">Interface Guide</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Features</div>
+                <ul class="sidebar-links">
+                    <li><a href="#text-editing">Text Editing</a></li>
+                    <li><a href="#signatures">Signatures</a></li>
+                    <li><a href="#annotations">Annotations</a></li>
+                    <li><a href="#forms">Form Filling</a></li>
+                    <li><a href="#images">Images & Stamps</a></li>
+                    <li><a href="#redaction">Redaction</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Advanced</div>
+                <ul class="sidebar-links">
+                    <li><a href="#ocr">AI Text Recognition</a></li>
+                    <li><a href="#sharing">Document Sharing</a></li>
+                    <li><a href="#shortcuts">Keyboard Shortcuts</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="docs-content">
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>PDFOX is a professional-grade PDF editor that runs entirely in your browser. No downloads, no installations, no accounts required. Edit, sign, annotate, and share PDF documents with enterprise-level features at a fraction of the cost of traditional solutions.</p>
+
+                <div class="feature-card">
+                    <h4>🎯 Key Capabilities</h4>
+                    <ul>
+                        <li>Edit existing text and add new text to any PDF</li>
+                        <li>Create and insert digital signatures</li>
+                        <li>Add annotations, highlights, and comments</li>
+                        <li>Fill out PDF forms automatically</li>
+                        <li>Redact sensitive information</li>
+                        <li>AI-powered text recognition for scanned documents</li>
+                        <li>Share documents via secure links (Pro)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="quick-start">
+                <h2>Quick Start</h2>
+                <p>Get started with PDFOX in three simple steps:</p>
+
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Upload Your PDF</h4>
+                            <p>Drag and drop a PDF onto the editor, or click "Open PDF" to browse your files. Files up to 50MB are supported.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Make Your Edits</h4>
+                            <p>Use the toolbar to select tools: add text, signatures, annotations, images, or fill forms. Click on the document to apply changes.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Save & Download</h4>
+                            <p>Click "Save" to download your edited PDF. Free users get a watermarked version; Pro users get clean exports.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tip-box">
+                    <strong>Tip:</strong> Your work is automatically saved in your browser session. You can close the tab and return later to continue editing (unless you clear browser data).
+                </div>
+            </section>
+
+            <section id="interface">
+                <h2>Interface Guide</h2>
+                <p>The PDFOX interface is designed for efficiency and ease of use:</p>
+
+                <h3>Toolbar</h3>
+                <p>The main toolbar at the top contains all editing tools:</p>
+                <ul>
+                    <li><strong>Open PDF</strong> - Load a new document</li>
+                    <li><strong>Save</strong> - Download your edited PDF</li>
+                    <li><strong>Add Text</strong> - Insert new text anywhere</li>
+                    <li><strong>Edit Text</strong> - Modify existing text</li>
+                    <li><strong>Signature</strong> - Add your signature</li>
+                    <li><strong>Draw</strong> - Freehand drawing tool</li>
+                    <li><strong>Shapes</strong> - Add rectangles, circles, lines</li>
+                    <li><strong>Highlight</strong> - Highlight text passages</li>
+                    <li><strong>Stamp</strong> - Add predefined stamps</li>
+                    <li><strong>Image</strong> - Insert images</li>
+                    <li><strong>Redact</strong> - Black out sensitive content</li>
+                </ul>
+
+                <h3>Page Navigation</h3>
+                <p>Navigate between pages using:</p>
+                <ul>
+                    <li>Page thumbnails in the sidebar</li>
+                    <li>Previous/Next buttons</li>
+                    <li>Page number input for direct navigation</li>
+                    <li>Scroll wheel on the document</li>
+                </ul>
+
+                <h3>Zoom Controls</h3>
+                <p>Adjust document zoom using the zoom buttons or dropdown. You can also use <span class="keyboard-shortcut">Ctrl</span> + <span class="keyboard-shortcut">+</span> / <span class="keyboard-shortcut">-</span> to zoom in and out.</p>
+            </section>
+
+            <section id="text-editing">
+                <h2>Text Editing</h2>
+
+                <h3>Adding New Text</h3>
+                <p>To add new text to your PDF:</p>
+                <ol>
+                    <li>Click the <strong>Add Text</strong> tool in the toolbar</li>
+                    <li>Click anywhere on the document where you want to place text</li>
+                    <li>Type your content in the text box that appears</li>
+                    <li>Use the formatting options to adjust font, size, and color</li>
+                    <li>Click outside the text box to confirm</li>
+                </ol>
+
+                <h3>Editing Existing Text</h3>
+                <p>To modify existing text:</p>
+                <ol>
+                    <li>Select the <strong>Edit Text</strong> tool</li>
+                    <li>Click on the text you want to edit</li>
+                    <li>Make your changes directly</li>
+                    <li>Click outside to save changes</li>
+                </ol>
+
+                <div class="warning-box">
+                    <strong>Note:</strong> Some PDFs have text embedded as images or use custom fonts. In these cases, text editing may be limited. Use the AI Text Recognition feature to convert image-based text to editable text.
+                </div>
+
+                <h3>Text Formatting Options</h3>
+                <ul>
+                    <li><strong>Font Family</strong> - Choose from available fonts</li>
+                    <li><strong>Font Size</strong> - Adjust text size (8-72pt)</li>
+                    <li><strong>Bold / Italic</strong> - Apply text styles</li>
+                    <li><strong>Text Color</strong> - Pick any color</li>
+                    <li><strong>Alignment</strong> - Left, center, or right align</li>
+                </ul>
+            </section>
+
+            <section id="signatures">
+                <h2>Signatures</h2>
+                <p>PDFOX offers multiple ways to create legally-binding electronic signatures:</p>
+
+                <h3>Creating a Signature</h3>
+                <div class="feature-card">
+                    <h4>✍️ Draw</h4>
+                    <p>Use your mouse, trackpad, or touchscreen to draw your signature naturally. Adjust pen thickness and color as needed.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>⌨️ Type</h4>
+                    <p>Type your name and choose from several signature-style fonts. Preview different styles before selecting.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>📤 Upload</h4>
+                    <p>Upload an image of your existing signature (PNG, JPG). Transparent backgrounds work best.</p>
+                </div>
+
+                <h3>Placing Your Signature</h3>
+                <ol>
+                    <li>Create or select your signature</li>
+                    <li>Click on the document where you want to place it</li>
+                    <li>Drag to reposition if needed</li>
+                    <li>Use corner handles to resize</li>
+                </ol>
+
+                <div class="tip-box">
+                    <strong>Tip:</strong> Your signatures are saved locally in your browser for quick reuse. Clear browser data to remove them.
+                </div>
+            </section>
+
+            <section id="annotations">
+                <h2>Annotations</h2>
+                <p>Add notes, highlights, and comments to your documents:</p>
+
+                <h3>Highlight Tool</h3>
+                <p>Select text and apply highlights in various colors. Great for reviewing documents or marking important passages.</p>
+
+                <h3>Drawing Tool</h3>
+                <p>Freehand drawing for marking up documents, circling items, or adding handwritten notes.</p>
+
+                <h3>Shapes</h3>
+                <ul>
+                    <li><strong>Rectangle</strong> - Draw boxes around content</li>
+                    <li><strong>Circle/Ellipse</strong> - Highlight circular areas</li>
+                    <li><strong>Line</strong> - Draw straight lines</li>
+                    <li><strong>Arrow</strong> - Point to specific content</li>
+                </ul>
+
+                <h3>Comments</h3>
+                <p>Add text comments that appear as icons on the document. Click to expand and read the full comment.</p>
+            </section>
+
+            <section id="forms">
+                <h2>Form Filling</h2>
+                <p>PDFOX automatically detects fillable form fields in your PDF documents.</p>
+
+                <h3>Auto-Detection</h3>
+                <p>When you open a PDF with form fields, PDFOX highlights them automatically. Simply click on a field and start typing.</p>
+
+                <h3>Supported Field Types</h3>
+                <ul>
+                    <li>Text fields - Single and multi-line</li>
+                    <li>Checkboxes - Click to check/uncheck</li>
+                    <li>Radio buttons - Select one option</li>
+                    <li>Dropdown menus - Choose from options</li>
+                    <li>Date fields - Date picker available</li>
+                    <li>Signature fields - Insert your signature</li>
+                </ul>
+
+                <div class="tip-box">
+                    <strong>Tip:</strong> Use <span class="keyboard-shortcut">Tab</span> to move between form fields quickly.
+                </div>
+            </section>
+
+            <section id="images">
+                <h2>Images & Stamps</h2>
+
+                <h3>Adding Images</h3>
+                <ol>
+                    <li>Click the <strong>Image</strong> tool</li>
+                    <li>Select an image file (PNG, JPG, GIF supported)</li>
+                    <li>Click on the document to place the image</li>
+                    <li>Drag corners to resize, maintaining aspect ratio</li>
+                </ol>
+
+                <h3>Stamps</h3>
+                <p>Quick-access stamps for common document needs:</p>
+                <ul>
+                    <li>APPROVED / REJECTED</li>
+                    <li>DRAFT / FINAL</li>
+                    <li>CONFIDENTIAL</li>
+                    <li>FOR REVIEW</li>
+                    <li>COPY / ORIGINAL</li>
+                    <li>Date stamps</li>
+                </ul>
+            </section>
+
+            <section id="redaction">
+                <h2>Redaction</h2>
+                <p>Permanently remove sensitive information from your documents.</p>
+
+                <div class="warning-box">
+                    <strong>Important:</strong> Redaction is permanent. Once applied and saved, the redacted content cannot be recovered. Always keep a backup of your original document.
+                </div>
+
+                <h3>How to Redact</h3>
+                <ol>
+                    <li>Select the <strong>Redact</strong> tool</li>
+                    <li>Click and drag to select the area to redact</li>
+                    <li>The selected area will be marked for redaction</li>
+                    <li>Save the document to apply redactions permanently</li>
+                </ol>
+
+                <h3>Redaction vs. Highlighting</h3>
+                <p>Unlike black highlighting, proper redaction removes the underlying content completely. The data is deleted from the PDF, not just covered.</p>
+            </section>
+
+            <section id="ocr">
+                <h2>AI Text Recognition (OCR)</h2>
+                <p>Convert scanned documents and images into editable, searchable text using our AI-powered OCR technology.</p>
+
+                <h3>When to Use OCR</h3>
+                <ul>
+                    <li>Scanned paper documents</li>
+                    <li>PDFs created from photos</li>
+                    <li>Documents with text as images</li>
+                    <li>Old documents without selectable text</li>
+                </ul>
+
+                <h3>How It Works</h3>
+                <ol>
+                    <li>Open your scanned PDF</li>
+                    <li>PDFOX automatically detects if OCR is needed</li>
+                    <li>Click "Run OCR" when prompted</li>
+                    <li>Wait for processing (varies by document size)</li>
+                    <li>Text becomes editable and searchable</li>
+                </ol>
+
+                <div class="tip-box">
+                    <strong>Tip:</strong> For best OCR results, ensure your scanned documents are clear, well-lit, and at least 300 DPI resolution.
+                </div>
+            </section>
+
+            <section id="sharing">
+                <h2>Document Sharing (Pro)</h2>
+                <p>Share your documents securely with anyone via unique links.</p>
+
+                <h3>Creating a Share Link</h3>
+                <ol>
+                    <li>Click the <strong>Share</strong> button</li>
+                    <li>Optionally set a password for protection</li>
+                    <li>Click "Create Link"</li>
+                    <li>Copy and send the link to recipients</li>
+                </ol>
+
+                <h3>Share Link Features</h3>
+                <ul>
+                    <li><strong>24-hour expiry</strong> - Links automatically expire for security</li>
+                    <li><strong>Password protection</strong> - Optional password requirement</li>
+                    <li><strong>View & download</strong> - Recipients can view and download</li>
+                    <li><strong>No account needed</strong> - Recipients don't need PDFOX accounts</li>
+                </ul>
+
+                <div class="warning-box">
+                    <strong>Note:</strong> Document sharing is only available with Pro access. Share links expire after 24 hours.
+                </div>
+            </section>
+
+            <section id="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+                <p>Speed up your workflow with these keyboard shortcuts:</p>
+
+                <div class="shortcuts-grid">
+                    <div class="shortcut-item">
+                        <span>Open file</span>
+                        <span><span class="keyboard-shortcut">Ctrl</span> + <span class="keyboard-shortcut">O</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Save/Download</span>
+                        <span><span class="keyboard-shortcut">Ctrl</span> + <span class="keyboard-shortcut">S</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Undo</span>
+                        <span><span class="keyboard-shortcut">Ctrl</span> + <span class="keyboard-shortcut">Z</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Redo</span>
+                        <span><span class="keyboard-shortcut">Ctrl</span> + <span class="keyboard-shortcut">Y</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Zoom in</span>
+                        <span><span class="keyboard-shortcut">Ctrl</span> + <span class="keyboard-shortcut">+</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Zoom out</span>
+                        <span><span class="keyboard-shortcut">Ctrl</span> + <span class="keyboard-shortcut">-</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Reset zoom</span>
+                        <span><span class="keyboard-shortcut">Ctrl</span> + <span class="keyboard-shortcut">0</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Next page</span>
+                        <span><span class="keyboard-shortcut">Page Down</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Previous page</span>
+                        <span><span class="keyboard-shortcut">Page Up</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Delete selected</span>
+                        <span><span class="keyboard-shortcut">Delete</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Escape tool</span>
+                        <span><span class="keyboard-shortcut">Esc</span></span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Next form field</span>
+                        <span><span class="keyboard-shortcut">Tab</span></span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>PDFOX</h4>
+                <a href="/#features">Features</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/about">About Us</a>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <a href="/help">Help Center</a>
+                <a href="/docs">Documentation</a>
+                <a href="/api">API</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms of Service</a>
+                <a href="/security">Security</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 PDFOX. All rights reserved. | Professional PDF Editing Platform
+        </div>
+    </footer>
+
+    <script>
+        const lenis = new Lenis({ duration: 1.2, lerp: 0.1, wheelMultiplier: 1, smoothTouch: false });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+
+        // Highlight active sidebar link on scroll
+        const sections = document.querySelectorAll('section[id]');
+        const sidebarLinks = document.querySelectorAll('.sidebar-links a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 150;
+                if (scrollY >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            sidebarLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
