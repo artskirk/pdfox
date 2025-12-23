@@ -7,18 +7,11 @@
     <meta name="description" content="Complete documentation for PDFOX PDF editor. Learn how to use all features including text editing, signatures, annotations, and more.">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/shared.css">
     <script src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
 
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #000000; color: #ffffff; overflow-x: hidden; line-height: 1.6; }
-        .nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(229, 9, 20, 0.2); }
-        .logo { font-family: 'Bebas Neue', sans-serif; font-size: 40px; font-weight: 700; color: #E50914; cursor: pointer; letter-spacing: 2px; text-decoration: none; }
-        .nav-links { display: flex; gap: 30px; align-items: center; }
-        .nav-link { color: #ffffff; text-decoration: none; font-weight: 500; transition: color 0.3s; }
-        .nav-link:hover { color: #E50914; }
-        .cta-button { background: #E50914; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-        .cta-button:hover { background: #B8070F; }
+        body { line-height: 1.6; }
 
         .hero { padding: 140px 50px 60px; text-align: center; background: linear-gradient(180deg, rgba(229, 9, 20, 0.05) 0%, rgba(0, 0, 0, 0) 100%); }
         .hero h1 { font-size: 56px; font-weight: 700; margin-bottom: 20px; background: linear-gradient(135deg, #ffffff 0%, #E50914 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -64,33 +57,48 @@
         .shortcut-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; }
         .shortcut-item span:first-child { color: #ccc; }
 
-        .footer { background: #000000; padding: 60px 50px 40px; border-top: 1px solid #333333; }
-        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px; }
-        .footer-section h4 { font-size: 16px; margin-bottom: 20px; color: #ffffff; }
-        .footer-section a { display: block; color: #808080; text-decoration: none; margin-bottom: 12px; font-size: 14px; transition: color 0.3s; }
-        .footer-section a:hover { color: #ffffff; }
-        .footer-bottom { max-width: 1200px; margin: 0 auto; padding-top: 30px; border-top: 1px solid #333333; color: #808080; font-size: 13px; text-align: center; }
-
         @media (max-width: 992px) {
             .docs-layout { grid-template-columns: 1fr; }
             .sidebar { position: relative; top: 0; display: flex; flex-wrap: wrap; gap: 20px; }
             .sidebar-section { margin-bottom: 0; }
         }
         @media (max-width: 768px) {
+            .hero { padding: 100px 20px 40px; }
             .hero h1 { font-size: 36px; }
-            .docs-layout { padding: 30px 20px 60px; }
-            .nav { padding: 15px 20px; }
+            .hero p { font-size: 16px; }
+            .docs-layout { padding: 30px 16px 60px; gap: 30px; }
+            .sidebar { flex-direction: column; gap: 16px; }
+            .sidebar-section { width: 100%; }
+            .sidebar-links { display: flex; flex-wrap: wrap; gap: 8px; }
+            .sidebar-links li { margin-bottom: 0; }
+            .sidebar-links a { padding: 8px 14px; font-size: 13px; background: rgba(255,255,255,0.05); }
+            .docs-content h2 { font-size: 24px; }
+            .docs-content h3 { font-size: 18px; }
+            .feature-card { padding: 16px; }
+            .step { flex-direction: column; gap: 12px; padding: 16px; }
+            .shortcuts-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .hero { padding: 80px 16px 30px; }
+            .hero h1 { font-size: 28px; }
+            .docs-layout { padding: 20px 12px 40px; }
+            .sidebar-links a { padding: 6px 12px; font-size: 12px; }
+            .docs-content h2 { font-size: 20px; }
+            .docs-content p { font-size: 14px; }
+            .shortcut-item { padding: 10px 12px; font-size: 13px; }
+            .keyboard-shortcut { padding: 3px 6px; font-size: 11px; }
         }
     </style>
 </head>
 <body>
-    <nav class="nav">
+    <nav class="nav" id="nav">
         <a href="/" class="logo">PDFOX</a>
         <div class="nav-links">
             <a href="/#features" class="nav-link">Features</a>
             <a href="/pricing" class="nav-link">Pricing</a>
             <a href="/about" class="nav-link">About</a>
-            <button class="cta-button" onclick="window.location.href='/editor'">Try Now</button>
+            <button class="cta-button" onclick="window.location.href='/#upload'">Try Free</button>
         </div>
     </nav>
 
@@ -507,7 +515,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            &copy; 2025 PDFOX. All rights reserved. | Professional PDF Editing Platform
+            &copy; 2026 PDFOX. All rights reserved. | Professional PDF Editing Platform
         </div>
     </footer>
 

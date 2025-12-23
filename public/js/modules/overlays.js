@@ -96,22 +96,26 @@ const PDFoxOverlays = (function() {
             e.preventDefault();
             deleteOverlay(overlay.id);
         });
-        deleteBtn.addEventListener('mousedown', (e) => {
+        deleteBtn.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
             e.stopImmediatePropagation();
         });
         div.appendChild(deleteBtn);
 
-        // Resize handles
+        // Resize handles (with touch support)
         ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'].forEach(position => {
             const handle = document.createElement('div');
             handle.className = `resize-handle ${position}`;
-            handle.onmousedown = (e) => {
+            handle.style.touchAction = 'none';
+            handle.onpointerdown = (e) => {
                 e.stopPropagation();
                 startResize(e, overlay.id, position);
             };
             div.appendChild(handle);
         });
+
+        // Enable touch support
+        div.style.touchAction = 'none';
 
         // Event handlers
         div.addEventListener('click', (e) => {
@@ -132,7 +136,7 @@ const PDFoxOverlays = (function() {
             e.stopPropagation();
             editOverlay(overlay.id);
         });
-        div.addEventListener('mousedown', (e) => {
+        div.addEventListener('pointerdown', (e) => {
             // Ignore right-clicks - let context menu handle them
             if (e.button === 2) return;
 
@@ -396,27 +400,36 @@ const PDFoxOverlays = (function() {
         selectOverlay(overlayId);
 
         const element = document.getElementById(overlayId);
-        if (element) element.classList.add('dragging');
+        if (element) {
+            element.classList.add('dragging');
+            // Capture pointer for reliable tracking
+            if (element.setPointerCapture && e.pointerId !== undefined) {
+                element.setPointerCapture(e.pointerId);
+            }
+        }
 
         dragState = {
             overlayId: overlayId,
             startX: e.clientX,
             startY: e.clientY,
             initialX: overlay.x,
-            initialY: overlay.y
+            initialY: overlay.y,
+            pointerId: e.pointerId
         };
 
-        document.addEventListener('mousemove', onDrag);
-        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('pointermove', onDrag);
+        document.addEventListener('pointerup', endDrag);
+        document.addEventListener('pointercancel', endDrag);
         e.preventDefault();
     }
 
     /**
      * Handle drag movement
-     * @param {MouseEvent} e - Mouse event
+     * @param {PointerEvent} e - Pointer event
      */
     function onDrag(e) {
         if (!dragState) return;
+        if (e.pointerId !== undefined && dragState.pointerId !== undefined && e.pointerId !== dragState.pointerId) return;
 
         const scale = core.get('scale') || 1.0;
         const dx = e.clientX - dragState.startX;
@@ -440,20 +453,33 @@ const PDFoxOverlays = (function() {
 
     /**
      * End dragging
+     * @param {PointerEvent} e - Pointer event
      */
-    function endDrag() {
+    function endDrag(e) {
         if (dragState) {
+            if (e && e.pointerId !== undefined && dragState.pointerId !== undefined && e.pointerId !== dragState.pointerId) return;
             const element = document.getElementById(dragState.overlayId);
-            if (element) element.classList.remove('dragging');
+            if (element) {
+                element.classList.remove('dragging');
+                // Release pointer capture
+                if (element.releasePointerCapture && e && e.pointerId !== undefined) {
+                    try {
+                        element.releasePointerCapture(e.pointerId);
+                    } catch (err) {
+                        // Ignore - pointer may not be captured
+                    }
+                }
+            }
             dragState = null;
         }
-        document.removeEventListener('mousemove', onDrag);
-        document.removeEventListener('mouseup', endDrag);
+        document.removeEventListener('pointermove', onDrag);
+        document.removeEventListener('pointerup', endDrag);
+        document.removeEventListener('pointercancel', endDrag);
     }
 
     /**
      * Start resizing overlay
-     * @param {MouseEvent} e - Mouse event
+     * @param {PointerEvent} e - Pointer event
      * @param {string} overlayId - Overlay ID
      * @param {string} position - Handle position
      */
@@ -464,6 +490,11 @@ const PDFoxOverlays = (function() {
 
         selectOverlay(overlayId);
 
+        // Capture pointer for reliable tracking
+        if (e.target && e.target.setPointerCapture && e.pointerId !== undefined) {
+            e.target.setPointerCapture(e.pointerId);
+        }
+
         resizeState = {
             overlayId: overlayId,
             position: position,
@@ -473,20 +504,23 @@ const PDFoxOverlays = (function() {
             initialY: overlay.y,
             initialWidth: overlay.width,
             initialHeight: overlay.height,
-            initialFontSize: overlay.fontSize || 16
+            initialFontSize: overlay.fontSize || 16,
+            pointerId: e.pointerId
         };
 
-        document.addEventListener('mousemove', onResize);
-        document.addEventListener('mouseup', endResize);
+        document.addEventListener('pointermove', onResize);
+        document.addEventListener('pointerup', endResize);
+        document.addEventListener('pointercancel', endResize);
         e.preventDefault();
     }
 
     /**
      * Handle resize movement
-     * @param {MouseEvent} e - Mouse event
+     * @param {PointerEvent} e - Pointer event
      */
     function onResize(e) {
         if (!resizeState) return;
+        if (e.pointerId !== undefined && resizeState.pointerId !== undefined && e.pointerId !== resizeState.pointerId) return;
 
         const scale = core.get('scale') || 1.0;
         // Convert screen delta to normalized delta
@@ -566,11 +600,16 @@ const PDFoxOverlays = (function() {
 
     /**
      * End resizing
+     * @param {PointerEvent} e - Pointer event
      */
-    function endResize() {
+    function endResize(e) {
+        if (resizeState) {
+            if (e && e.pointerId !== undefined && resizeState.pointerId !== undefined && e.pointerId !== resizeState.pointerId) return;
+        }
         resizeState = null;
-        document.removeEventListener('mousemove', onResize);
-        document.removeEventListener('mouseup', endResize);
+        document.removeEventListener('pointermove', onResize);
+        document.removeEventListener('pointerup', endResize);
+        document.removeEventListener('pointercancel', endResize);
     }
 
     return {
@@ -705,8 +744,8 @@ const PDFoxOverlays = (function() {
             if (overlayLayer) {
                 overlayLayer.addEventListener('click', handleClickAway);
 
-                // Track mouse position for paste functionality
-                overlayLayer.addEventListener('mousemove', (e) => {
+                // Track pointer position for paste functionality (supports touch)
+                overlayLayer.addEventListener('pointermove', (e) => {
                     const rect = overlayLayer.getBoundingClientRect();
                     updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
                 });
@@ -716,8 +755,8 @@ const PDFoxOverlays = (function() {
             if (canvasContainer) {
                 canvasContainer.addEventListener('click', handleClickAway);
 
-                // Track mouse position for paste functionality
-                canvasContainer.addEventListener('mousemove', (e) => {
+                // Track pointer position for paste functionality (supports touch)
+                canvasContainer.addEventListener('pointermove', (e) => {
                     const rect = canvasContainer.getBoundingClientRect();
                     updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
                 });

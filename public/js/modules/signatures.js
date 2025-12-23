@@ -258,8 +258,12 @@ const PDFoxSignatures = (function() {
     function makeSignatureDraggable(element, signature) {
         let isDragging = false;
         let startX, startY, initialX, initialY;
+        let activePointerId = null;
 
-        element.addEventListener('mousedown', (e) => {
+        // Enable touch support
+        element.style.touchAction = 'none';
+
+        element.addEventListener('pointerdown', (e) => {
             const currentTool = core.get('currentTool');
             // Allow dragging for common editing tools or when signature is clicked directly
             const allowedTools = ['editText', 'moveText', 'pan', 'select', 'signature', null, undefined];
@@ -269,15 +273,17 @@ const PDFoxSignatures = (function() {
             if (e.target.classList.contains('signature-resize-handle')) return;
 
             isDragging = true;
+            activePointerId = e.pointerId;
             startX = e.clientX;
             startY = e.clientY;
             initialX = signature.x;
             initialY = signature.y;
+            element.setPointerCapture(e.pointerId);
             e.preventDefault();
         });
 
-        const onMouseMove = (e) => {
-            if (!isDragging) return;
+        const onPointerMove = (e) => {
+            if (!isDragging || e.pointerId !== activePointerId) return;
 
             const dx = e.clientX - startX;
             const dy = e.clientY - startY;
@@ -289,12 +295,15 @@ const PDFoxSignatures = (function() {
             element.style.top = signature.y + 'px';
         };
 
-        const onMouseUp = () => {
+        const onPointerUp = (e) => {
+            if (e.pointerId !== activePointerId) return;
             isDragging = false;
+            activePointerId = null;
         };
 
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerUp);
     }
 
     /**
@@ -306,18 +315,24 @@ const PDFoxSignatures = (function() {
     function makeSignatureResizable(resizeHandle, element, signature) {
         let isResizing = false;
         let startX, startWidth;
+        let activePointerId = null;
         const aspectRatio = signature.height / signature.width;
 
-        resizeHandle.addEventListener('mousedown', (e) => {
+        // Enable touch support
+        resizeHandle.style.touchAction = 'none';
+
+        resizeHandle.addEventListener('pointerdown', (e) => {
             isResizing = true;
+            activePointerId = e.pointerId;
             startX = e.clientX;
             startWidth = signature.width;
+            resizeHandle.setPointerCapture(e.pointerId);
             e.stopPropagation();
             e.preventDefault();
         });
 
-        const onMouseMove = (e) => {
-            if (!isResizing) return;
+        const onPointerMove = (e) => {
+            if (!isResizing || e.pointerId !== activePointerId) return;
 
             const dx = e.clientX - startX;
             let newWidth = startWidth + dx;
@@ -335,12 +350,15 @@ const PDFoxSignatures = (function() {
             element.style.height = signature.height + 'px';
         };
 
-        const onMouseUp = () => {
+        const onPointerUp = (e) => {
+            if (e.pointerId !== activePointerId) return;
             isResizing = false;
+            activePointerId = null;
         };
 
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerUp);
     }
 
     return {

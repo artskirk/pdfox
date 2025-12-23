@@ -237,17 +237,17 @@ const PDFoxStamps = (function() {
 
         document.body.appendChild(popup);
 
-        // Add event listeners for buttons - use mousedown to ensure we catch the event
+        // Add event listeners for buttons - use pointerdown for touch support
         const cancelBtn = popup.querySelector('#stampCancelBtn');
         const placeBtn = popup.querySelector('#stampPlaceBtn');
 
-        cancelBtn.addEventListener('mousedown', (e) => {
+        cancelBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             closeStampPopup();
         });
 
-        placeBtn.addEventListener('mousedown', (e) => {
+        placeBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             e.stopPropagation();
 
@@ -468,8 +468,9 @@ const PDFoxStamps = (function() {
             <div class="stamp-resize-handle se" data-handle="se"></div>
         `;
 
-        // Add event handlers
-        element.addEventListener('mousedown', (e) => {
+        // Add event handlers (pointer events for touch support)
+        element.style.touchAction = 'none';
+        element.addEventListener('pointerdown', (e) => {
             // Ignore right-clicks - let context menu handle them
             if (e.button === 2) return;
 
@@ -521,7 +522,7 @@ const PDFoxStamps = (function() {
 
     /**
      * Start dragging a stamp
-     * @param {MouseEvent} e - Mouse event
+     * @param {PointerEvent} e - Pointer event
      * @param {string} stampId - Stamp ID
      */
     function startDrag(e, stampId) {
@@ -537,21 +538,30 @@ const PDFoxStamps = (function() {
         const startTop = parseInt(element.style.top);
         const originalX = stamp.x;
         const originalY = stamp.y;
+        const activePointerId = e.pointerId;
 
         element.style.cursor = 'grabbing';
 
-        function onMouseMove(e) {
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
+        // Capture pointer for reliable tracking
+        if (element.setPointerCapture && e.pointerId !== undefined) {
+            element.setPointerCapture(e.pointerId);
+        }
+
+        function onPointerMove(moveEvent) {
+            if (moveEvent.pointerId !== activePointerId) return;
+            const dx = moveEvent.clientX - startX;
+            const dy = moveEvent.clientY - startY;
             element.style.left = `${startLeft + dx}px`;
             element.style.top = `${startTop + dy}px`;
             stamp.x = originalX + dx;
             stamp.y = originalY + dy;
         }
 
-        function onMouseUp() {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
+        function onPointerUp(upEvent) {
+            if (upEvent.pointerId !== activePointerId) return;
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
             element.style.cursor = '';
 
             // Add to history if position changed
@@ -564,13 +574,14 @@ const PDFoxStamps = (function() {
             }
         }
 
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerUp);
     }
 
     /**
      * Start resizing a stamp
-     * @param {MouseEvent} e - Mouse event
+     * @param {PointerEvent} e - Pointer event
      * @param {string} stampId - Stamp ID
      * @param {string} handle - Resize handle name (nw, ne, sw, se)
      */
@@ -585,12 +596,19 @@ const PDFoxStamps = (function() {
         resizeHandle = handle;
         resizeStartPos = { x: e.clientX, y: e.clientY };
         resizeStartSize = stamp.size;
+        const activePointerId = e.pointerId;
 
         const originalSize = stamp.size;
 
-        function onMouseMove(e) {
-            const dx = e.clientX - resizeStartPos.x;
-            const dy = e.clientY - resizeStartPos.y;
+        // Capture pointer for reliable tracking
+        if (e.target && e.target.setPointerCapture && e.pointerId !== undefined) {
+            e.target.setPointerCapture(e.pointerId);
+        }
+
+        function onPointerMove(moveEvent) {
+            if (moveEvent.pointerId !== activePointerId) return;
+            const dx = moveEvent.clientX - resizeStartPos.x;
+            const dy = moveEvent.clientY - resizeStartPos.y;
 
             // Calculate new size based on handle
             let delta = 0;
@@ -607,9 +625,11 @@ const PDFoxStamps = (function() {
             selectStamp(stampId);
         }
 
-        function onMouseUp() {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
+        function onPointerUp(upEvent) {
+            if (upEvent.pointerId !== activePointerId) return;
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
             isResizing = false;
             resizeHandle = null;
 
@@ -624,8 +644,9 @@ const PDFoxStamps = (function() {
             }
         }
 
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerUp);
     }
 
     /**
@@ -866,17 +887,17 @@ const PDFoxStamps = (function() {
             if (canvas) {
                 canvas.addEventListener('click', handleCanvasClick);
 
-                // Track mouse position for paste functionality
-                canvas.addEventListener('mousemove', (e) => {
+                // Track pointer position for paste functionality (supports touch)
+                canvas.addEventListener('pointermove', (e) => {
                     const rect = canvas.getBoundingClientRect();
                     updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
                 });
             }
 
-            // Also track mouse on overlay layer
+            // Also track pointer on overlay layer (supports touch)
             const overlayLayer = document.getElementById('overlayLayer');
             if (overlayLayer) {
-                overlayLayer.addEventListener('mousemove', (e) => {
+                overlayLayer.addEventListener('pointermove', (e) => {
                     const rect = overlayLayer.getBoundingClientRect();
                     updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
                 });
@@ -918,8 +939,8 @@ const PDFoxStamps = (function() {
                 }
             });
 
-            // Click outside to deselect
-            document.addEventListener('mousedown', (e) => {
+            // Click/tap outside to deselect (pointer events for touch support)
+            document.addEventListener('pointerdown', (e) => {
                 if (!e.target.closest('.stamp-element') &&
                     !e.target.closest('.stamp-options-popup') &&
                     !e.target.closest('[data-stamp]') &&

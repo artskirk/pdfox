@@ -6,6 +6,25 @@
     <title>PDFOX - Shared Document</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
+    <!-- App Config (injected by server, must load before logger) -->
+    <script>
+        (function() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/config', false);
+            try {
+                xhr.send();
+                if (xhr.status === 200) {
+                    window.PDFOX_CONFIG = JSON.parse(xhr.responseText);
+                }
+            } catch (e) {
+                window.PDFOX_CONFIG = { env: 'prod', debug: false };
+            }
+        })();
+    </script>
+
+    <!-- Production Logger (must load after config) -->
+    <script src="/js/modules/logger.js"></script>
+
     <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 

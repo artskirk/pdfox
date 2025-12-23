@@ -132,6 +132,11 @@ body {
     gap: 15px;
 }
 
+/* Mobile menu toggle - hidden on desktop */
+.mobile-menu-toggle {
+    display: none;
+}
+
 .header-btn {
     background: #808080;
     color: white;
@@ -173,6 +178,19 @@ body {
     background: linear-gradient(135deg, #333 0%, #222 100%);
     border-color: #E50914;
     box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
+}
+
+/* Sign button - hidden on desktop, shown on mobile */
+.header-btn.header-btn-sign {
+    display: none;
+    background: linear-gradient(135deg, #E50914 0%, #C40812 100%);
+    border: none;
+    color: white;
+}
+
+.header-btn.header-btn-sign:hover {
+    background: linear-gradient(135deg, #ff1a1a 0%, #E50914 100%);
+    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
 }
 
 .header-pro-badge {
@@ -4420,5 +4438,1032 @@ body {
     .upgrade-modal-icon svg {
         width: 28px;
         height: 28px;
+    }
+}
+
+/* ==========================================================================
+   Mobile & Tablet Responsive Design
+   ========================================================================== */
+
+/* Mobile Notification Banner */
+.mobile-notification {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10001;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border-bottom: 2px solid var(--color-primary);
+    padding: 12px 16px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+.mobile-notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 100%;
+}
+
+.mobile-notification-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile-notification-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: white;
+}
+
+.mobile-notification-text {
+    flex: 1;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+}
+
+.mobile-notification-text strong {
+    color: var(--color-text-primary);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.mobile-notification-close {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all var(--transition-fast);
+}
+
+.mobile-notification-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+}
+
+/* Mobile Menu Toggle Button */
+.mobile-menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--color-text-primary);
+    padding: 8px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.mobile-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-menu-toggle svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Mobile Tool FAB (Floating Action Button) */
+.mobile-tool-fab {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    z-index: 999;
+    width: 56px;
+    height: 56px;
+    background: var(--color-primary);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(229, 9, 20, 0.4);
+    transition: all var(--transition-normal);
+}
+
+.mobile-tool-fab:hover,
+.mobile-tool-fab:active {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(229, 9, 20, 0.5);
+}
+
+.mobile-tool-fab svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Mobile Tool Drawer (Bottom Sheet) */
+.mobile-tool-drawer {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    background: var(--color-bg-primary);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.mobile-tool-drawer.open {
+    transform: translateY(0);
+}
+
+.mobile-tool-drawer-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--color-border);
+    border-radius: 2px;
+    margin: 12px auto;
+}
+
+.mobile-tool-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.mobile-tool-drawer-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.mobile-tool-drawer-close {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.mobile-tool-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 20px;
+}
+
+.mobile-tool-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 8px;
+    background: var(--color-bg-secondary);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    min-height: 72px;
+}
+
+.mobile-tool-item:active {
+    transform: scale(0.95);
+}
+
+.mobile-tool-item.active {
+    background: rgba(229, 9, 20, 0.15);
+    border-color: var(--color-primary);
+}
+
+.mobile-tool-item svg {
+    width: 24px;
+    height: 24px;
+    color: var(--color-text-secondary);
+}
+
+.mobile-tool-item.active svg {
+    color: var(--color-primary);
+}
+
+.mobile-tool-item span {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Mobile Sidebar Drawer */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-backdrop.visible {
+    opacity: 1;
+}
+
+/* Mobile Page Controls (Bottom Bar) */
+.mobile-page-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 998;
+    background: var(--color-bg-primary);
+    border-top: 1px solid var(--color-border);
+    padding: 8px 16px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+
+.mobile-page-bar-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.mobile-page-btn {
+    background: var(--color-bg-tertiary);
+    border: none;
+    color: var(--color-text-primary);
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.mobile-page-btn:active {
+    background: var(--color-bg-hover);
+    transform: scale(0.95);
+}
+
+.mobile-page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.mobile-page-info {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.mobile-page-info strong {
+    color: var(--color-text-primary);
+}
+
+.mobile-zoom-controls {
+    display: flex;
+    gap: 4px;
+}
+
+/* Touch-friendly canvas interactions */
+canvas {
+    touch-action: none;
+}
+
+.signature-element,
+.text-overlay,
+.annotation-element {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Larger touch targets for resize handles */
+.resize-handle {
+    min-width: 24px;
+    min-height: 24px;
+}
+
+/* ==========================================================================
+   Tablet Breakpoint (768px - 992px)
+   ========================================================================== */
+@media (max-width: 992px) {
+    .header {
+        padding: 16px 24px;
+    }
+
+    .header h1 {
+        font-size: 28px;
+    }
+
+    .header-btn {
+        padding: 10px 18px;
+        font-size: 14px;
+    }
+
+    .canvas-container {
+        padding: 30px;
+    }
+
+    .sidebar {
+        width: 280px;
+        padding: 20px;
+    }
+
+    .tool-group {
+        padding: 6px 8px;
+    }
+}
+
+/* ==========================================================================
+   Tablet Portrait & Large Phone Breakpoint (768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Show mobile notification */
+    .mobile-notification {
+        display: block;
+    }
+
+    body.notification-dismissed .mobile-notification {
+        display: none;
+    }
+
+    /* =======================================================================
+       MOBILE HEADER - Professional UI/UX Design
+       Following Apple HIG & Material Design principles
+       ======================================================================= */
+
+    .header {
+        padding: 8px 12px;
+        flex-wrap: nowrap;
+        gap: 0;
+        height: 56px;
+        background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* Logo - Compact on mobile */
+    .header h1 {
+        font-size: 18px;
+        gap: 6px;
+        flex: 1;
+        justify-content: flex-start;
+        margin-left: 8px;
+    }
+
+    .header h1 svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    /* Hide text on small screens, keep icon */
+    .header h1 span:not(:first-child) {
+        display: none;
+    }
+
+    /* Header Actions - Icon buttons only */
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* Hide ALL default header buttons on mobile */
+    .header-btn {
+        display: none !important;
+    }
+
+    /* Mobile Action Buttons - Icon only, 44px touch targets */
+    .header-btn.primary,
+    .header-btn.header-btn-share,
+    .header-btn.header-btn-sign {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 12px;
+        font-size: 0; /* Hide text */
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        transition: all 0.2s ease;
+    }
+
+    .header-btn.primary svg,
+    .header-btn.header-btn-share svg,
+    .header-btn.header-btn-sign svg {
+        margin: 0 !important;
+        width: 22px;
+        height: 22px;
+    }
+
+    /* Sign Button - Secondary style */
+    .header-btn.header-btn-sign {
+        background: rgba(229, 9, 20, 0.15);
+        border-color: rgba(229, 9, 20, 0.3);
+    }
+
+    .header-btn.header-btn-sign:active {
+        background: rgba(229, 9, 20, 0.3);
+        transform: scale(0.95);
+    }
+
+    /* Share Button - Secondary style */
+    .header-btn.header-btn-share {
+        padding-right: 0;
+    }
+
+    .header-btn.header-btn-share:active {
+        background: rgba(255,255,255,0.15);
+        transform: scale(0.95);
+    }
+
+    /* Hide PRO badge on mobile */
+    .header-btn.header-btn-share .header-pro-badge {
+        display: none;
+    }
+
+    /* Save Button - Primary action, prominent */
+    .header-btn.primary {
+        background: linear-gradient(135deg, #E50914 0%, #B8070F 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(229, 9, 20, 0.4);
+    }
+
+    .header-btn.primary:active {
+        background: linear-gradient(135deg, #ff1a1a 0%, #E50914 100%);
+        transform: scale(0.95);
+    }
+
+    .header-btn.primary svg path {
+        stroke: white;
+    }
+
+    /* Mobile Menu Toggle - Clean hamburger */
+    .mobile-menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .mobile-menu-toggle:active {
+        background: rgba(255,255,255,0.1);
+        transform: scale(0.95);
+    }
+
+    .mobile-menu-toggle svg {
+        width: 24px;
+        height: 24px;
+        color: #fff;
+    }
+
+    /* Hide toolbar completely on mobile */
+    .toolbar {
+        display: none !important;
+    }
+
+    /* Enlarge canvas/preview area - full height */
+    .main-content {
+        height: calc(100vh - 56px);
+    }
+
+    .canvas-container {
+        padding: 8px;
+        height: 100%;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x pan-y;
+    }
+
+    /* PDF viewer touch behavior */
+    .pdf-viewer {
+        touch-action: none; /* We handle touch ourselves for pinch-zoom */
+    }
+
+    .pdf-page-canvas {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* Prevent text selection during touch */
+    .canvas-container * {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    /* Sidebar becomes drawer */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 300px;
+        max-width: 85vw;
+        z-index: 9999;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding-top: 60px;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-backdrop {
+        display: block;
+        pointer-events: none;
+    }
+
+    .sidebar-backdrop.visible {
+        pointer-events: auto;
+    }
+
+    /* Add close button to sidebar */
+    .sidebar-close-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: var(--color-bg-tertiary);
+        border: none;
+        color: var(--color-text-primary);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    /* Canvas adjustments */
+    .canvas-container {
+        padding: 20px;
+    }
+
+    /* Show mobile page bar */
+    .mobile-page-bar {
+        display: block;
+    }
+
+    /* Hide desktop page controls */
+    .page-controls {
+        display: none;
+    }
+
+    /* Show mobile FAB */
+    .mobile-tool-fab {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Modal adjustments */
+    .modal-content,
+    .share-modal-content {
+        margin: 16px;
+        max-width: calc(100vw - 32px);
+        max-height: calc(100vh - 32px);
+    }
+
+    /* Signature modal */
+    .signature-tabs {
+        flex-wrap: wrap;
+    }
+
+    #signatureCanvas {
+        width: 100% !important;
+        height: 150px !important;
+    }
+
+    /* Layers panel */
+    .layers-list {
+        max-height: 250px;
+    }
+
+    /* Empty state */
+    .empty-state-logo svg {
+        width: 60px;
+        height: 60px;
+    }
+
+    .empty-state-title {
+        font-size: 28px;
+    }
+
+    .empty-state-subtitle {
+        font-size: 16px;
+    }
+
+    .empty-state-features {
+        gap: 16px;
+    }
+
+    .feature-card {
+        padding: 16px;
+    }
+}
+
+/* ==========================================================================
+   Large Phone Breakpoint (600px)
+   ========================================================================== */
+@media (max-width: 600px) {
+    /* More compact header on smaller phones */
+    .header {
+        padding: 6px 8px;
+        height: 52px;
+    }
+
+    .header h1 {
+        font-size: 16px;
+        margin-left: 4px;
+    }
+
+    .header h1 svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    /* Slightly smaller action buttons */
+    .header-btn.primary,
+    .header-btn.header-btn-share,
+    .header-btn.header-btn-sign {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+    }
+
+    .header-btn.primary svg,
+    .header-btn.header-btn-share svg,
+    .header-btn.header-btn-sign svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .mobile-menu-toggle {
+        width: 40px;
+        height: 40px;
+    }
+
+    .mobile-menu-toggle svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .header-actions {
+        gap: 3px;
+    }
+
+    /* Adjust main content for smaller header */
+    .main-content {
+        height: calc(100vh - 52px);
+    }
+
+    /* Canvas adjustments */
+    .canvas-container {
+        padding: 6px;
+    }
+
+    .pdf-viewer {
+        border-radius: var(--radius-sm);
+    }
+
+    /* Tool drawer enabled */
+    .mobile-tool-drawer {
+        display: block;
+    }
+
+    /* Modal full-screen on mobile */
+    .modal-content,
+    .share-modal-content,
+    .upgrade-modal-content {
+        margin: 0;
+        max-width: 100%;
+        max-height: 100%;
+        height: 100%;
+        border-radius: 0;
+    }
+
+    .modal-header,
+    .share-modal-header {
+        padding: 16px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    /* Empty state adjustments */
+    .empty-state-title {
+        font-size: 24px;
+    }
+
+    .empty-state-features {
+        flex-direction: column;
+    }
+
+    .feature-card {
+        padding: 14px;
+    }
+
+    .upload-zone {
+        padding: 30px 20px;
+    }
+
+    /* Annotation panel */
+    .annotation-style-panel {
+        left: 8px;
+        right: 8px;
+        bottom: 80px;
+        padding: 10px 14px;
+    }
+
+    /* Context menu */
+    .context-menu {
+        max-width: calc(100vw - 32px);
+    }
+}
+
+/* ==========================================================================
+   Medium Phone Breakpoint (480px)
+   ========================================================================== */
+@media (max-width: 480px) {
+    /* Minimal header */
+    .header {
+        padding: 8px 12px;
+    }
+
+    .header h1 {
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+
+    .header-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    .header-btn span:not(.header-pro-badge) {
+        display: none;
+    }
+
+    .header-btn svg {
+        margin: 0;
+    }
+
+    /* Toolbar scroll */
+    .toolbar {
+        padding: 6px 8px;
+        gap: 4px;
+    }
+
+    .tool-group {
+        padding: 4px 6px;
+    }
+
+    .tool-group-label {
+        display: none;
+    }
+
+    .tool-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    /* Canvas minimal padding */
+    .canvas-container {
+        padding: 8px;
+    }
+
+    /* Sidebar full width */
+    .sidebar {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Mobile tool grid 3 columns */
+    .mobile-tool-grid {
+        grid-template-columns: repeat(3, 1fr);
+        padding: 16px;
+        gap: 6px;
+    }
+
+    .mobile-tool-item {
+        padding: 10px 6px;
+        min-height: 64px;
+    }
+
+    /* Signature canvas smaller */
+    #signatureCanvas {
+        height: 120px !important;
+    }
+
+    /* Empty state compact */
+    .empty-state-logo svg {
+        width: 48px;
+        height: 48px;
+    }
+
+    .empty-state-title {
+        font-size: 20px;
+    }
+
+    .empty-state-subtitle {
+        font-size: 14px;
+        padding: 0 16px;
+    }
+
+    .upload-zone {
+        padding: 24px 16px;
+    }
+
+    .upload-zone-icon svg {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* ==========================================================================
+   Small Phone Breakpoint (360px)
+   ========================================================================== */
+@media (max-width: 360px) {
+    .header h1 {
+        font-size: 16px;
+    }
+
+    .header h1 svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .header-btn {
+        padding: 6px 8px;
+    }
+
+    .mobile-tool-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        padding: 12px;
+    }
+
+    .mobile-tool-item {
+        padding: 8px 4px;
+        min-height: 56px;
+    }
+
+    .mobile-tool-item svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .mobile-tool-item span {
+        font-size: 9px;
+    }
+
+    .empty-state-title {
+        font-size: 18px;
+    }
+}
+
+/* ==========================================================================
+   Landscape Orientation on Mobile
+   ========================================================================== */
+@media (max-height: 500px) and (orientation: landscape) {
+    .header {
+        padding: 6px 16px;
+    }
+
+    .header h1 {
+        font-size: 18px;
+    }
+
+    .toolbar {
+        padding: 4px 12px;
+    }
+
+    .canvas-container {
+        padding: 8px;
+    }
+
+    .mobile-page-bar {
+        padding: 4px 12px;
+    }
+
+    .mobile-tool-fab {
+        bottom: 60px;
+        width: 48px;
+        height: 48px;
+    }
+
+    .mobile-tool-drawer {
+        max-height: 60vh;
+    }
+
+    /* Signature modal landscape */
+    #signatureCanvas {
+        height: 100px !important;
+    }
+}
+
+/* ==========================================================================
+   Safe Area Insets (Notch Support)
+   ========================================================================== */
+@supports (padding: env(safe-area-inset-top)) {
+    .header {
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+    }
+
+    .mobile-page-bar {
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+    }
+
+    .mobile-tool-drawer {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .sidebar {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* ==========================================================================
+   High DPI / Retina Displays
+   ========================================================================== */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .pdf-viewer {
+        image-rendering: -webkit-optimize-contrast;
+    }
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .mobile-tool-drawer,
+    .sidebar {
+        transition: none;
+    }
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+@media print {
+    .header,
+    .toolbar,
+    .sidebar,
+    .mobile-notification,
+    .mobile-tool-fab,
+    .mobile-page-bar,
+    .page-controls {
+        display: none !important;
+    }
+
+    .canvas-container {
+        padding: 0;
+        overflow: visible;
+    }
+
+    .pdf-viewer {
+        box-shadow: none;
+        border-radius: 0;
     }
 }

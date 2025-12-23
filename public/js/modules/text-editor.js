@@ -52,7 +52,7 @@ const PDFoxTextEditor = (function() {
             e.preventDefault();
             deleteEditedSpan(span);
         });
-        deleteBtn.addEventListener('mousedown', (e) => {
+        deleteBtn.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
         });
         span.appendChild(deleteBtn);
@@ -63,7 +63,8 @@ const PDFoxTextEditor = (function() {
             const handle = document.createElement('div');
             handle.className = `edit-resize-handle ${pos}`;
             handle.dataset.position = pos;
-            handle.addEventListener('mousedown', (e) => {
+            handle.style.touchAction = 'none';
+            handle.addEventListener('pointerdown', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 startResize(e, span, pos);
@@ -145,7 +146,7 @@ const PDFoxTextEditor = (function() {
 
     /**
      * Start resize operation
-     * @param {MouseEvent} e - The mousedown event
+     * @param {PointerEvent} e - The pointerdown event
      * @param {HTMLElement} span - The span being resized
      * @param {string} position - The handle position (se, sw, ne, nw)
      */
@@ -156,8 +157,13 @@ const PDFoxTextEditor = (function() {
         resizeStartY = e.clientY;
         resizeStartFontSize = parseFloat(span.style.fontSize) || 14;
 
-        const onMouseMove = (moveEvent) => {
-            if (!isResizing) return;
+        const activePointerId = e.pointerId;
+        if (e.target && e.target.setPointerCapture) {
+            e.target.setPointerCapture(activePointerId);
+        }
+
+        const onPointerMove = (moveEvent) => {
+            if (!isResizing || moveEvent.pointerId !== activePointerId) return;
 
             const deltaY = moveEvent.clientY - resizeStartY;
 
@@ -172,7 +178,9 @@ const PDFoxTextEditor = (function() {
             span.style.fontSize = newFontSize + 'px';
         };
 
-        const onMouseUp = () => {
+        const onPointerUp = (upEvent) => {
+            if (upEvent.pointerId !== activePointerId) return;
+
             if (isResizing) {
                 // Update the edit data with new font size
                 const page = parseInt(span.dataset.page);
@@ -188,12 +196,14 @@ const PDFoxTextEditor = (function() {
                 isResizing = false;
                 resizeHandle = null;
             }
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
         };
 
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerUp);
     }
 
     /**
@@ -332,7 +342,10 @@ const PDFoxTextEditor = (function() {
      * @param {HTMLElement} textSpan - Text span element
      */
     function enableTextDrag(textSpan) {
-        textSpan.addEventListener('mousedown', function(e) {
+        // Enable touch support
+        textSpan.style.touchAction = 'none';
+
+        textSpan.addEventListener('pointerdown', function(e) {
             // Ignore right-clicks - let context menu handle them
             if (e.button === 2) return;
 
@@ -340,12 +353,13 @@ const PDFoxTextEditor = (function() {
             // Allow dragging in both editText and moveText modes
             if (currentTool !== 'moveText' && currentTool !== 'editText') return;
 
-            // Don't start drag on double-click
+            // Don't start drag on double-click (not applicable for touch)
             if (e.detail > 1) return;
 
             hasMoved = false;
             const startX = e.clientX;
             const startY = e.clientY;
+            const activePointerId = e.pointerId;
 
             // Small delay to distinguish click from drag
             clickTimeout = setTimeout(() => {
@@ -424,8 +438,9 @@ const PDFoxTextEditor = (function() {
                 e.preventDefault();
             }, 150);
 
-            // Track if mouse moves before timeout
+            // Track if pointer moves before timeout
             const checkMove = (moveEvent) => {
+                if (moveEvent.pointerId !== activePointerId) return;
                 const dx = Math.abs(moveEvent.clientX - startX);
                 const dy = Math.abs(moveEvent.clientY - startY);
                 if (dx > 5 || dy > 5) {
@@ -433,17 +448,20 @@ const PDFoxTextEditor = (function() {
                 }
             };
 
-            document.addEventListener('mousemove', checkMove);
+            document.addEventListener('pointermove', checkMove);
 
-            // Clean up on mouseup
-            const cleanupCheck = () => {
-                document.removeEventListener('mousemove', checkMove);
-                document.removeEventListener('mouseup', cleanupCheck);
+            // Clean up on pointerup
+            const cleanupCheck = (upEvent) => {
+                if (upEvent.pointerId !== activePointerId) return;
+                document.removeEventListener('pointermove', checkMove);
+                document.removeEventListener('pointerup', cleanupCheck);
+                document.removeEventListener('pointercancel', cleanupCheck);
                 if (!hasMoved && clickTimeout) {
                     clearTimeout(clickTimeout);
                 }
             };
-            document.addEventListener('mouseup', cleanupCheck);
+            document.addEventListener('pointerup', cleanupCheck);
+            document.addEventListener('pointercancel', cleanupCheck);
         });
 
         // Prevent click event from firing when we dragged
@@ -459,8 +477,8 @@ const PDFoxTextEditor = (function() {
      * Setup global drag event handlers
      */
     function setupDragHandlers() {
-        // Handle text drag movement
-        document.addEventListener('mousemove', function(e) {
+        // Handle text drag movement (pointer events for touch support)
+        document.addEventListener('pointermove', function(e) {
             if (!isDraggingText || !draggedTextElement) return;
 
             e.preventDefault();
@@ -478,8 +496,8 @@ const PDFoxTextEditor = (function() {
             draggedTextElement.style.top = newTop + 'px';
         });
 
-        // Handle text drag end
-        document.addEventListener('mouseup', function(e) {
+        // Handle text drag end (pointer events for touch support)
+        const endDrag = function(e) {
             if (!isDraggingText || !draggedTextElement) return;
 
             draggedTextElement.classList.remove('dragging');
@@ -528,7 +546,10 @@ const PDFoxTextEditor = (function() {
 
             isDraggingText = false;
             draggedTextElement = null;
-        });
+        };
+
+        document.addEventListener('pointerup', endDrag);
+        document.addEventListener('pointercancel', endDrag);
     }
 
     /**
@@ -601,8 +622,8 @@ const PDFoxTextEditor = (function() {
                 });
             }
 
-            // Click-away handler to deselect edited spans
-            document.addEventListener('mousedown', (e) => {
+            // Click-away handler to deselect edited spans (pointer events for touch support)
+            document.addEventListener('pointerdown', (e) => {
                 if (!selectedEditSpan) return;
 
                 // Don't deselect if clicking on an edited span or its controls

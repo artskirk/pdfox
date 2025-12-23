@@ -12,12 +12,20 @@ const { Document, Paragraph, TextRun, Packer } = require('docx');
 const Stripe = require('stripe');
 const { google } = require('googleapis');
 const jwt = require('jsonwebtoken');
+const { createLogger } = require('./lib/logger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const APP_ENV = process.env.APP_ENV || 'prod';
 const APP_DEBUG = process.env.APP_DEBUG === '1';
 const isProduction = APP_ENV === 'prod';
+
+// Initialize logger
+const log = createLogger({
+    isProduction,
+    debugEnabled: APP_DEBUG,
+    logDir: path.join(__dirname, 'logs')
+});
 
 // ============================================================================
 // Input Validation & Sanitization Helpers
@@ -159,8 +167,23 @@ app.use((req, res, next) => {
     next();
 });
 
-// Initialize Stripe
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || 'your_stripe_secret_key');
+// Request logging middleware
+app.use(log.requestLogger());
+
+// Initialize Stripe with environment-specific keys
+const STRIPE_SECRET_KEY = isProduction
+    ? (process.env.STRIPE_SECRET_KEY_LIVE || process.env.STRIPE_SECRET_KEY)
+    : (process.env.STRIPE_SECRET_KEY_TEST || process.env.STRIPE_SECRET_KEY);
+
+const STRIPE_PUBLISHABLE_KEY = isProduction
+    ? (process.env.STRIPE_PUBLISHABLE_KEY_LIVE || process.env.STRIPE_PUBLISHABLE_KEY)
+    : (process.env.STRIPE_PUBLISHABLE_KEY_TEST || process.env.STRIPE_PUBLISHABLE_KEY);
+
+if (!STRIPE_SECRET_KEY || STRIPE_SECRET_KEY === 'your_stripe_secret_key') {
+    log.warn(`Stripe secret key not configured for ${isProduction ? 'production' : 'development'} environment`);
+}
+
+const stripe = Stripe(STRIPE_SECRET_KEY || 'sk_test_placeholder');
 
 // Payment configuration
 const PAYMENT_AMOUNT = parseInt(process.env.PAYMENT_AMOUNT || '299'); // 2.99 EUR in cents
@@ -195,7 +218,7 @@ function loadProAccess() {
             return valid;
         }
     } catch (error) {
-        console.error('Error loading Pro access data:', error);
+        log.error('Error loading Pro access data:', error.message);
     }
     return [];
 }
@@ -205,7 +228,7 @@ function saveProAccess(data) {
     try {
         fs.writeFileSync(proAccessFile, JSON.stringify(data, null, 2));
     } catch (error) {
-        console.error('Error saving Pro access data:', error);
+        log.error('Error saving Pro access data:', error.message);
     }
 }
 
@@ -279,7 +302,7 @@ function loadShareMetadata() {
             return JSON.parse(fs.readFileSync(shareMetadataFile, 'utf8'));
         }
     } catch (error) {
-        console.error('Error loading share metadata:', error);
+        log.error('Error loading share metadata:', error.message);
     }
     return { shares: {} };
 }
@@ -289,7 +312,7 @@ function saveShareMetadata(data) {
     try {
         fs.writeFileSync(shareMetadataFile, JSON.stringify(data, null, 2));
     } catch (error) {
-        console.error('Error saving share metadata:', error);
+        log.error('Error saving share metadata:', error.message);
     }
 }
 
@@ -366,7 +389,7 @@ function cleanupExpiredShares() {
 
     if (cleaned > 0) {
         saveShareMetadata(data);
-        console.log(`Cleaned up ${cleaned} expired shares`);
+        log.info(`Cleaned up ${cleaned} expired shares`);
     }
 }
 
@@ -488,9 +511,7 @@ function safeSpawn(command, args, options = {}) {
 // Extract text from scanned/image PDF using OCR
 async function extractTextWithOCR(filePath) {
     try {
-        if (!isProduction) {
-            console.log('Attempting OCR extraction for scanned PDF...');
-        }
+        log.debug('Attempting OCR extraction for scanned PDF...');
 
         // Validate file path - must be within uploads directory
         const resolvedPath = path.resolve(filePath);
@@ -531,25 +552,19 @@ async function extractTextWithOCR(filePath) {
                     fs.unlinkSync(imagePath);
                 }
             } catch (pageError) {
-                if (!isProduction) {
-                    console.log(`Could not process page ${page}:`, pageError.message);
-                }
+                log.debug(`Could not process page ${page}:`, pageError.message);
                 break; // Stop if we can't process a page
             }
         }
 
         if (extractedText.trim().length > 0) {
-            if (!isProduction) {
-                console.log(`OCR extracted ${extractedText.length} characters`);
-            }
+            log.debug(`OCR extracted ${extractedText.length} characters`);
             return extractedText;
         } else {
             throw new Error('No text could be extracted via OCR');
         }
     } catch (error) {
-        if (!isProduction) {
-            console.error('OCR extraction error:', error);
-        }
+        log.debug('OCR extraction error:', error.message);
         throw new Error('Could not extract text from PDF using OCR');
     }
 }
@@ -564,12 +579,12 @@ async function extractTextFromPDF(filePath) {
         const pdfData = await pdfParse(dataBuffer);
         extractedText = pdfData.text;
     } catch (parseError) {
-        console.log('Standard PDF parsing failed, will try OCR');
+        log.debug('Standard PDF parsing failed, will try OCR');
     }
 
     // If no text extracted, try OCR
     if (!extractedText || extractedText.trim().length === 0) {
-        console.log('No text found, attempting OCR extraction...');
+        log.debug('No text found, attempting OCR extraction...');
         extractedText = await extractTextWithOCR(filePath);
     }
 
@@ -664,7 +679,7 @@ app.post('/create-checkout-session', async (req, res) => {
 
         res.json({ sessionId: session.id, url: session.url });
     } catch (error) {
-        console.error('Error creating checkout session:', error);
+        log.error('Error creating checkout session:', error.message);
         res.status(500).json({ error: 'Failed to create checkout session' });
     }
 });
@@ -729,7 +744,7 @@ app.post('/api/v1/pro/create-checkout', async (req, res) => {
 
         res.json({ sessionId: session.id, url: session.url });
     } catch (error) {
-        console.error('Error creating Pro checkout session:', error);
+        log.error('Error creating Pro checkout session:', error.message);
         res.status(500).json({ error: 'Failed to create checkout session' });
     }
 });
@@ -766,7 +781,7 @@ app.post('/api/v1/pro/verify-payment', async (req, res) => {
         // Verify fingerprint matches (with some tolerance for minor changes)
         const storedFingerprint = session.metadata?.fingerprint;
         if (storedFingerprint !== fingerprint) {
-            console.warn(`Fingerprint mismatch: expected ${storedFingerprint}, got ${fingerprint}`);
+            log.warn(`Fingerprint mismatch: expected ${storedFingerprint}, got ${fingerprint}`);
             // For now, we'll allow it but log the mismatch
             // In production, you might want stricter validation
         }
@@ -805,7 +820,7 @@ app.post('/api/v1/pro/verify-payment', async (req, res) => {
             message: 'Pro access activated'
         });
     } catch (error) {
-        console.error('Error verifying Pro payment:', error);
+        log.error('Error verifying Pro payment:', error.message);
         res.status(500).json({ error: 'Failed to verify payment' });
     }
 });
@@ -842,7 +857,7 @@ app.post('/api/v1/pro/validate', (req, res) => {
 
         // Verify fingerprint matches (optional strict mode)
         if (fingerprint && decoded.fingerprint !== fingerprint) {
-            console.warn(`Fingerprint mismatch during validation: expected ${decoded.fingerprint}, got ${fingerprint}`);
+            log.warn(`Fingerprint mismatch during validation: expected ${decoded.fingerprint}, got ${fingerprint}`);
             // Log but don't reject - fingerprints can change slightly
         }
 
@@ -852,7 +867,7 @@ app.post('/api/v1/pro/validate', (req, res) => {
             email: decoded.email
         });
     } catch (error) {
-        console.error('Error validating Pro access:', error);
+        log.error('Error validating Pro access:', error.message);
         res.json({ valid: false, reason: 'Validation error' });
     }
 });
@@ -878,7 +893,7 @@ app.post('/api/v1/pro/status', (req, res) => {
             res.json({ isPro: false });
         }
     } catch (error) {
-        console.error('Error checking Pro status:', error);
+        log.error('Error checking Pro status:', error.message);
         res.json({ isPro: false });
     }
 });
@@ -995,7 +1010,7 @@ app.post('/api/v1/pro/recover', async (req, res) => {
                 });
             }
         } catch (stripeError) {
-            console.error('Stripe lookup error:', stripeError.message);
+            log.error('Stripe lookup error:', stripeError.message);
         }
 
         // Nothing found
@@ -1005,7 +1020,7 @@ app.post('/api/v1/pro/recover', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error recovering Pro access:', error);
+        log.error('Error recovering Pro access:', error.message);
         res.status(500).json({ error: 'Failed to recover Pro access' });
     }
 });
@@ -1016,7 +1031,7 @@ app.post('/api/v1/webhooks/stripe', express.raw({ type: 'application/json' }), a
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-        console.warn('Stripe webhook secret not configured');
+        log.warn('Stripe webhook secret not configured');
         return res.status(400).send('Webhook secret not configured');
     }
 
@@ -1024,7 +1039,7 @@ app.post('/api/v1/webhooks/stripe', express.raw({ type: 'application/json' }), a
     try {
         event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
     } catch (err) {
-        console.error('Webhook signature verification failed:', err.message);
+        log.error('Webhook signature verification failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
@@ -1044,7 +1059,7 @@ app.post('/api/v1/webhooks/stripe', express.raw({ type: 'application/json' }), a
 
                 if (!exists) {
                     createProAccess(email, fingerprint, session.id);
-                    console.log(`Pro access granted via webhook for ${email}`);
+                    log.info(`Pro access granted via webhook`, { email });
                 }
             }
         }
@@ -1096,7 +1111,7 @@ app.post('/verify-payment', async (req, res) => {
             res.status(400).json({ error: 'Payment not completed' });
         }
     } catch (error) {
-        console.error('Error verifying payment:', error);
+        log.error('Error verifying payment:', error.message);
         res.status(500).json({ error: 'Failed to verify payment' });
     }
 });
@@ -1252,7 +1267,7 @@ app.post('/upload-to-drive', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error uploading to Google Drive:', error);
+        log.error('Error uploading to Google Drive:', error.message);
         res.status(500).json({
             error: 'Failed to upload to Google Drive',
             details: error.message
@@ -1311,9 +1326,10 @@ app.get('/download/:filename', (req, res) => {
 // Get app configuration for frontend
 app.get('/config', (req, res) => {
     res.json({
-        publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || 'your_publishable_key',
+        publishableKey: STRIPE_PUBLISHABLE_KEY || 'your_publishable_key',
         env: APP_ENV,
-        debug: APP_DEBUG
+        debug: APP_DEBUG,
+        isProduction: isProduction
     });
 });
 
@@ -1335,7 +1351,7 @@ app.post('/convert', upload.single('pdf'), async (req, res) => {
         const filePath = req.file.path;
         const filename = path.parse(req.file.filename).name;
 
-        console.log(`Converting ${req.file.filename} to ${format}`);
+        log.debug(`Converting ${req.file.filename} to ${format}`);
 
         // Extract text from PDF
         let extractedText;
@@ -1392,7 +1408,7 @@ app.post('/convert', upload.single('pdf'), async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error processing conversion:', error);
+        log.error('Error processing conversion:', error.message);
 
         // Clean up uploaded file if it exists
         if (req.file && fs.existsSync(req.file.path)) {
@@ -1467,9 +1483,7 @@ app.post('/api/v1/share/create', shareUpload.single('pdf'), async (req, res) => 
             hasPassword: !!passwordHash
         });
     } catch (error) {
-        if (!isProduction) {
-            console.error('Error creating share:', error);
-        }
+        log.error('Error creating share:', error.message);
         res.status(500).json({ error: 'Failed to create share' });
     }
 });
@@ -1761,9 +1775,7 @@ app.use((req, res, next) => {
 // Global error handler - MUST NOT expose internal details
 app.use((err, req, res, next) => {
     // Log error details server-side only (not to client)
-    if (!isProduction) {
-        console.error('Server Error:', err);
-    }
+    log.error('Server Error:', err.message);
 
     // Determine status code
     const statusCode = err.status || err.statusCode || 500;
@@ -1777,8 +1789,21 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-    if (!isProduction) {
-        console.log(`PDFOX running on http://localhost:${PORT}`);
-        console.log(`Environment: ${isProduction ? 'production' : 'development'}`);
+    log.info(`PDFOX running on http://localhost:${PORT}`);
+    log.info(`Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
+
+    // Log Stripe configuration (key prefix only for security)
+    const keyPrefix = STRIPE_SECRET_KEY ? STRIPE_SECRET_KEY.substring(0, 7) : 'NOT SET';
+    const keyType = keyPrefix.startsWith('sk_live') || keyPrefix.startsWith('rk_live') ? 'LIVE' :
+                    keyPrefix.startsWith('sk_test') || keyPrefix.startsWith('rk_test') ? 'TEST' : 'UNKNOWN';
+    log.info(`Stripe: ${keyType} mode (${keyPrefix}...)`);
+
+    if (isProduction && keyType === 'TEST') {
+        log.warn('Production environment using TEST Stripe keys!');
     }
+    if (!isProduction && keyType === 'LIVE') {
+        log.warn('Development environment using LIVE Stripe keys!');
+    }
+
+    log.info('Logging initialized', { logDir: path.join(__dirname, 'logs') });
 });

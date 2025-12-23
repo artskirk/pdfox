@@ -40,8 +40,8 @@ const PDFoxPatch = (function() {
     }
 
     /**
-     * Start selection on mousedown
-     * @param {MouseEvent} e
+     * Start selection on pointerdown
+     * @param {PointerEvent} e
      */
     function startSelection(e) {
         // Ignore right-clicks - let context menu handle them
@@ -64,8 +64,8 @@ const PDFoxPatch = (function() {
     }
 
     /**
-     * Update selection on mousemove
-     * @param {MouseEvent} e
+     * Update selection on pointermove
+     * @param {PointerEvent} e
      */
     function updateSelection(e) {
         if (!isSelecting || !selectionStart) return;
@@ -86,8 +86,8 @@ const PDFoxPatch = (function() {
     }
 
     /**
-     * End selection on mouseup
-     * @param {MouseEvent} e
+     * End selection on pointerup
+     * @param {PointerEvent} e
      */
     function endSelection(e) {
         if (!isSelecting || !selectionStart) return;
@@ -331,19 +331,19 @@ const PDFoxPatch = (function() {
         const opacityValue = popup.querySelector('#patchOpacityValue');
         const previewImage = popup.querySelector('#patchPreviewImage');
 
-        closeBtn.addEventListener('mousedown', (e) => {
+        closeBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             closePatchPopup();
         });
 
-        cancelBtn.addEventListener('mousedown', (e) => {
+        cancelBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             closePatchPopup();
         });
 
-        placeBtn.addEventListener('mousedown', (e) => {
+        placeBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             confirmPatch();
@@ -474,8 +474,9 @@ const PDFoxPatch = (function() {
             <div class="patch-resize-handle se" data-handle="se"></div>
         `;
 
-        // Event handlers
-        element.addEventListener('mousedown', (e) => {
+        // Event handlers (pointer events for touch support)
+        element.style.touchAction = 'none';
+        element.addEventListener('pointerdown', (e) => {
             if (e.target.classList.contains('patch-resize-handle')) {
                 e.stopPropagation();
                 startResize(e, patch.id, e.target.dataset.handle);
@@ -523,6 +524,8 @@ const PDFoxPatch = (function() {
 
     /**
      * Start dragging a patch
+     * @param {PointerEvent} e - Pointer event
+     * @param {string} patchId - Patch ID
      */
     function startDrag(e, patchId) {
         const element = document.getElementById(patchId);
@@ -534,14 +537,20 @@ const PDFoxPatch = (function() {
         isDragging = true;
         dragStartPos = { x: e.clientX, y: e.clientY };
         dragStartPatchPos = { x: patch.x, y: patch.y };
+        const activePointerId = e.pointerId;
 
         element.classList.add('dragging');
 
-        const onMouseMove = (e) => {
-            if (!isDragging) return;
+        // Capture pointer for reliable tracking
+        if (element.setPointerCapture && e.pointerId !== undefined) {
+            element.setPointerCapture(e.pointerId);
+        }
 
-            const dx = e.clientX - dragStartPos.x;
-            const dy = e.clientY - dragStartPos.y;
+        const onPointerMove = (moveEvent) => {
+            if (!isDragging || moveEvent.pointerId !== activePointerId) return;
+
+            const dx = moveEvent.clientX - dragStartPos.x;
+            const dy = moveEvent.clientY - dragStartPos.y;
 
             patch.x = dragStartPatchPos.x + dx;
             patch.y = dragStartPatchPos.y + dy;
@@ -550,9 +559,12 @@ const PDFoxPatch = (function() {
             element.style.top = `${patch.y}px`;
         };
 
-        const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
+        const onPointerUp = (upEvent) => {
+            if (upEvent.pointerId !== activePointerId) return;
+
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
 
             element.classList.remove('dragging');
             isDragging = false;
@@ -567,12 +579,16 @@ const PDFoxPatch = (function() {
             }
         };
 
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerUp);
     }
 
     /**
      * Start resizing a patch
+     * @param {PointerEvent} e - Pointer event
+     * @param {string} patchId - Patch ID
+     * @param {string} handle - Handle position
      */
     function startResize(e, patchId, handle) {
         const element = document.getElementById(patchId);
@@ -586,16 +602,22 @@ const PDFoxPatch = (function() {
         resizeStartPos = { x: e.clientX, y: e.clientY };
         resizeStartSize = { width: patch.width, height: patch.height };
         resizeStartPatchPos = { x: patch.x, y: patch.y };
+        const activePointerId = e.pointerId;
 
         const originalWidth = patch.width;
         const originalHeight = patch.height;
         const aspectRatio = originalWidth / originalHeight;
 
-        const onMouseMove = (e) => {
-            if (!isResizing) return;
+        // Capture pointer for reliable tracking
+        if (e.target && e.target.setPointerCapture && e.pointerId !== undefined) {
+            e.target.setPointerCapture(e.pointerId);
+        }
 
-            const dx = e.clientX - resizeStartPos.x;
-            const dy = e.clientY - resizeStartPos.y;
+        const onPointerMove = (moveEvent) => {
+            if (!isResizing || moveEvent.pointerId !== activePointerId) return;
+
+            const dx = moveEvent.clientX - resizeStartPos.x;
+            const dy = moveEvent.clientY - resizeStartPos.y;
 
             let newWidth = resizeStartSize.width;
             let newHeight = resizeStartSize.height;
@@ -637,9 +659,12 @@ const PDFoxPatch = (function() {
             element.style.top = `${newY}px`;
         };
 
-        const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
+        const onPointerUp = (upEvent) => {
+            if (upEvent.pointerId !== activePointerId) return;
+
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
 
             isResizing = false;
             resizeHandle = null;
@@ -660,8 +685,9 @@ const PDFoxPatch = (function() {
             }
         };
 
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerUp);
     }
 
     /**
@@ -826,12 +852,13 @@ const PDFoxPatch = (function() {
                 }
             });
 
-            // Add mouse event handlers to annotation canvas
+            // Add pointer event handlers to annotation canvas (supports touch)
             const canvas = document.getElementById('annotationCanvas');
             if (canvas) {
-                canvas.addEventListener('mousedown', startSelection);
-                canvas.addEventListener('mousemove', updateSelection);
-                canvas.addEventListener('mouseup', endSelection);
+                canvas.addEventListener('pointerdown', startSelection);
+                canvas.addEventListener('pointermove', updateSelection);
+                canvas.addEventListener('pointerup', endSelection);
+                canvas.addEventListener('pointercancel', endSelection);
             }
 
             // Keyboard shortcuts
@@ -869,8 +896,8 @@ const PDFoxPatch = (function() {
                 }
             });
 
-            // Click outside to deselect
-            document.addEventListener('mousedown', (e) => {
+            // Click/tap outside to deselect (pointer events for touch support)
+            document.addEventListener('pointerdown', (e) => {
                 if (!e.target.closest('.patch-element') &&
                     !e.target.closest('.patch-options-popup') &&
                     !e.target.closest('.layer-item') &&

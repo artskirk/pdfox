@@ -599,11 +599,17 @@ const PDFoxAnnotations = (function() {
 
     /**
      * Start annotation drawing
-     * @param {MouseEvent} e - Mouse event
+     * @param {PointerEvent} e - Pointer event
      */
     function startAnnotation(e) {
         // Ignore right-clicks - let context menu handle them
+        // For touch events, button is 0 (or undefined in some cases)
         if (e.button === 2) return;
+
+        // Capture pointer for reliable tracking
+        if (e.target && e.target.setPointerCapture) {
+            e.target.setPointerCapture(e.pointerId);
+        }
 
         const currentTool = core.get('currentTool');
 
@@ -754,7 +760,7 @@ const PDFoxAnnotations = (function() {
 
     /**
      * Continue drawing annotation
-     * @param {MouseEvent} e - Mouse event
+     * @param {PointerEvent} e - Pointer event
      */
     function drawAnnotation(e) {
         const currentTool = core.get('currentTool');
@@ -956,9 +962,18 @@ const PDFoxAnnotations = (function() {
 
     /**
      * End annotation drawing
-     * @param {MouseEvent} e - Mouse event
+     * @param {PointerEvent} e - Pointer event
      */
     function endAnnotation(e) {
+        // Release pointer capture
+        if (e.target && e.target.releasePointerCapture && e.pointerId !== undefined) {
+            try {
+                e.target.releasePointerCapture(e.pointerId);
+            } catch (err) {
+                // Ignore - pointer may not be captured
+            }
+        }
+
         const currentTool = core.get('currentTool');
 
         // Let patch module handle its own events
@@ -1147,10 +1162,12 @@ const PDFoxAnnotations = (function() {
             annotationContext = annotationCanvas.getContext('2d');
             pdfCanvas = elements.pdfCanvas;
 
-            // Set up event listeners
-            annotationCanvas.addEventListener('mousedown', startAnnotation);
-            annotationCanvas.addEventListener('mousemove', drawAnnotation);
-            annotationCanvas.addEventListener('mouseup', endAnnotation);
+            // Set up event listeners (use pointer events for touch support)
+            annotationCanvas.style.touchAction = 'none';
+            annotationCanvas.addEventListener('pointerdown', startAnnotation);
+            annotationCanvas.addEventListener('pointermove', drawAnnotation);
+            annotationCanvas.addEventListener('pointerup', endAnnotation);
+            annotationCanvas.addEventListener('pointercancel', endAnnotation);
 
             // Subscribe to page changes
             core.on('page:rendered', () => this.redraw());
