@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "PDF to Text Converter with OCR support for scanned documents",
   "main": "server.js",
+  "bin": {
+    "pdfox": "./bin/console"
+  },
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "console": "node bin/console"
   },
   "keywords": [
     "pdf",
@@ -20,14 +24,18 @@
   "license": "ISC",
   "dependencies": {
     "canvas": "^3.2.0",
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^12.1.0",
     "docx": "^9.5.1",
     "dotenv": "^17.2.3",
     "express": "^4.18.2",
     "form-data": "^4.0.5",
     "googleapis": "^166.0.0",
-    "html-docx-js": "^0.3.1",
+    "inquirer": "^8.2.7",
     "jsonwebtoken": "^9.0.3",
     "multer": "^1.4.5-lts.1",
+    "ora": "^5.4.1",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^2.4.5",
     "pdf.js-extract": "^0.2.1",

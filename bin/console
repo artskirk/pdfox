@@ -1,0 +1,15 @@
+#!/usr/bin/env node
+
+/**
+ * PDFOX Admin Console
+ * Command-line interface for managing the PDFOX application
+ */
+
+'use strict';
+
+// Load environment variables first
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+// Run CLI
+require('../lib/cli');

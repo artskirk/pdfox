@@ -105,7 +105,7 @@ app.use((req, res, next) => {
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net",
         "img-src 'self' data: blob: https:",
-        "connect-src 'self' https://api.stripe.com https://accounts.google.com https://cdn.jsdelivr.net https://openfpcdn.io https://fonts.googleapis.com https://fonts.gstatic.com",
+        "connect-src 'self' https://api.stripe.com https://accounts.google.com https://cdn.jsdelivr.net https://unpkg.com https://openfpcdn.io https://fonts.googleapis.com https://fonts.gstatic.com",
         "frame-src 'self' https://js.stripe.com https://accounts.google.com",
         "worker-src 'self' blob: https://cdnjs.cloudflare.com",
         "object-src 'none'",
