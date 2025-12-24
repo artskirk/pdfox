@@ -132,6 +132,11 @@
             transition: border-color 0.3s;
         }
 
+        .form-group select option {
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
@@ -176,6 +181,54 @@
             color: #E50914;
         }
 
+        .form-message {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .form-message.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        .form-message.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .form-group.error input,
+        .form-group.error select,
+        .form-group.error textarea {
+            border-color: #ef4444;
+        }
+
+        .field-error {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .form-group.error .field-error {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
         @media (max-width: 992px) {
             .contact-container {
                 grid-template-columns: 1fr;
@@ -209,17 +262,12 @@
             <div class="contact-card">
                 <h3>💼 Enterprise Sales</h3>
                 <p>Interested in PDFOX for your team or organization? Our sales team can help with custom pricing, deployment options, and dedicated support.</p>
-                <a href="mailto:sales@pdfox.cloud" class="contact-link">
-                    sales@pdfox.cloud →
-                </a>
+                <p style="margin-top: 10px; color: #999; font-size: 14px;">Select "Enterprise Sales Inquiry" in the form</p>
             </div>
 
             <div class="contact-card">
                 <h3>🛠️ Technical Support</h3>
                 <p>Need help with your account or experiencing technical issues? Our support team is standing by.</p>
-                <a href="mailto:support@pdfox.cloud" class="contact-link">
-                    support@pdfox.cloud →
-                </a>
                 <p style="margin-top: 15px; font-size: 14px;">
                     <strong>Response times:</strong><br>
                     Starter: 24 hours<br>
@@ -230,16 +278,13 @@
 
             <div class="contact-card">
                 <h3>💡 General Inquiries</h3>
-                <p>Have questions about features, pricing, or partnerships? We'd love to hear from you.</p>
-                <a href="mailto:hello@pdfox.cloud" class="contact-link">
-                    hello@pdfox.cloud →
-                </a>
+                <p>Have questions about features, pricing, or partnerships? We'd love to hear from you. Use the contact form and we'll get back to you shortly.</p>
             </div>
 
             <div class="contact-card">
                 <h3>📚 Self-Service Resources</h3>
                 <p>Looking for quick answers? Check out our help center and documentation.</p>
-                <a href="#" class="contact-link">
+                <a href="/help" class="contact-link">
                     Visit Help Center →
                 </a>
             </div>
@@ -250,14 +295,18 @@
             <p class="subtitle">Fill out the form below and we'll get back to you shortly.</p>
 
             <form id="contactForm">
-                <div class="form-group">
+                <div id="formMessage" class="form-message"></div>
+
+                <div class="form-group" id="nameGroup">
                     <label for="name">Full Name *</label>
-                    <input type="text" id="name" name="name" required placeholder="John Smith">
+                    <input type="text" id="name" name="name" placeholder="John Smith">
+                    <div class="field-error">Please enter your name</div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="emailGroup">
                     <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" required placeholder="john@company.com">
+                    <input type="email" id="email" name="email" placeholder="john@company.com">
+                    <div class="field-error">Please enter a valid email address</div>
                 </div>
 
                 <div class="form-group">
@@ -265,9 +314,9 @@
                     <input type="text" id="company" name="company" placeholder="Acme Corporation">
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="topicGroup">
                     <label for="topic">What can we help with? *</label>
-                    <select id="topic" name="topic" required>
+                    <select id="topic" name="topic">
                         <option value="">Select a topic...</option>
                         <option value="sales">Enterprise Sales Inquiry</option>
                         <option value="support">Technical Support</option>
@@ -276,11 +325,13 @@
                         <option value="partnership">Partnership Opportunity</option>
                         <option value="other">Other</option>
                     </select>
+                    <div class="field-error">Please select a topic</div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="messageGroup">
                     <label for="message">Message *</label>
-                    <textarea id="message" name="message" required placeholder="Tell us how we can help..."></textarea>
+                    <textarea id="message" name="message" placeholder="Tell us how we can help..."></textarea>
+                    <div class="field-error">Please enter your message</div>
                 </div>
 
                 <button type="submit" class="form-submit">Send Message</button>
@@ -338,15 +389,118 @@
         }
         requestAnimationFrame(raf);
 
+        // Validation helpers
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function setFieldError(groupId, hasError) {
+            const group = document.getElementById(groupId);
+            if (hasError) {
+                group.classList.add('error');
+            } else {
+                group.classList.remove('error');
+            }
+        }
+
+        function clearAllErrors() {
+            document.querySelectorAll('.form-group.error').forEach(el => el.classList.remove('error'));
+        }
+
+        // Clear error on input
+        document.querySelectorAll('#contactForm input, #contactForm select, #contactForm textarea').forEach(field => {
+            field.addEventListener('input', function() {
+                this.closest('.form-group').classList.remove('error');
+            });
+        });
+
         // Form submission handler
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            // In production, this would send to your backend
-            alert('Thank you for your message! We\'ll get back to you within 4 hours during business hours.');
+            const submitBtn = this.querySelector('.form-submit');
+            const messageDiv = document.getElementById('formMessage');
+            const originalText = submitBtn.textContent;
 
-            // Reset form
-            this.reset();
+            // Hide any previous message
+            messageDiv.style.display = 'none';
+            messageDiv.className = 'form-message';
+            clearAllErrors();
+
+            // Validate fields
+            let isValid = true;
+            let firstError = null;
+
+            if (!this.name.value.trim()) {
+                setFieldError('nameGroup', true);
+                isValid = false;
+                firstError = firstError || document.getElementById('nameGroup');
+            }
+
+            if (!this.email.value.trim() || !isValidEmail(this.email.value)) {
+                setFieldError('emailGroup', true);
+                isValid = false;
+                firstError = firstError || document.getElementById('emailGroup');
+            }
+
+            if (!this.topic.value) {
+                setFieldError('topicGroup', true);
+                isValid = false;
+                firstError = firstError || document.getElementById('topicGroup');
+            }
+
+            if (!this.message.value.trim()) {
+                setFieldError('messageGroup', true);
+                isValid = false;
+                firstError = firstError || document.getElementById('messageGroup');
+            }
+
+            if (!isValid) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            submitBtn.textContent = 'Sending...';
+            submitBtn.disabled = true;
+
+            try {
+                const formData = {
+                    name: this.name.value.trim(),
+                    email: this.email.value.trim(),
+                    company: this.company.value.trim(),
+                    topic: this.topic.value,
+                    message: this.message.value.trim()
+                };
+
+                const response = await fetch('/api/v1/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    messageDiv.textContent = result.message;
+                    messageDiv.className = 'form-message success';
+                    messageDiv.style.display = 'block';
+                    this.reset();
+
+                    // Scroll to message
+                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    messageDiv.textContent = result.error || 'Failed to send message. Please try again.';
+                    messageDiv.className = 'form-message error';
+                    messageDiv.style.display = 'block';
+                }
+            } catch (error) {
+                messageDiv.textContent = 'Failed to send message. Please try again or email us directly.';
+                messageDiv.className = 'form-message error';
+                messageDiv.style.display = 'block';
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
         });
     </script>
 </body>

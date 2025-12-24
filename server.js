@@ -1653,6 +1653,136 @@ app.get('/s/:hash', (req, res) => {
 });
 
 // ============================================================================
+// Contact Form API (Telegram Integration)
+// ============================================================================
+
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID;
+
+// Send message to Telegram channel
+async function sendToTelegram(message) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHANNEL_ID) {
+        log.warn('Telegram not configured - skipping notification');
+        return false;
+    }
+
+    const https = require('https');
+
+    return new Promise((resolve) => {
+        const data = JSON.stringify({
+            chat_id: TELEGRAM_CHANNEL_ID,
+            text: message,
+            parse_mode: 'HTML'
+        });
+
+        const options = {
+            hostname: 'api.telegram.org',
+            port: 443,
+            path: `/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(data)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => {
+                if (res.statusCode === 200) {
+                    log.debug('Telegram message sent successfully');
+                    resolve(true);
+                } else {
+                    log.error('Telegram API error:', body);
+                    resolve(false);
+                }
+            });
+        });
+
+        req.on('error', (err) => {
+            log.error('Telegram request error:', err.message);
+            resolve(false);
+        });
+
+        req.setTimeout(10000, () => {
+            req.destroy();
+            log.error('Telegram request timeout');
+            resolve(false);
+        });
+
+        req.write(data);
+        req.end();
+    });
+}
+
+// Contact form submission endpoint
+app.post('/api/v1/contact', express.json(), async (req, res) => {
+    try {
+        const { name, email, company, topic, message } = req.body;
+
+        // Validate required fields
+        if (!name || !email || !topic || !message) {
+            return res.status(400).json({ error: 'Name, email, topic, and message are required' });
+        }
+
+        // Validate email
+        if (!isValidEmail(email)) {
+            return res.status(400).json({ error: 'Invalid email address' });
+        }
+
+        // Sanitize inputs (basic XSS prevention for Telegram HTML)
+        const sanitize = (str) => str ? str.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) : '';
+
+        // Topic labels
+        const topicLabels = {
+            'sales': 'Enterprise Sales Inquiry',
+            'support': 'Technical Support',
+            'billing': 'Billing Question',
+            'feature': 'Feature Request',
+            'partnership': 'Partnership Opportunity',
+            'other': 'Other'
+        };
+
+        // Format message for Telegram
+        const telegramMessage = `
+<b>New Contact Form Submission</b>
+
+<b>Name:</b> ${sanitize(name)}
+<b>Email:</b> ${sanitize(email)}
+<b>Company:</b> ${sanitize(company) || 'Not provided'}
+<b>Topic:</b> ${topicLabels[topic] || sanitize(topic)}
+
+<b>Message:</b>
+${sanitize(message)}
+
+<i>Received: ${new Date().toLocaleString('en-US', { timeZone: 'Europe/London' })}</i>
+        `.trim();
+
+        // Send to Telegram
+        const sent = await sendToTelegram(telegramMessage);
+
+        if (sent) {
+            log.info('Contact form submitted', { email, topic });
+            res.json({
+                success: true,
+                message: 'Thank you for your message! We\'ll get back to you within 4 hours during business hours.'
+            });
+        } else {
+            // Still return success to user but log the issue
+            log.warn('Contact form received but Telegram notification failed', { email, topic });
+            res.json({
+                success: true,
+                message: 'Thank you for your message! We\'ll get back to you within 4 hours during business hours.'
+            });
+        }
+    } catch (error) {
+        log.error('Contact form error:', error.message);
+        res.status(500).json({ error: 'Failed to submit contact form. Please try again.' });
+    }
+});
+
+// ============================================================================
 // Clean URL Routes (Sales-Friendly URLs)
 // ============================================================================
 
