@@ -1,13 +1,47 @@
-# robots.txt for PDF to Text Converter
+# PDFOX - robots.txt
+# https://pdfox.cloud
+
+# Allow all search engines
 User-agent: *
 Allow: /
 
-# Sitemaps
-Sitemap: https://yourwebsite.com/sitemap.xml
+# Main pages - encourage indexing
+Allow: /
+Allow: /pdf-editor
+Allow: /pricing
+Allow: /about
+Allow: /contact
+Allow: /help
+Allow: /api
+Allow: /privacy
+Allow: /terms
+Allow: /security
 
-# Crawl-delay for respectful crawling
-Crawl-delay: 1
-
-# Disallow certain paths
+# Disallow private/temporary paths
 Disallow: /uploads/
 Disallow: /outputs/
+Disallow: /logs/
+Disallow: /data/
+Disallow: /s/
+Disallow: /payment-success
+Disallow: /pro-success
+Disallow: /share-viewer
+
+# Disallow query strings for cleaner indexing
+Disallow: /*?*
+
+# Googlebot specific rules
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+# Bingbot specific rules
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+# Sitemap location
+Sitemap: https://pdfox.cloud/sitemap.xml
+
+# Host directive
+Host: https://pdfox.cloud
