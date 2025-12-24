@@ -44,6 +44,10 @@ const PDFoxAnnotations = (function() {
     let fillStartState = null;
     let resizeHandle = null; // 'nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'
 
+    // Multi-touch tracking for pinch-to-zoom detection
+    let activePointers = new Map();
+    let pendingAddTextAction = null;
+
     /**
      * Get bounding box of an annotation
      * @param {Object} ann - Annotation object
@@ -606,6 +610,19 @@ const PDFoxAnnotations = (function() {
         // For touch events, button is 0 (or undefined in some cases)
         if (e.button === 2) return;
 
+        // Track active pointers for multi-touch detection (pinch-to-zoom)
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        // If multiple pointers are active, this is a multi-touch gesture (pinch/zoom)
+        // Cancel any pending addText action and skip tool activation
+        if (activePointers.size > 1) {
+            if (pendingAddTextAction) {
+                clearTimeout(pendingAddTextAction);
+                pendingAddTextAction = null;
+            }
+            return;
+        }
+
         // Capture pointer for reliable tracking
         if (e.target && e.target.setPointerCapture) {
             e.target.setPointerCapture(e.pointerId);
@@ -715,9 +732,24 @@ const PDFoxAnnotations = (function() {
         if (currentTool === 'addText') {
             e.stopPropagation();
             e.preventDefault();
-            if (typeof PDFoxTextEditor !== 'undefined') {
-                PDFoxTextEditor.openAddTextModal(x, y);
+
+            // Use a short delay to detect if this is a pinch-to-zoom gesture
+            // If a second finger comes down within 150ms, cancel the addText action
+            const textX = x;
+            const textY = y;
+
+            if (pendingAddTextAction) {
+                clearTimeout(pendingAddTextAction);
             }
+
+            pendingAddTextAction = setTimeout(() => {
+                // Only open modal if still single touch (no multi-touch detected)
+                if (activePointers.size <= 1 && typeof PDFoxTextEditor !== 'undefined') {
+                    PDFoxTextEditor.openAddTextModal(textX, textY);
+                }
+                pendingAddTextAction = null;
+            }, 150);
+
             return;
         }
 
@@ -763,6 +795,16 @@ const PDFoxAnnotations = (function() {
      * @param {PointerEvent} e - Pointer event
      */
     function drawAnnotation(e) {
+        // Update pointer position for multi-touch tracking
+        if (activePointers.has(e.pointerId)) {
+            activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        }
+
+        // If multiple pointers active, skip annotation handling (allow pinch-to-zoom)
+        if (activePointers.size > 1) {
+            return;
+        }
+
         const currentTool = core.get('currentTool');
 
         // Let patch module handle its own events
@@ -973,6 +1015,9 @@ const PDFoxAnnotations = (function() {
                 // Ignore - pointer may not be captured
             }
         }
+
+        // Remove pointer from active tracking (for multi-touch detection)
+        activePointers.delete(e.pointerId);
 
         const currentTool = core.get('currentTool');
 
