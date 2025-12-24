@@ -1210,7 +1210,10 @@ const PDFoxAnnotations = (function() {
             pdfCanvas = elements.pdfCanvas;
 
             // Set up event listeners (use pointer events for touch support)
-            annotationCanvas.style.touchAction = 'none';
+            // Use 'manipulation' on mobile to allow pinch-zoom and panning
+            // Use 'none' on desktop for precise drawing control
+            const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+            annotationCanvas.style.touchAction = isMobile ? 'manipulation' : 'none';
             annotationCanvas.addEventListener('pointerdown', startAnnotation);
             annotationCanvas.addEventListener('pointermove', drawAnnotation);
             annotationCanvas.addEventListener('pointerup', endAnnotation);
