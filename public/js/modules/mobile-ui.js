@@ -657,13 +657,60 @@
             }
         }, { passive: false });
 
-        // Also listen on the annotation canvas for early multi-touch detection
+        // Also handle pinch-to-zoom on annotation canvas (which is on top of pdfViewer)
         const annotationCanvas = document.getElementById('annotationCanvas');
         if (annotationCanvas) {
             annotationCanvas.addEventListener('touchstart', (e) => {
                 if (e.touches.length >= 2) {
+                    e.preventDefault();
+                    touches = Array.from(e.touches);
                     pinchState.active = true;
+                    pinchState.initialDistance = getDistance(touches[0], touches[1]);
+                    pinchState.initialScale = (typeof PDFoxCore !== 'undefined') ? PDFoxCore.get('scale') : 1;
                 }
+            }, { passive: false });
+
+            annotationCanvas.addEventListener('touchmove', (e) => {
+                if (!pinchState.active || e.touches.length !== 2) return;
+
+                e.preventDefault();
+                touches = Array.from(e.touches);
+
+                const currentDistance = getDistance(touches[0], touches[1]);
+                const scaleFactor = currentDistance / pinchState.initialDistance;
+                let newScale = pinchState.initialScale * scaleFactor;
+
+                // Clamp scale between 0.5 and 3.0
+                newScale = Math.max(0.5, Math.min(3.0, newScale));
+
+                // Only update if scale changed significantly
+                if (Math.abs(newScale - pinchState.lastScale) > 0.02) {
+                    pinchState.lastScale = newScale;
+                    applyPinchZoom(newScale);
+                }
+            }, { passive: false });
+
+            annotationCanvas.addEventListener('touchend', (e) => {
+                if (pinchState.active && e.touches.length < 2) {
+                    pinchState.active = false;
+
+                    // Reset CSS transform
+                    pdfViewer.style.transform = '';
+                    pdfViewer.style.transformOrigin = '';
+
+                    // Finalize zoom by re-rendering at new scale
+                    if (typeof PDFoxCore !== 'undefined') {
+                        PDFoxCore.set('scale', pinchState.lastScale);
+                        if (typeof PDFoxApp !== 'undefined' && PDFoxApp.renderCurrentPage) {
+                            PDFoxApp.renderCurrentPage();
+                        }
+                        // Update zoom display
+                        if (typeof PDFoxApp !== 'undefined' && PDFoxApp.updateZoomDisplay) {
+                            PDFoxApp.updateZoomDisplay();
+                        }
+                    }
+                }
+                touches = Array.from(e.touches);
             }, { passive: true });
         }
 
