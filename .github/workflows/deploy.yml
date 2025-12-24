@@ -8,15 +8,19 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to pdfox.cloud
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: 46.62.238.177
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 46.62.238.177 >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          ssh -i ~/.ssh/deploy_key root@46.62.238.177 '
             cd /var/www/pdfox
             git pull origin main
-            npm install --production
+            npm install --omit=dev
             pm2 reload pdfox --update-env
             echo "Deployed at $(date)"
+          '
