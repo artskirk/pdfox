@@ -15,7 +15,10 @@ const PDFoxApp = (function() {
     let renderer, textEditor, layers, annotations, signatures, overlays;
 
     // Default tool - what we return to after actions
-    const DEFAULT_TOOL = 'addText';
+    // On mobile, use moveText to allow scrolling/panning without triggering popups
+    const isMobileDevice = () => window.innerWidth <= 768 || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+    const getDefaultTool = () => isMobileDevice() ? 'moveText' : 'addText';
+    let DEFAULT_TOOL = 'addText'; // Will be set correctly on init
 
     // One-shot tools that auto-reset after use
     // Note: 'fill' is not included because it switches to move mode after drawing
@@ -120,7 +123,7 @@ const PDFoxApp = (function() {
         core.emit('tool:changed', { tool, previousTool });
 
         // Show brief notification for tool change (except for default tool)
-        if (tool !== DEFAULT_TOOL) {
+        if (tool !== getDefaultTool()) {
             const toolNames = {
                 editText: 'Edit Text',
                 addText: 'Add Text',
@@ -139,7 +142,7 @@ const PDFoxApp = (function() {
      * Reset to default tool
      */
     function resetToDefaultTool() {
-        setTool(DEFAULT_TOOL);
+        setTool(getDefaultTool());
     }
 
     /**
@@ -2377,9 +2380,9 @@ const PDFoxApp = (function() {
                 } else {
                     // No modal open - reset to default tool
                     const currentTool = core.get('currentTool');
-                    if (currentTool !== DEFAULT_TOOL) {
+                    if (currentTool !== getDefaultTool()) {
                         resetToDefaultTool();
-                        ui.showNotification('Tool reset to Edit Text', 'info');
+                        ui.showNotification('Tool reset', 'info');
                     }
                 }
             }
@@ -2594,7 +2597,7 @@ const PDFoxApp = (function() {
                 // Only reset if clicked directly on container (not on child elements)
                 if (e.target === canvasContainer) {
                     const currentTool = core.get('currentTool');
-                    if (currentTool !== DEFAULT_TOOL && !PERSISTENT_TOOLS.includes(currentTool)) {
+                    if (currentTool !== getDefaultTool() && !PERSISTENT_TOOLS.includes(currentTool)) {
                         resetToDefaultTool();
                     }
                 }
@@ -2737,7 +2740,7 @@ const PDFoxApp = (function() {
                     core.set('pdfBytes', pdfBytes);
 
                     await renderer.loadPDF(new Uint8Array(pdfBytes));
-                    setTool('addText', true); // Force to ensure UI is updated
+                    setTool(getDefaultTool(), true); // Force to ensure UI is updated
                     updateZoomDisplay();
 
                     const appliedZoom = Math.round(core.get('scale') * 100);
@@ -2944,8 +2947,9 @@ const PDFoxApp = (function() {
                 }
 
                 // Set default tool (force to ensure UI is updated) - unless restored
-                if (!core.get('currentTool') || core.get('currentTool') === 'addText') {
-                    setTool('addText', true);
+                const defaultTool = getDefaultTool();
+                if (!core.get('currentTool') || core.get('currentTool') === defaultTool) {
+                    setTool(defaultTool, true);
                 } else {
                     setTool(core.get('currentTool'), true);
                 }
