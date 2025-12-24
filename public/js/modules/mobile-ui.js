@@ -307,32 +307,32 @@
 
         if (prevBtn) {
             prevBtn.addEventListener('click', () => {
-                if (window.PDFApp && window.PDFApp.prevPage) {
-                    window.PDFApp.prevPage();
+                if (typeof PDFoxApp !== 'undefined' && PDFoxApp.prevPage) {
+                    PDFoxApp.prevPage();
                 }
             });
         }
 
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
-                if (window.PDFApp && window.PDFApp.nextPage) {
-                    window.PDFApp.nextPage();
+                if (typeof PDFoxApp !== 'undefined' && PDFoxApp.nextPage) {
+                    PDFoxApp.nextPage();
                 }
             });
         }
 
         if (zoomInBtn) {
             zoomInBtn.addEventListener('click', () => {
-                if (window.PDFApp && window.PDFApp.zoomIn) {
-                    window.PDFApp.zoomIn();
+                if (typeof PDFoxApp !== 'undefined' && PDFoxApp.zoomIn) {
+                    PDFoxApp.zoomIn();
                 }
             });
         }
 
         if (zoomOutBtn) {
             zoomOutBtn.addEventListener('click', () => {
-                if (window.PDFApp && window.PDFApp.zoomOut) {
-                    window.PDFApp.zoomOut();
+                if (typeof PDFoxApp !== 'undefined' && PDFoxApp.zoomOut) {
+                    PDFoxApp.zoomOut();
                 }
             });
         }
@@ -511,15 +511,15 @@
     function selectTool(toolId) {
         // Handle undo/redo separately
         if (toolId === 'undo') {
-            if (window.PDFApp && window.PDFApp.undo) {
-                window.PDFApp.undo();
+            if (typeof PDFoxApp !== 'undefined' && PDFoxApp.undo) {
+                PDFoxApp.undo();
             }
             return;
         }
 
         if (toolId === 'redo') {
-            if (window.PDFApp && window.PDFApp.redo) {
-                window.PDFApp.redo();
+            if (typeof PDFoxApp !== 'undefined' && PDFoxApp.redo) {
+                PDFoxApp.redo();
             }
             return;
         }
@@ -626,8 +626,8 @@
 
         // Small delay to ensure PDF is rendered
         setTimeout(() => {
-            if (window.PDFApp && window.PDFApp.zoomFitWidth) {
-                window.PDFApp.zoomFitWidth();
+            if (typeof PDFoxApp !== 'undefined' && PDFoxApp.zoomFitWidth) {
+                PDFoxApp.zoomFitWidth();
                 console.log('Auto-fitted PDF to width for mobile');
             }
         }, 100);
@@ -653,7 +653,7 @@
                 e.preventDefault();
                 pinchState.active = true;
                 pinchState.initialDistance = getDistance(touches[0], touches[1]);
-                pinchState.initialScale = window.PDFCore ? window.PDFCore.get('scale') : 1;
+                pinchState.initialScale = (typeof PDFoxCore !== 'undefined') ? PDFoxCore.get('scale') : 1;
             }
         }, { passive: false });
 
@@ -696,14 +696,14 @@
                 pdfViewer.style.transformOrigin = '';
 
                 // Finalize zoom by re-rendering at new scale
-                if (window.PDFCore) {
-                    window.PDFCore.set('scale', pinchState.lastScale);
-                    if (window.PDFApp && window.PDFApp.renderCurrentPage) {
-                        window.PDFApp.renderCurrentPage();
+                if (typeof PDFoxCore !== 'undefined') {
+                    PDFoxCore.set('scale', pinchState.lastScale);
+                    if (typeof PDFoxApp !== 'undefined' && PDFoxApp.renderCurrentPage) {
+                        PDFoxApp.renderCurrentPage();
                     }
                     // Update zoom display
-                    if (window.PDFApp && window.PDFApp.updateZoomDisplay) {
-                        window.PDFApp.updateZoomDisplay();
+                    if (typeof PDFoxApp !== 'undefined' && PDFoxApp.updateZoomDisplay) {
+                        PDFoxApp.updateZoomDisplay();
                     }
                 }
             }
@@ -728,7 +728,7 @@
         if (!pdfViewer) return;
 
         // Use CSS transform for smooth visual feedback during pinch
-        const currentScale = window.PDFCore ? window.PDFCore.get('scale') : 1;
+        const currentScale = (typeof PDFoxCore !== 'undefined') ? PDFoxCore.get('scale') : 1;
         const visualScale = scale / currentScale;
 
         pdfViewer.style.transform = `scale(${visualScale})`;
