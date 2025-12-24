@@ -623,11 +623,6 @@ const PDFoxAnnotations = (function() {
             return;
         }
 
-        // Capture pointer for reliable tracking
-        if (e.target && e.target.setPointerCapture) {
-            e.target.setPointerCapture(e.pointerId);
-        }
-
         const currentTool = core.get('currentTool');
 
         const rect = annotationCanvas.getBoundingClientRect();
@@ -642,7 +637,10 @@ const PDFoxAnnotations = (function() {
                 if (selectedArea) {
                     const handle = getResizeHandleAtPosition(x, y, selectedArea);
                     if (handle) {
-                        // Start resizing
+                        // Start resizing - capture pointer for reliable tracking
+                        if (e.target && e.target.setPointerCapture) {
+                            e.target.setPointerCapture(e.pointerId);
+                        }
                         isResizingFill = true;
                         resizeHandle = handle;
                         fillDragStartPos = { x, y };
@@ -657,6 +655,10 @@ const PDFoxAnnotations = (function() {
             // Check for fill area hit
             const fillHitIndex = findFillAtPosition(x, y);
             if (fillHitIndex >= 0) {
+                // Capture pointer for reliable drag tracking
+                if (e.target && e.target.setPointerCapture) {
+                    e.target.setPointerCapture(e.pointerId);
+                }
                 // Select and start dragging this fill area
                 selectedFillIndex = fillHitIndex;
                 deselectAnnotation(); // Deselect any annotation
@@ -679,6 +681,10 @@ const PDFoxAnnotations = (function() {
             // Check for annotation hit
             const hitIndex = findAnnotationAtPosition(x, y);
             if (hitIndex >= 0) {
+                // Capture pointer for reliable drag tracking
+                if (e.target && e.target.setPointerCapture) {
+                    e.target.setPointerCapture(e.pointerId);
+                }
                 // Deselect fill area if any
                 selectedFillIndex = null;
 
@@ -705,10 +711,11 @@ const PDFoxAnnotations = (function() {
                 e.preventDefault();
                 return;
             } else {
-                // Clicked on empty area - deselect all
+                // Clicked on empty area - deselect all and allow native scrolling
                 deselectAnnotation();
                 selectedFillIndex = null;
                 redrawAnnotations();
+                // Don't prevent default or capture pointer - allow scrolling
             }
             return;
         }
@@ -753,6 +760,11 @@ const PDFoxAnnotations = (function() {
             }, 200);
 
             return;
+        }
+
+        // Capture pointer for reliable drawing tracking
+        if (e.target && e.target.setPointerCapture) {
+            e.target.setPointerCapture(e.pointerId);
         }
 
         // Start drawing annotation - get styles from annotation styles module or fallback to legacy inputs

@@ -4962,9 +4962,9 @@ canvas {
         touch-action: pan-x pan-y;
     }
 
-    /* PDF viewer touch behavior */
+    /* PDF viewer touch behavior - allow panning and pinch-zoom */
     .pdf-viewer {
-        touch-action: none; /* We handle touch ourselves for pinch-zoom */
+        touch-action: manipulation;
     }
 
     .pdf-page-canvas {
