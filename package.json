@@ -1,6 +1,6 @@
 {
   "name": "pdf-to-text-converter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "PDF to Text Converter with OCR support for scanned documents",
   "main": "server.js",
   "bin": {
