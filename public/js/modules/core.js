@@ -7,13 +7,16 @@
 const PDFoxCore = (function() {
     'use strict';
 
+    // Detect mobile device for default tool selection
+    const isMobileDevice = () => window.innerWidth <= 768 || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+
     // Private state
     const state = {
         pdfDoc: null,
         currentPage: 1,
         totalPages: 0,
         scale: 1.0,
-        currentTool: 'addText',
+        currentTool: isMobileDevice() ? 'moveText' : 'addText',
         textEdits: [],
         textOverlays: [],
         signatures: [],
