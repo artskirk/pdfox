@@ -13,6 +13,7 @@ const Stripe = require('stripe');
 const { google } = require('googleapis');
 const jwt = require('jsonwebtoken');
 const { createLogger } = require('./lib/logger');
+const { AnalyticsNotifier } = require('./lib/analytics');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,11 @@ const log = createLogger({
     isProduction,
     debugEnabled: APP_DEBUG,
     logDir: path.join(__dirname, 'logs')
+});
+
+// Initialize analytics
+const analytics = new AnalyticsNotifier({
+    debug: APP_DEBUG
 });
 
 // ============================================================================
@@ -742,6 +748,13 @@ app.post('/api/v1/pro/create-checkout', async (req, res) => {
             },
         });
 
+        // Track payment started
+        analytics.trackPaymentStarted(req, {
+            product: 'Pro Access',
+            amount: PRO_PAYMENT_AMOUNT,
+            email: email
+        });
+
         res.json({ sessionId: session.id, url: session.url });
     } catch (error) {
         log.error('Error creating Pro checkout session:', error.message);
@@ -810,6 +823,19 @@ app.post('/api/v1/pro/verify-payment', async (req, res) => {
         // Create new Pro access
         const email = session.customer_email || session.metadata?.email || 'unknown@user.com';
         const { token, expiresAt } = createProAccess(email, fingerprint, sessionId, receiptNumber);
+
+        // Track payment completed and pro activated
+        analytics.trackPaymentCompleted({
+            product: 'Pro Access',
+            amount: PRO_PAYMENT_AMOUNT,
+            email: email,
+            receiptNumber: receiptNumber
+        });
+
+        analytics.trackProActivated(req, {
+            email: email,
+            expiresAt: expiresAt
+        });
 
         res.json({
             success: true,
@@ -1397,6 +1423,12 @@ app.post('/convert', upload.single('pdf'), async (req, res) => {
             fs.unlinkSync(filePath);
         }
 
+        // Track document conversion
+        analytics.trackDocumentConverted(req, {
+            format: format,
+            characterCount: extractedText.length
+        });
+
         // Return success with download link
         res.json({
             status: 'success',
@@ -1474,6 +1506,13 @@ app.post('/api/v1/share/create', shareUpload.single('pdf'), async (req, res) => 
 
         // Generate share URL
         const shareUrl = `${req.protocol}://${req.get('host')}/share/${hash}`;
+
+        // Track document shared
+        analytics.trackDocumentShared(req, {
+            fileName: fileName,
+            hasPassword: !!passwordHash,
+            hash: hash
+        });
 
         res.json({
             success: true,
@@ -1716,6 +1755,57 @@ async function sendToTelegram(message) {
     });
 }
 
+// Analytics tracking endpoint (for client-side page view tracking)
+app.post('/api/v1/analytics/pageview', express.json(), async (req, res) => {
+    try {
+        const { page } = req.body;
+        if (page) {
+            analytics.trackPageView(req, page);
+        }
+        res.json({ success: true });
+    } catch (error) {
+        res.json({ success: false });
+    }
+});
+
+// Editor analytics tracking endpoint
+app.post('/api/v1/analytics/editor', express.json(), async (req, res) => {
+    try {
+        const { event, details } = req.body;
+
+        if (!event) {
+            return res.json({ success: false });
+        }
+
+        switch (event) {
+            case 'file_uploaded':
+                analytics.trackFileUploaded(req, details);
+                break;
+            case 'tool_used':
+                analytics.trackToolUsed(req, details);
+                break;
+            case 'document_saved':
+                analytics.trackDocumentSaved(req, details);
+                break;
+            case 'document_exported':
+                analytics.trackDocumentExported(req, details);
+                break;
+            case 'share_initiated':
+                analytics.trackShareInitiated(req, details);
+                break;
+            case 'save_option_selected':
+                analytics.trackSaveOptionSelected(req, details);
+                break;
+            default:
+                analytics.trackEditorEvent(req, { event, ...details });
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        res.json({ success: false });
+    }
+});
+
 // Contact form submission endpoint
 app.post('/api/v1/contact', express.json(), async (req, res) => {
     try {
@@ -1731,51 +1821,14 @@ app.post('/api/v1/contact', express.json(), async (req, res) => {
             return res.status(400).json({ error: 'Invalid email address' });
         }
 
-        // Sanitize inputs (basic XSS prevention for Telegram HTML)
-        const sanitize = (str) => str ? str.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) : '';
+        // Track contact form with enhanced analytics
+        await analytics.trackContactForm(req, { name, email, company, topic, message });
 
-        // Topic labels
-        const topicLabels = {
-            'sales': 'Enterprise Sales Inquiry',
-            'support': 'Technical Support',
-            'billing': 'Billing Question',
-            'feature': 'Feature Request',
-            'partnership': 'Partnership Opportunity',
-            'other': 'Other'
-        };
-
-        // Format message for Telegram
-        const telegramMessage = `
-<b>New Contact Form Submission</b>
-
-<b>Name:</b> ${sanitize(name)}
-<b>Email:</b> ${sanitize(email)}
-<b>Company:</b> ${sanitize(company) || 'Not provided'}
-<b>Topic:</b> ${topicLabels[topic] || sanitize(topic)}
-
-<b>Message:</b>
-${sanitize(message)}
-
-<i>Received: ${new Date().toLocaleString('en-US', { timeZone: 'Europe/London' })}</i>
-        `.trim();
-
-        // Send to Telegram
-        const sent = await sendToTelegram(telegramMessage);
-
-        if (sent) {
-            log.info('Contact form submitted', { email, topic });
-            res.json({
-                success: true,
-                message: 'Thank you for your message! We\'ll get back to you within 4 hours during business hours.'
-            });
-        } else {
-            // Still return success to user but log the issue
-            log.warn('Contact form received but Telegram notification failed', { email, topic });
-            res.json({
-                success: true,
-                message: 'Thank you for your message! We\'ll get back to you within 4 hours during business hours.'
-            });
-        }
+        log.info('Contact form submitted', { email, topic });
+        res.json({
+            success: true,
+            message: 'Thank you for your message! We\'ll get back to you within 4 hours during business hours.'
+        });
     } catch (error) {
         log.error('Contact form error:', error.message);
         res.status(500).json({ error: 'Failed to submit contact form. Please try again.' });
@@ -1788,6 +1841,7 @@ ${sanitize(message)}
 
 // Main pages - clean URLs
 app.get('/editor', (req, res) => {
+    analytics.trackEditorOpened(req);
     res.sendFile(path.join(__dirname, 'public', 'pdf-editor-modular.html'));
 });
 

@@ -58,6 +58,11 @@ const PDFoxApp = (function() {
 
         core.set('currentTool', tool);
 
+        // Track tool change
+        if (typeof EditorAnalytics !== 'undefined' && !force) {
+            EditorAnalytics.trackToolUsed(tool, 'Selected');
+        }
+
         // Update button states - clear all first
         document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
             btn.classList.remove('active');
@@ -517,6 +522,15 @@ const PDFoxApp = (function() {
      * Start Pro checkout flow
      */
     async function startProCheckout() {
+        // Track "Get Pro Access" option selected
+        if (typeof EditorAnalytics !== 'undefined') {
+            const fileName = sessionStorage.getItem('pdfFileName') || 'document.pdf';
+            EditorAnalytics.send('save_option_selected', {
+                fileName: fileName,
+                action: 'Get Pro Access'
+            });
+        }
+
         const emailInput = document.getElementById('upgradeEmail');
         const errorEl = document.getElementById('upgradeEmailError');
         const ctaBtn = document.getElementById('upgradeCtaBtn');
@@ -581,6 +595,15 @@ const PDFoxApp = (function() {
      * Save PDF with watermark (for free users who choose to proceed)
      */
     async function saveWithWatermark() {
+        // Track "Save for Free" option selected
+        if (typeof EditorAnalytics !== 'undefined') {
+            const fileName = sessionStorage.getItem('pdfFileName') || 'document.pdf';
+            EditorAnalytics.send('save_option_selected', {
+                fileName: fileName,
+                action: 'Save for Free'
+            });
+        }
+
         closeUpgradeModal();
         await _doSavePDF(true); // Force watermark
     }
@@ -589,6 +612,15 @@ const PDFoxApp = (function() {
      * Show recovery form modal
      */
     function showRecoveryForm() {
+        // Track "Restore Access" option selected
+        if (typeof EditorAnalytics !== 'undefined') {
+            const fileName = sessionStorage.getItem('pdfFileName') || 'document.pdf';
+            EditorAnalytics.send('save_option_selected', {
+                fileName: fileName,
+                action: 'Restore Access'
+            });
+        }
+
         closeUpgradeModal();
         const modal = document.getElementById('recoveryModal');
         if (modal) {
@@ -720,6 +752,15 @@ const PDFoxApp = (function() {
             // Show upgrade modal for free users
             showUpgradeModal();
             return;
+        }
+
+        // Track Pro user save
+        if (typeof EditorAnalytics !== 'undefined') {
+            const fileName = sessionStorage.getItem('pdfFileName') || 'document.pdf';
+            EditorAnalytics.send('document_saved', {
+                fileName: fileName,
+                action: 'Save (Pro User)'
+            });
         }
 
         // Pro users save directly without watermark
@@ -1998,6 +2039,12 @@ const PDFoxApp = (function() {
     function showShareOptionsModal() {
         const modal = document.getElementById('shareOptionsModal');
         if (modal) {
+            // Track share initiated
+            if (typeof EditorAnalytics !== 'undefined') {
+                const fileName = sessionStorage.getItem('pdfFileName') || 'document.pdf';
+                EditorAnalytics.trackShareInitiated(fileName, 'Share Dialog');
+            }
+
             // Reset form
             const passwordCheckbox = document.getElementById('sharePasswordEnabled');
             const passwordInput = document.getElementById('sharePassword');
@@ -2155,6 +2202,16 @@ const PDFoxApp = (function() {
      */
     function headerShareLink() {
         const isProUser = core.get('isProUser') || false;
+
+        // Track share button click
+        if (typeof EditorAnalytics !== 'undefined') {
+            const fileName = sessionStorage.getItem('pdfFileName') || 'document.pdf';
+            EditorAnalytics.send('share_initiated', {
+                fileName: fileName,
+                method: isProUser ? 'Share Button (Pro)' : 'Share Button (Free)',
+                isPro: isProUser
+            });
+        }
 
         if (isProUser) {
             // Pro user - proceed with share functionality
@@ -2868,6 +2925,12 @@ const PDFoxApp = (function() {
 
                 // Load PDF (renderer will calculate optimal zoom automatically)
                 await renderer.loadPDF(new Uint8Array(pdfBytes));
+
+                // Track file upload via editor analytics
+                if (typeof EditorAnalytics !== 'undefined') {
+                    const pageCount = core.get('totalPages') || renderer.pdfDoc?.numPages || 'Unknown';
+                    EditorAnalytics.trackFileUpload({ name: fileName, size: pdfBytes.length }, pageCount);
+                }
 
                 // Initialize session persistence and restore any saved state
                 if (typeof PDFoxSessionPersistence !== 'undefined') {
