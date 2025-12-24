@@ -586,6 +586,14 @@
     };
 
     /**
+     * Check if pinch gesture is currently active
+     * Used by annotations module to prevent tool activation during pinch-to-zoom
+     */
+    function isPinchActive() {
+        return pinchState.active;
+    }
+
+    /**
      * Initialize mobile PDF viewing features
      */
     function initMobilePDFViewing() {
@@ -638,7 +646,9 @@
         pdfViewer.addEventListener('touchstart', (e) => {
             touches = Array.from(e.touches);
 
-            if (touches.length === 2) {
+            // Set pinch active immediately when 2+ touches detected
+            // This helps prevent addText popup during pinch gestures
+            if (touches.length >= 2) {
                 // Two fingers - start pinch
                 e.preventDefault();
                 pinchState.active = true;
@@ -646,6 +656,16 @@
                 pinchState.initialScale = window.PDFCore ? window.PDFCore.get('scale') : 1;
             }
         }, { passive: false });
+
+        // Also listen on the annotation canvas for early multi-touch detection
+        const annotationCanvas = document.getElementById('annotationCanvas');
+        if (annotationCanvas) {
+            annotationCanvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length >= 2) {
+                    pinchState.active = true;
+                }
+            }, { passive: true });
+        }
 
         pdfViewer.addEventListener('touchmove', (e) => {
             if (!pinchState.active || e.touches.length !== 2) return;
@@ -782,6 +802,7 @@
         init,
         isMobile,
         isTouch,
+        isPinchActive,
         openSidebar,
         closeSidebar,
         toggleSidebar,

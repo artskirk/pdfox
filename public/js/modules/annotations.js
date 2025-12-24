@@ -734,7 +734,7 @@ const PDFoxAnnotations = (function() {
             e.preventDefault();
 
             // Use a short delay to detect if this is a pinch-to-zoom gesture
-            // If a second finger comes down within 150ms, cancel the addText action
+            // If a second finger comes down within 200ms, cancel the addText action
             const textX = x;
             const textY = y;
 
@@ -744,11 +744,13 @@ const PDFoxAnnotations = (function() {
 
             pendingAddTextAction = setTimeout(() => {
                 // Only open modal if still single touch (no multi-touch detected)
-                if (activePointers.size <= 1 && typeof PDFoxTextEditor !== 'undefined') {
+                // Also check MobileUI pinch state for touch-based pinch detection
+                const isPinching = (typeof MobileUI !== 'undefined' && MobileUI.isPinchActive && MobileUI.isPinchActive());
+                if (activePointers.size <= 1 && !isPinching && typeof PDFoxTextEditor !== 'undefined') {
                     PDFoxTextEditor.openAddTextModal(textX, textY);
                 }
                 pendingAddTextAction = null;
-            }, 150);
+            }, 200);
 
             return;
         }
@@ -1213,6 +1215,14 @@ const PDFoxAnnotations = (function() {
             annotationCanvas.addEventListener('pointermove', drawAnnotation);
             annotationCanvas.addEventListener('pointerup', endAnnotation);
             annotationCanvas.addEventListener('pointercancel', endAnnotation);
+
+            // Add touch listener to detect multi-touch and cancel pending addText action
+            annotationCanvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length >= 2 && pendingAddTextAction) {
+                    clearTimeout(pendingAddTextAction);
+                    pendingAddTextAction = null;
+                }
+            }, { passive: true });
 
             // Subscribe to page changes
             core.on('page:rendered', () => this.redraw());
