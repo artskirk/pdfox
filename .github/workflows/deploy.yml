@@ -1,0 +1,22 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to pdfox.cloud
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 46.62.238.177
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/pdfox
+            git pull origin main
+            npm install --production
+            pm2 reload pdfox --update-env
+            echo "Deployed at $(date)"
