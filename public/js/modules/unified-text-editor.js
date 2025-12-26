@@ -31,6 +31,31 @@ const PDFoxUnifiedTextEditor = (function() {
     const fontSizePresets = [10, 12, 14, 18, 24, 36];
 
     /**
+     * Pick color using the EyeDropper API
+     * Falls back to alert if not supported
+     * @returns {Promise<string|null>} Hex color or null
+     */
+    async function pickColorWithEyedropper() {
+        // Check if EyeDropper API is supported
+        if (!window.EyeDropper) {
+            ui.showNotification('Eyedropper not supported in this browser. Try Chrome or Edge.', 'warning');
+            return null;
+        }
+
+        try {
+            const eyeDropper = new EyeDropper();
+            const result = await eyeDropper.open();
+            return result.sRGBHex;
+        } catch (err) {
+            // User cancelled or error
+            if (err.name !== 'AbortError') {
+                console.warn('[PDFox] Eyedropper error:', err);
+            }
+            return null;
+        }
+    }
+
+    /**
      * Get mode configuration
      * @param {string} mode - Mode name
      * @returns {Object} Mode config
@@ -193,12 +218,32 @@ const PDFoxUnifiedTextEditor = (function() {
                         <div class="unified-editor-row">
                             <div class="unified-editor-field">
                                 <label>Text Color</label>
-                                <input type="color" id="uteTextColor" value="${textColor}">
+                                <div class="color-input-group">
+                                    <input type="color" id="uteTextColor" value="${textColor}">
+                                    <button type="button" class="eyedropper-btn" id="uteTextColorPicker" title="Pick color from screen">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M2 22l1-1h3l9-9"/>
+                                            <path d="M3 21v-3l9-9"/>
+                                            <path d="M14.5 5.5L18 2l4 4-3.5 3.5"/>
+                                            <path d="M12 8l4 4"/>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                             <div class="unified-editor-field">
                                 <label>Background</label>
                                 <div class="bg-color-control">
-                                    <input type="color" id="uteBgColor" value="${bgColor}" ${isTransparent ? 'disabled' : ''}>
+                                    <div class="color-input-group">
+                                        <input type="color" id="uteBgColor" value="${bgColor}" ${isTransparent ? 'disabled' : ''}>
+                                        <button type="button" class="eyedropper-btn" id="uteBgColorPicker" title="Pick color from screen" ${isTransparent ? 'disabled' : ''}>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M2 22l1-1h3l9-9"/>
+                                                <path d="M3 21v-3l9-9"/>
+                                                <path d="M14.5 5.5L18 2l4 4-3.5 3.5"/>
+                                                <path d="M12 8l4 4"/>
+                                            </svg>
+                                        </button>
+                                    </div>
                                     ${config.showTransparent ? `
                                         <label class="transparent-toggle">
                                             <input type="checkbox" id="uteTransparent" ${isTransparent ? 'checked' : ''}>
@@ -370,9 +415,40 @@ const PDFoxUnifiedTextEditor = (function() {
         // Transparent toggle
         const transparentCheck = document.getElementById('uteTransparent');
         const bgColorInput = document.getElementById('uteBgColor');
+        const bgColorPicker = document.getElementById('uteBgColorPicker');
         transparentCheck?.addEventListener('change', () => {
             bgColorInput.disabled = transparentCheck.checked;
             bgColorInput.style.opacity = transparentCheck.checked ? '0.5' : '1';
+            if (bgColorPicker) {
+                bgColorPicker.disabled = transparentCheck.checked;
+                bgColorPicker.style.opacity = transparentCheck.checked ? '0.5' : '1';
+            }
+        });
+
+        // Eyedropper for text color
+        document.getElementById('uteTextColorPicker')?.addEventListener('click', async () => {
+            const color = await pickColorWithEyedropper();
+            if (color) {
+                document.getElementById('uteTextColor').value = color;
+            }
+        });
+
+        // Eyedropper for background color
+        document.getElementById('uteBgColorPicker')?.addEventListener('click', async () => {
+            const color = await pickColorWithEyedropper();
+            if (color) {
+                document.getElementById('uteBgColor').value = color;
+                // Disable transparent if picking a background color
+                if (transparentCheck && transparentCheck.checked) {
+                    transparentCheck.checked = false;
+                    bgColorInput.disabled = false;
+                    bgColorInput.style.opacity = '1';
+                    if (bgColorPicker) {
+                        bgColorPicker.disabled = false;
+                        bgColorPicker.style.opacity = '1';
+                    }
+                }
+            }
         });
 
         // Escape key

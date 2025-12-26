@@ -3459,6 +3459,48 @@ body {
     user-select: none;
 }
 
+/* Color Input Group with Eyedropper */
+.color-input-group {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+}
+
+.color-input-group input[type="color"] {
+    flex: 1;
+}
+
+.eyedropper-btn {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-tertiary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.eyedropper-btn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: rgba(229, 9, 20, 0.1);
+}
+
+.eyedropper-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.eyedropper-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
 /* Font Style Controls */
 .font-style-field {
     grid-column: 1 / -1;
