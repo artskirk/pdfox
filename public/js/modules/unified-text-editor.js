@@ -888,14 +888,15 @@ const PDFoxUnifiedTextEditor = (function() {
         copyText,
 
         // Convenience methods
-        showAddText(x, y, page, detectedBgColor) {
+        showAddText(x, y, page, detectedColors) {
             show('add', {
                 x,
                 y,
                 page,
-                // If a background color was detected, use it and disable transparent mode
-                bgColor: detectedBgColor || '#ffffff',
-                isTransparent: !detectedBgColor // Transparent only if no color was detected
+                // If colors were detected, use them and disable transparent mode
+                bgColor: detectedColors?.bgColor || '#ffffff',
+                textColor: detectedColors?.textColor || '#000000',
+                isTransparent: !detectedColors // Transparent only if no colors were detected
             });
         },
 

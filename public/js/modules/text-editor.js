@@ -36,9 +36,9 @@ const PDFoxTextEditor = (function() {
      * Detect background color from PDF canvas at given position (private function)
      * @param {number} x - X position
      * @param {number} y - Y position
-     * @returns {string|null} Hex color code or null if detection fails
+     * @returns {Object|null} Object with bgColor and textColor, or null if detection fails
      */
-    function detectBackgroundColorAt(x, y) {
+    function detectColorsAt(x, y) {
         try {
             const pdfCanvas = document.getElementById('pdfCanvas');
             if (!pdfCanvas) return null;
@@ -78,11 +78,31 @@ const PDFoxTextEditor = (function() {
 
             // Convert to hex
             const toHex = (c) => c.toString(16).padStart(2, '0');
-            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+            const bgColor = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+
+            // Calculate luminance to determine contrasting text color
+            // Using relative luminance formula: https://www.w3.org/TR/WCAG20/#relativeluminancedef
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+            // Use white text for dark backgrounds, black for light backgrounds
+            const textColor = luminance < 0.5 ? '#ffffff' : '#000000';
+
+            return { bgColor, textColor };
         } catch (err) {
-            console.warn('[PDFox TextEditor] Could not detect background color:', err);
+            console.warn('[PDFox TextEditor] Could not detect colors:', err);
             return null;
         }
+    }
+
+    /**
+     * Legacy wrapper for background color detection only
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @returns {string|null} Hex color code or null
+     */
+    function detectBackgroundColorAt(x, y) {
+        const colors = detectColorsAt(x, y);
+        return colors ? colors.bgColor : null;
     }
 
     /**
@@ -368,13 +388,13 @@ const PDFoxTextEditor = (function() {
             originalWidth: span.offsetWidth
         };
 
-        // Detect background color from PDF if this is first edit (no existing bgColor)
-        let detectedBgColor = null;
-        if (!existingEdit?.customBgColor) {
+        // Detect colors from PDF if this is first edit (no existing colors)
+        let detectedColors = null;
+        if (!existingEdit?.customBgColor || !existingEdit?.customColor) {
             // Get span position relative to canvas
             const spanX = parseFloat(span.style.left) || 0;
             const spanY = parseFloat(span.style.top) || 0;
-            detectedBgColor = detectBackgroundColorAt(spanX, spanY);
+            detectedColors = detectColorsAt(spanX, spanY);
         }
 
         // Use unified text editor
@@ -389,10 +409,10 @@ const PDFoxTextEditor = (function() {
                 fontName: currentEditingTextItem.fontName,
                 originalWidth: currentEditingTextItem.originalWidth,
                 fontSize: existingEdit?.customFontSize || Math.round(fontSize),
-                textColor: existingEdit?.customColor || '#000000',
-                bgColor: existingEdit?.customBgColor || detectedBgColor || '#ffffff',
+                textColor: existingEdit?.customColor || detectedColors?.textColor || '#000000',
+                bgColor: existingEdit?.customBgColor || detectedColors?.bgColor || '#ffffff',
                 fontFamily: existingEdit?.customFontFamily || 'Arial, sans-serif',
-                isTransparent: existingEdit?.isTransparent ?? (detectedBgColor ? false : true),
+                isTransparent: existingEdit?.isTransparent ?? (detectedColors ? false : true),
                 isBold: existingEdit?.isBold ?? false,
                 isItalic: existingEdit?.isItalic ?? false
             });
@@ -750,13 +770,10 @@ const PDFoxTextEditor = (function() {
             if (typeof PDFoxUnifiedTextEditor !== 'undefined') {
                 if (PDFoxUnifiedTextEditor.isOpen()) return;
 
-                const defaultFontSize = parseInt(document.getElementById('fontSize')?.value) || 14;
-                const defaultColor = document.getElementById('textColor')?.value || '#000000';
+                // Detect both background and text colors from PDF at click position
+                const detectedColors = detectColorsAt(x, y);
 
-                // Detect background color from PDF at click position
-                const detectedBgColor = this.detectBackgroundColor(x, y);
-
-                PDFoxUnifiedTextEditor.showAddText(x, y, core.get('currentPage'), detectedBgColor);
+                PDFoxUnifiedTextEditor.showAddText(x, y, core.get('currentPage'), detectedColors);
             }
         },
 
