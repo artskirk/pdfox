@@ -102,8 +102,8 @@ const PDFoxOverlays = (function() {
         });
         div.appendChild(deleteBtn);
 
-        // Resize handles (with touch support)
-        ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'].forEach(position => {
+        // Resize handles - corners only for cleaner look
+        ['nw', 'ne', 'sw', 'se'].forEach(position => {
             const handle = document.createElement('div');
             handle.className = `resize-handle ${position}`;
             handle.style.touchAction = 'none';

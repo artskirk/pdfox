@@ -964,7 +964,7 @@ const PDFoxUnifiedTextEditor = (function() {
         copyText,
 
         // Convenience methods
-        showAddText(x, y, page, detectedColors) {
+        showAddText(x, y, page, detectedColors, detectedFontSize) {
             show('add', {
                 x,
                 y,
@@ -972,7 +972,9 @@ const PDFoxUnifiedTextEditor = (function() {
                 // If colors were detected, use them and disable transparent mode
                 bgColor: detectedColors?.bgColor || '#ffffff',
                 textColor: detectedColors?.textColor || '#000000',
-                isTransparent: !detectedColors // Transparent only if no colors were detected
+                isTransparent: !detectedColors, // Transparent only if no colors were detected
+                // Use detected font size or default to 12
+                fontSize: detectedFontSize || 12
             });
         },
 

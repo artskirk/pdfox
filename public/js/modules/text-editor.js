@@ -106,6 +106,69 @@ const PDFoxTextEditor = (function() {
     }
 
     /**
+     * Detect typical font size from nearby text in the document
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @returns {number} Detected font size or default (12)
+     */
+    function detectFontSizeAt(x, y) {
+        try {
+            const textLayer = document.getElementById('textLayer');
+            if (!textLayer) return 12;
+
+            const spans = textLayer.querySelectorAll('span');
+            if (spans.length === 0) return 12;
+
+            // Find spans near the click position
+            const nearbyFontSizes = [];
+            const searchRadius = 150; // pixels
+
+            spans.forEach(span => {
+                const spanX = parseFloat(span.style.left) || 0;
+                const spanY = parseFloat(span.style.top) || 0;
+                const distance = Math.sqrt(Math.pow(x - spanX, 2) + Math.pow(y - spanY, 2));
+
+                if (distance < searchRadius) {
+                    const fontSize = parseFloat(span.style.fontSize);
+                    if (fontSize && fontSize > 0) {
+                        nearbyFontSizes.push({ fontSize, distance });
+                    }
+                }
+            });
+
+            // If found nearby text, use the closest one's font size
+            if (nearbyFontSizes.length > 0) {
+                nearbyFontSizes.sort((a, b) => a.distance - b.distance);
+                return Math.round(nearbyFontSizes[0].fontSize);
+            }
+
+            // Otherwise, get the most common font size in the document
+            const fontSizeCounts = {};
+            spans.forEach(span => {
+                const fontSize = parseFloat(span.style.fontSize);
+                if (fontSize && fontSize > 0) {
+                    const rounded = Math.round(fontSize);
+                    fontSizeCounts[rounded] = (fontSizeCounts[rounded] || 0) + 1;
+                }
+            });
+
+            let mostCommonSize = 12;
+            let maxCount = 0;
+            for (const [size, count] of Object.entries(fontSizeCounts)) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    mostCommonSize = parseInt(size);
+                }
+            }
+
+            return mostCommonSize;
+        } catch (err) {
+            console.warn('[PDFox TextEditor] Could not detect font size:', err);
+            return 12;
+        }
+    }
+
+    /**
      * Add controls (delete button, resize handles) to an edited span
      * @param {HTMLElement} span - The edited span element
      */
@@ -770,10 +833,11 @@ const PDFoxTextEditor = (function() {
             if (typeof PDFoxUnifiedTextEditor !== 'undefined') {
                 if (PDFoxUnifiedTextEditor.isOpen()) return;
 
-                // Detect both background and text colors from PDF at click position
+                // Detect colors and font size from PDF at click position
                 const detectedColors = detectColorsAt(x, y);
+                const detectedFontSize = detectFontSizeAt(x, y);
 
-                PDFoxUnifiedTextEditor.showAddText(x, y, core.get('currentPage'), detectedColors);
+                PDFoxUnifiedTextEditor.showAddText(x, y, core.get('currentPage'), detectedColors, detectedFontSize);
             }
         },
 

@@ -1954,81 +1954,85 @@ body {
    ========================================================================== */
 .text-overlay {
     position: absolute;
-    padding: 4px 8px;
+    padding: 2px 4px;
     background-color: transparent;
-    border: 2px solid transparent;
+    border: 1px dashed transparent;
     box-shadow: none;
     cursor: move;
     user-select: none;
     white-space: pre-wrap;
     word-wrap: break-word;
-    transition: all var(--transition-fast);
+    transition: border-color 0.15s ease;
     z-index: 100;
+    line-height: 1.2;
 }
 
 .text-overlay:hover {
-    border-color: rgba(229, 9, 20, 0.5);
+    border-color: rgba(100, 100, 100, 0.4);
 }
 
 .text-overlay.selected {
-    border: 2px solid var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.2), 0 4px 16px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(229, 9, 20, 0.6);
     z-index: 200;
 }
 
 .text-overlay .delete-btn {
     position: absolute;
-    top: -12px;
-    right: -12px;
-    width: 24px;
-    height: 24px;
-    background: var(--color-primary);
+    top: -10px;
+    right: -10px;
+    width: 20px;
+    height: 20px;
+    background: #666;
     color: white;
-    border: 2px solid white;
+    border: none;
     border-radius: 50%;
     cursor: pointer;
     display: none;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
+    font-size: 12px;
+    font-weight: normal;
     z-index: 201;
+    opacity: 0.8;
+    transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.text-overlay .delete-btn:hover {
+    background: var(--color-primary);
+    opacity: 1;
 }
 
 .text-overlay.selected .delete-btn { display: flex; }
 .text-overlay.dragging {
-    opacity: 0.7;
+    opacity: 0.8;
     cursor: grabbing;
     z-index: 1000 !important;
 }
 
-/* Resize handles */
+/* Resize handles - minimal corner squares */
 .resize-handle {
     position: absolute;
-    width: 10px;
-    height: 10px;
-    background: var(--color-primary);
-    border: 2px solid white;
-    border-radius: 50%;
+    width: 8px;
+    height: 8px;
+    background: rgba(229, 9, 20, 0.8);
+    border: none;
+    border-radius: 1px;
     display: none;
     z-index: 202;
-    transition: transform 0.15s ease;
+    transition: background 0.15s ease;
 }
 
 .resize-handle:hover {
-    transform: scale(1.2);
+    background: var(--color-primary);
 }
 
 .text-overlay.selected .resize-handle { display: block; }
 
-.resize-handle.se { bottom: -5px; right: -5px; cursor: nwse-resize; }
-.resize-handle.sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
-.resize-handle.ne { top: -5px; right: -5px; cursor: nesw-resize; }
-.resize-handle.nw { top: -5px; left: -5px; cursor: nwse-resize; }
-.resize-handle.n { top: -5px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-.resize-handle.s { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-.resize-handle.e { top: 50%; right: -5px; transform: translateY(-50%); cursor: ew-resize; }
-.resize-handle.w { top: 50%; left: -5px; transform: translateY(-50%); cursor: ew-resize; }
+/* Only corner handles */
+.resize-handle.se { bottom: -4px; right: -4px; cursor: nwse-resize; }
+.resize-handle.sw { bottom: -4px; left: -4px; cursor: nesw-resize; }
+.resize-handle.ne { top: -4px; right: -4px; cursor: nesw-resize; }
+.resize-handle.nw { top: -4px; left: -4px; cursor: nwse-resize; }
 
 /* ==========================================================================
    Sidebar & Layers Panel
