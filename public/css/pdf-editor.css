@@ -2042,6 +2042,11 @@ body {
     border-left: 1px solid #222;
 }
 
+/* Hide mobile close button on desktop */
+.sidebar-close-btn {
+    display: none;
+}
+
 .sidebar h3 {
     font-size: 16px;
     margin-bottom: 15px;
@@ -5005,8 +5010,9 @@ canvas {
         pointer-events: auto;
     }
 
-    /* Add close button to sidebar */
+    /* Show close button in sidebar on mobile */
     .sidebar-close-btn {
+        display: flex;
         position: absolute;
         top: 12px;
         right: 12px;
@@ -5016,10 +5022,10 @@ canvas {
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
+        z-index: 10;
     }
 
     /* Canvas adjustments */
