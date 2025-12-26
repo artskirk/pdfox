@@ -33,6 +33,59 @@ const PDFoxTextEditor = (function() {
     let resizeStartFontSize = 14;
 
     /**
+     * Detect background color from PDF canvas at given position (private function)
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @returns {string|null} Hex color code or null if detection fails
+     */
+    function detectBackgroundColorAt(x, y) {
+        try {
+            const pdfCanvas = document.getElementById('pdfCanvas');
+            if (!pdfCanvas) return null;
+
+            const ctx = pdfCanvas.getContext('2d');
+            if (!ctx) return null;
+
+            // Sample a small area around the position to get average color
+            const sampleSize = 10;
+            const startX = Math.max(0, Math.floor(x) - sampleSize / 2);
+            const startY = Math.max(0, Math.floor(y) - sampleSize / 2);
+            const endX = Math.min(pdfCanvas.width, startX + sampleSize);
+            const endY = Math.min(pdfCanvas.height, startY + sampleSize);
+
+            const width = endX - startX;
+            const height = endY - startY;
+
+            if (width <= 0 || height <= 0) return null;
+
+            const imageData = ctx.getImageData(startX, startY, width, height);
+            const data = imageData.data;
+
+            // Calculate average color
+            let r = 0, g = 0, b = 0, count = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                r += data[i];
+                g += data[i + 1];
+                b += data[i + 2];
+                count++;
+            }
+
+            if (count === 0) return null;
+
+            r = Math.round(r / count);
+            g = Math.round(g / count);
+            b = Math.round(b / count);
+
+            // Convert to hex
+            const toHex = (c) => c.toString(16).padStart(2, '0');
+            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+        } catch (err) {
+            console.warn('[PDFox TextEditor] Could not detect background color:', err);
+            return null;
+        }
+    }
+
+    /**
      * Add controls (delete button, resize handles) to an edited span
      * @param {HTMLElement} span - The edited span element
      */
@@ -315,6 +368,15 @@ const PDFoxTextEditor = (function() {
             originalWidth: span.offsetWidth
         };
 
+        // Detect background color from PDF if this is first edit (no existing bgColor)
+        let detectedBgColor = null;
+        if (!existingEdit?.customBgColor) {
+            // Get span position relative to canvas
+            const spanX = parseFloat(span.style.left) || 0;
+            const spanY = parseFloat(span.style.top) || 0;
+            detectedBgColor = detectBackgroundColorAt(spanX, spanY);
+        }
+
         // Use unified text editor
         if (typeof PDFoxUnifiedTextEditor !== 'undefined') {
             PDFoxUnifiedTextEditor.showEditText({
@@ -328,9 +390,9 @@ const PDFoxTextEditor = (function() {
                 originalWidth: currentEditingTextItem.originalWidth,
                 fontSize: existingEdit?.customFontSize || Math.round(fontSize),
                 textColor: existingEdit?.customColor || '#000000',
-                bgColor: existingEdit?.customBgColor || '#ffffff',
+                bgColor: existingEdit?.customBgColor || detectedBgColor || '#ffffff',
                 fontFamily: existingEdit?.customFontFamily || 'Arial, sans-serif',
-                isTransparent: existingEdit?.isTransparent ?? false,
+                isTransparent: existingEdit?.isTransparent ?? (detectedBgColor ? false : true),
                 isBold: existingEdit?.isBold ?? false,
                 isItalic: existingEdit?.isItalic ?? false
             });
@@ -675,50 +737,7 @@ const PDFoxTextEditor = (function() {
          * @returns {string} Hex color code
          */
         detectBackgroundColor(x, y) {
-            try {
-                const pdfCanvas = document.getElementById('pdfCanvas');
-                if (!pdfCanvas) return '#ffffff';
-
-                const ctx = pdfCanvas.getContext('2d');
-                if (!ctx) return '#ffffff';
-
-                // Sample a small area around the click point to get average color
-                const sampleSize = 10;
-                const startX = Math.max(0, Math.floor(x) - sampleSize / 2);
-                const startY = Math.max(0, Math.floor(y) - sampleSize / 2);
-                const endX = Math.min(pdfCanvas.width, startX + sampleSize);
-                const endY = Math.min(pdfCanvas.height, startY + sampleSize);
-
-                const width = endX - startX;
-                const height = endY - startY;
-
-                if (width <= 0 || height <= 0) return '#ffffff';
-
-                const imageData = ctx.getImageData(startX, startY, width, height);
-                const data = imageData.data;
-
-                // Calculate average color
-                let r = 0, g = 0, b = 0, count = 0;
-                for (let i = 0; i < data.length; i += 4) {
-                    r += data[i];
-                    g += data[i + 1];
-                    b += data[i + 2];
-                    count++;
-                }
-
-                if (count === 0) return '#ffffff';
-
-                r = Math.round(r / count);
-                g = Math.round(g / count);
-                b = Math.round(b / count);
-
-                // Convert to hex
-                const toHex = (c) => c.toString(16).padStart(2, '0');
-                return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-            } catch (err) {
-                console.warn('[PDFox TextEditor] Could not detect background color:', err);
-                return '#ffffff';
-            }
+            return detectBackgroundColorAt(x, y) || '#ffffff';
         },
 
         /**
