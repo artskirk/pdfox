@@ -669,6 +669,59 @@ const PDFoxTextEditor = (function() {
         },
 
         /**
+         * Detect background color from PDF canvas at given position
+         * @param {number} x - X position
+         * @param {number} y - Y position
+         * @returns {string} Hex color code
+         */
+        detectBackgroundColor(x, y) {
+            try {
+                const pdfCanvas = document.getElementById('pdfCanvas');
+                if (!pdfCanvas) return '#ffffff';
+
+                const ctx = pdfCanvas.getContext('2d');
+                if (!ctx) return '#ffffff';
+
+                // Sample a small area around the click point to get average color
+                const sampleSize = 10;
+                const startX = Math.max(0, Math.floor(x) - sampleSize / 2);
+                const startY = Math.max(0, Math.floor(y) - sampleSize / 2);
+                const endX = Math.min(pdfCanvas.width, startX + sampleSize);
+                const endY = Math.min(pdfCanvas.height, startY + sampleSize);
+
+                const width = endX - startX;
+                const height = endY - startY;
+
+                if (width <= 0 || height <= 0) return '#ffffff';
+
+                const imageData = ctx.getImageData(startX, startY, width, height);
+                const data = imageData.data;
+
+                // Calculate average color
+                let r = 0, g = 0, b = 0, count = 0;
+                for (let i = 0; i < data.length; i += 4) {
+                    r += data[i];
+                    g += data[i + 1];
+                    b += data[i + 2];
+                    count++;
+                }
+
+                if (count === 0) return '#ffffff';
+
+                r = Math.round(r / count);
+                g = Math.round(g / count);
+                b = Math.round(b / count);
+
+                // Convert to hex
+                const toHex = (c) => c.toString(16).padStart(2, '0');
+                return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+            } catch (err) {
+                console.warn('[PDFox TextEditor] Could not detect background color:', err);
+                return '#ffffff';
+            }
+        },
+
+        /**
          * Open Add Text modal
          * @param {number} x - X position
          * @param {number} y - Y position
@@ -681,7 +734,10 @@ const PDFoxTextEditor = (function() {
                 const defaultFontSize = parseInt(document.getElementById('fontSize')?.value) || 14;
                 const defaultColor = document.getElementById('textColor')?.value || '#000000';
 
-                PDFoxUnifiedTextEditor.showAddText(x, y, core.get('currentPage'));
+                // Detect background color from PDF at click position
+                const detectedBgColor = this.detectBackgroundColor(x, y);
+
+                PDFoxUnifiedTextEditor.showAddText(x, y, core.get('currentPage'), detectedBgColor);
             }
         },
 

@@ -107,14 +107,25 @@ const PDFoxUnifiedTextEditor = (function() {
         const text = data.text || '';
         const fontSize = data.fontSize || 14;
         const textColor = data.textColor || data.color || '#000000';
-        const bgColor = data.bgColor ? rgbaToHex(data.bgColor) : '#ffffff';
+        // Handle both hex and rgba formats for bgColor
+        let bgColor = '#ffffff';
+        if (data.bgColor) {
+            if (data.bgColor.startsWith('#')) {
+                bgColor = data.bgColor;
+            } else if (data.bgColor.startsWith('rgb')) {
+                bgColor = rgbaToHex(data.bgColor);
+            } else {
+                bgColor = data.bgColor;
+            }
+        }
         const fontFamily = data.fontFamily || 'Arial, sans-serif';
         const isBold = data.isBold || false;
         const isItalic = data.isItalic || false;
-        // Default to transparent for 'add' mode, otherwise check existing data
+        // Use isTransparent from data if explicitly set, otherwise default based on mode
+        // For 'add' mode with detected background color, isTransparent will be false
         const isTransparent = data.isTransparent !== undefined
             ? data.isTransparent
-            : (mode === 'add' || mode === 'ocr')
+            : (mode === 'ocr')
                 ? true
                 : (data.bgColor && data.bgColor.includes('rgba') && data.bgColor.includes(', 0)'));
 
@@ -877,8 +888,15 @@ const PDFoxUnifiedTextEditor = (function() {
         copyText,
 
         // Convenience methods
-        showAddText(x, y, page) {
-            show('add', { x, y, page });
+        showAddText(x, y, page, detectedBgColor) {
+            show('add', {
+                x,
+                y,
+                page,
+                // If a background color was detected, use it and disable transparent mode
+                bgColor: detectedBgColor || '#ffffff',
+                isTransparent: !detectedBgColor // Transparent only if no color was detected
+            });
         },
 
         showEditText(data) {
