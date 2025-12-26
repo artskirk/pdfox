@@ -589,7 +589,7 @@ const PDFoxApp = (function() {
             // Re-enable button
             if (ctaBtn) {
                 ctaBtn.disabled = false;
-                ctaBtn.innerHTML = 'Get Pro Access <span class="upgrade-modal-price">- €8.99/24h</span>';
+                ctaBtn.innerHTML = 'Get Pro Access <span class="upgrade-modal-price">- €4.99/24h</span>';
             }
         }
     }

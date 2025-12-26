@@ -196,7 +196,7 @@ const PAYMENT_AMOUNT = parseInt(process.env.PAYMENT_AMOUNT || '299'); // 2.99 EU
 const PAYMENT_CURRENCY = process.env.PAYMENT_CURRENCY || 'eur';
 
 // Pro access configuration
-const PRO_PAYMENT_AMOUNT = parseInt(process.env.PRO_PAYMENT_AMOUNT || '899'); // 8.99 EUR in cents
+const PRO_PAYMENT_AMOUNT = parseInt(process.env.PRO_PAYMENT_AMOUNT || '499'); // 4.99 EUR in cents
 const PRO_ACCESS_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
 const FINGERPRINT_TOLERANCE = 0.85; // 85% match required
